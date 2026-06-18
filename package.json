@@ -1,0 +1,16 @@
+{
+  "name": "tv-mobile-game-framework",
+  "version": "1.0.0",
+  "description": "Generic TV + Mobile Game Framework (V1)",
+  "main": "framework/core/server.js",
+  "scripts": {
+    "start": "node framework/core/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "private": true
+}
