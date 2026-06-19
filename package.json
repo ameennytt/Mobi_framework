@@ -4,7 +4,11 @@
   "description": "Generic TV + Mobile Game Framework (V1)",
   "main": "framework/core/server.js",
   "scripts": {
-    "start": "node framework/core/server.js"
+    "start": "node framework/core/server.js",
+    "test": "node games/cricswing/shared/shot-visuals.test.js",
+    "new-game": "node scripts/new-game.js",
+    "bundle": "node scripts/bundle.js",
+    "publish": "node scripts/publish.js"
   },
   "dependencies": {
     "ws": "^8.16.0"

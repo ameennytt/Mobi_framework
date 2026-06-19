@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chase — Controller</title>
+  <link rel="stylesheet" href="/framework/ui/framework.css">
+  <style>
+    body { background: radial-gradient(ellipse at bottom, #0d1830 0%, #060a14 100%); margin: 0;
+      height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
+    .top { display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+    .top .name { font-size: 16px; font-weight: 800; color: var(--game-accent); }
+    .chip { font-size: 11px; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px; color: var(--game-muted); }
+    .hud { display: flex; gap: 12px; margin: 16px 0; }
+    .hud .score-card { flex: 1; padding: 10px; text-align: center; }
+    .hud .lbl { font-size: 11px; text-transform: uppercase; color: var(--game-muted); }
+    .hud .num { font-size: 26px; font-weight: 900; color: var(--game-text); }
+    .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    .aim-text { font-size: 14px; color: var(--game-muted); }
+    .aim-row { display: flex; gap: 10px; width: 100%; }
+    .aim { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: var(--game-text);
+      padding: 16px; border-radius: 10px; font-weight: bold; font-size: 14px; }
+    .aim.active { background: rgba(255,210,63,0.18); border-color: var(--game-accent); color: var(--game-accent); }
+    .go { width: 100%; height: 66px; font-size: 20px; font-weight: 900; border: none; border-radius: 14px;
+      background: var(--game-accent); color: var(--game-primary); box-shadow: 0 8px 22px rgba(255,210,63,0.3); }
+    .tip { text-align: center; font-size: 11px; color: var(--game-muted); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="name" id="title">Chase</div>
+    <div class="chip" id="conn">CONNECTING…</div>
+  </div>
+
+  <div class="hud">
+    <div class="score-card"><div class="lbl" id="lbl-primary">Runs</div><div class="num" id="val-primary">0</div></div>
+    <div class="score-card"><div class="lbl">Need</div><div class="num" id="val-need">—</div></div>
+  </div>
+
+  <div class="mid">
+    <div class="aim-text" id="aim-text">Aim: Center</div>
+    <div class="aim-row">
+      <button class="aim" id="aim-left">LEG</button>
+      <button class="aim active" id="aim-center">STRAIGHT</button>
+      <button class="aim" id="aim-right">OFF</button>
+    </div>
+  </div>
+
+  <div>
+    <button class="go" id="go-btn">PLAY SHOT</button>
+    <div class="tip">Pick a direction, then tap PLAY SHOT</div>
+  </div>
+
+  <script src="/framework/services/storage.js"></script>
+  <script src="/framework/services/event-hub.js"></script>
+  <script src="/framework/services/theme-loader.js"></script>
+  <script src="/framework/services/asset-loader.js"></script>
+  <script src="/framework/ui/components.js"></script>
+  <script src="/framework/core/game.js"></script>
+
+  <script>
+    'use strict';
+    window.onload = async () => {
+      const params = new URLSearchParams(location.search);
+      const target = parseInt(params.get('target') || '0', 10);
+      const overs = parseInt(params.get('overs') || '2', 10);
+      const difficulty = params.get('difficulty') || 'medium';
+      let aim = 'center';
+
+      const game = await window.FrameworkGame.init({
+        role: 'bat',
+        onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
+        onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
+        onPaired: () => {
+          // Tell the TV which chase to run (target/overs/difficulty chosen in lobby).
+          game.send('start', { target, overs, difficulty });
+        },
+        handlers: {
+          // TV refreshed and rejoined — re-send the chase so it repaints.
+          screen_rejoined: () => game.send('start', { target, overs, difficulty }),
+          game_state: (d) => {
+            setNum('val-primary', d.runs);
+            const need = d.target ? Math.max(0, d.target - d.runs) : 0;
+            const ballsLeft = Math.max(0, (d.overs || overs) * 6 - (d.balls || 0));
+            document.getElementById('val-need').textContent = d.target ? `${need}/${ballsLeft}` : '—';
+          },
+          game_over: (d) => {
+            window.FrameworkUI.showConfirmDialog({
+              title: d.won ? 'You Won!' : 'Chase Over',
+              body: `Final: ${d.runs}/${d.wickets || 0}.`,
+              confirmText: 'Play Again',
+              onConfirm: () => { window.location.href = '/games/chase/lobby.html'; },
+            });
+          },
+        },
+      });
+
+      document.getElementById('title').textContent = game.text('APP_TITLE');
+      document.getElementById('lbl-primary').textContent = game.text('PRIMARY_SCORE');
+
+      function setAim(a, labelKey) {
+        aim = a;
+        for (const id of ['left', 'center', 'right']) {
+          document.getElementById('aim-' + id).classList.toggle('active', id === a);
+        }
+        document.getElementById('aim-text').textContent = 'Aim: ' + labelKey;
+      }
+      document.getElementById('aim-left').onclick = () => setAim('left', 'Leg');
+      document.getElementById('aim-center').onclick = () => setAim('center', 'Straight');
+      document.getElementById('aim-right').onclick = () => setAim('right', 'Off');
+
+      document.getElementById('go-btn').onclick = () => {
+        if (navigator.vibrate) navigator.vibrate(30);
+        game.send('action', { choice: aim });
+      };
+
+      function setChip(t, c) { const e = document.getElementById('conn'); e.textContent = t; e.style.color = c; }
+      function setNum(id, v) { document.getElementById(id).textContent = (v == null ? 0 : v); }
+    };
+  </script>
+</body>
+</html>

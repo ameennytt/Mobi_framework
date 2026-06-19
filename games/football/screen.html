@@ -135,37 +135,35 @@
       document.getElementById('lbl-secondary').textContent = window.FrameworkAssets.text('SECONDARY_SCORE');
       document.getElementById('lbl-progress').textContent = window.FrameworkAssets.text('PROGRESS_METRIC');
 
-      // Auto size canvas
-      resizeCanvas();
-      window.onresize = resizeCanvas;
-
-      // Start performance manager & renderer loop
-      window.FrameworkTvPerf.init();
+      // Start renderer loop. It sizes the canvas (via TvPerfManager) and runs
+      // renderGame as the draw layer. Re-center the pitch whenever it resizes.
+      window.addEventListener('framework:canvas-resized', resetPitch);
       window.FrameworkRenderer.init(canvas, renderGame);
       window.FrameworkRenderer.start();
+      resetPitch();
 
       // Retrieve room from query or session
       const urlParams = new URLSearchParams(window.location.search);
-      let wantedCode = urlParams.get('room') || sessionStorage.getItem('cricswing_tv_room') || '';
+      let wantedCode = urlParams.get('room') || sessionStorage.getItem('football_tv_room') || '';
       
       // Connect WS screen role
       window.FrameworkEvents.connect(wantedCode, 'screen');
 
       // Wire pairing notifications
-      window.FrameworkEvents.on('ROOM_CREATED', (data) => {
+      window.FrameworkEvents.on('room_created', (data) => {
         roomCode = data.code;
-        sessionStorage.setItem('cricswing_tv_room', roomCode);
+        sessionStorage.setItem('football_tv_room', roomCode);
         window.FrameworkUI.renderPairingOverlay(roomCode, 'waiting');
       });
 
-      window.FrameworkEvents.on('BAT_CONNECTED', () => {
+      window.FrameworkEvents.on('bat_connected', () => {
         window.FrameworkUI.hidePairingOverlay();
         window.FrameworkUI.showToast('Controller Connected! Prepare to play.', 3000);
         gameActive = true;
         resetPitch();
       });
 
-      window.FrameworkEvents.on('BAT_DISCONNECTED', () => {
+      window.FrameworkEvents.on('bat_disconnected', () => {
         window.FrameworkUI.renderPairingOverlay(roomCode, 'waiting');
         gameActive = false;
       });
@@ -238,12 +236,6 @@
         }, 800);
       });
     };
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      resetPitch();
-    }
 
     function resetPitch() {
       // Reset goalie position

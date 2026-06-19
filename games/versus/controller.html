@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Striker Duel — Controller</title>
+  <link rel="stylesheet" href="/framework/ui/framework.css">
+  <style>
+    body { background: radial-gradient(ellipse at bottom, #0a2417 0%, #04100a 100%); margin: 0;
+      height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
+    .top { display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+    .top .name { font-size: 16px; font-weight: 800; color: var(--game-accent); }
+    .chip { font-size: 11px; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px; color: var(--game-muted); }
+    .hud { display: flex; gap: 12px; margin: 16px 0; }
+    .hud .score-card { flex: 1; padding: 10px; text-align: center; }
+    .hud .lbl { font-size: 11px; text-transform: uppercase; color: var(--game-muted); }
+    .hud .num { font-size: 26px; font-weight: 900; color: var(--game-text); }
+    .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+    .aim-text { font-size: 14px; color: var(--game-muted); }
+    .aim-row { display: flex; gap: 10px; width: 100%; }
+    .aim { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: var(--game-text);
+      padding: 16px; border-radius: 10px; font-weight: bold; font-size: 14px; }
+    .aim.active { background: rgba(57,255,20,0.18); border-color: var(--game-accent); color: var(--game-accent); }
+    .go { width: 100%; height: 66px; font-size: 20px; font-weight: 900; border: none; border-radius: 14px;
+      background: var(--game-accent); color: var(--game-primary); box-shadow: 0 8px 22px rgba(57,255,20,0.3); }
+    .tip { text-align: center; font-size: 11px; color: var(--game-muted); margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div class="name" id="title">Striker Duel</div>
+    <div class="chip" id="conn">CONNECTING…</div>
+  </div>
+
+  <div class="hud">
+    <div class="score-card"><div class="lbl">You</div><div class="num" id="val-you">0</div></div>
+    <div class="score-card"><div class="lbl">CPU</div><div class="num" id="val-cpu">0</div></div>
+    <div class="score-card"><div class="lbl">Round</div><div class="num" id="val-round">0</div></div>
+  </div>
+
+  <div class="mid">
+    <div class="aim-text" id="aim-text">Aim: Center</div>
+    <div class="aim-row">
+      <button class="aim" id="aim-left">LEFT</button>
+      <button class="aim active" id="aim-center">CENTER</button>
+      <button class="aim" id="aim-right">RIGHT</button>
+    </div>
+  </div>
+
+  <div>
+    <button class="go" id="go-btn">SHOOT</button>
+    <div class="tip">Pick a corner, then tap SHOOT</div>
+  </div>
+
+  <script src="/framework/services/storage.js"></script>
+  <script src="/framework/services/event-hub.js"></script>
+  <script src="/framework/services/theme-loader.js"></script>
+  <script src="/framework/services/asset-loader.js"></script>
+  <script src="/framework/ui/components.js"></script>
+  <script src="/framework/core/game.js"></script>
+
+  <script>
+    'use strict';
+    window.onload = async () => {
+      const params = new URLSearchParams(location.search);
+      const rounds = parseInt(params.get('rounds') || '5', 10);
+      const difficulty = params.get('difficulty') || 'medium';
+      let aim = 'center';
+
+      const game = await window.FrameworkGame.init({
+        role: 'bat',
+        onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
+        onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
+        onPaired: () => game.send('start', { rounds, difficulty }),
+        handlers: {
+          screen_rejoined: () => game.send('start', { rounds, difficulty }),
+          game_state: (d) => {
+            setNum('val-you', d.you); setNum('val-cpu', d.cpu); setNum('val-round', `${d.round}/${d.rounds}`);
+          },
+          game_over: (d) => {
+            window.FrameworkUI.showConfirmDialog({
+              title: d.won ? 'You Win!' : (d.you === d.cpu ? 'Draw' : 'You Lose'),
+              body: `Full time: ${d.you} - ${d.cpu}.`,
+              confirmText: 'Play Again',
+              onConfirm: () => { window.location.href = '/games/versus/lobby.html'; },
+            });
+          },
+        },
+      });
+
+      document.getElementById('title').textContent = game.text('APP_TITLE');
+
+      function setAim(a, label) {
+        aim = a;
+        for (const id of ['left', 'center', 'right']) document.getElementById('aim-' + id).classList.toggle('active', id === a);
+        document.getElementById('aim-text').textContent = 'Aim: ' + label;
+      }
+      document.getElementById('aim-left').onclick = () => setAim('left', 'Left');
+      document.getElementById('aim-center').onclick = () => setAim('center', 'Center');
+      document.getElementById('aim-right').onclick = () => setAim('right', 'Right');
+      document.getElementById('go-btn').onclick = () => { if (navigator.vibrate) navigator.vibrate(30); game.send('action', { choice: aim }); };
+
+      function setChip(t, c) { const e = document.getElementById('conn'); e.textContent = t; e.style.color = c; }
+      function setNum(id, v) { document.getElementById(id).textContent = (v == null ? 0 : v); }
+    };
+  </script>
+</body>
+</html>

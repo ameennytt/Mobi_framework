@@ -4,6 +4,11 @@ This guide explains how to capture user input on the mobile controller and relay
 
 Because we focus on **normal inputs** (button taps, direction keys, and basic tilts), developers can build stable, responsive gamepads without writing complex physical sensor algorithms.
 
+> **Naming rule:** message types are **lowercase** (e.g. `action`, `input_direction`,
+> `game_state`). Payload fields arrive **top-level** on the peer — `game.send('action',
+> {choice})` is read as `d.choice` in the handler. Mismatched/UPPERCASE names silently
+> won't fire. See the live example in `games/chase/controller.html`.
+
 ---
 
 ## 1. The Input Flow
@@ -37,12 +42,12 @@ let moveInterval = null;
 
 function startMove(dir) {
   // Notify the TV instantly when pressed down
-  window.FrameworkEvents.send('INPUT_DIRECTION', { dir: dir, state: 'down' });
+  window.FrameworkEvents.send('input_direction', { dir: dir, state: 'down' });
 }
 
 function stopMove() {
   // Notify the TV when the finger is lifted
-  window.FrameworkEvents.send('INPUT_DIRECTION', { dir: null, state: 'up' });
+  window.FrameworkEvents.send('input_direction', { dir: null, state: 'up' });
 }
 ```
 
@@ -52,7 +57,7 @@ On the TV, update the movement velocity based on the button state:
 let playerVelocity = 0;
 const SPEED = 5;
 
-window.FrameworkEvents.on('INPUT_DIRECTION', (data) => {
+window.FrameworkEvents.on('input_direction', (data) => {
   if (data.state === 'down') {
     playerVelocity = data.dir === 'left' ? -SPEED : SPEED;
   } else {
@@ -75,8 +80,8 @@ Action buttons trigger events like hits, kicks, jumps, or menu confirms.
 ### HTML Layout (`controller.html`)
 ```html
 <div class="action-bar">
-  <button class="btn-accent" onclick="triggerAction('HIT_FLAT')">FLAT HIT</button>
-  <button class="btn-accent" onclick="triggerAction('HIT_SLICE')">SLICE HIT</button>
+  <button class="btn-accent" onclick="triggerAction('hit_flat')">FLAT HIT</button>
+  <button class="btn-accent" onclick="triggerAction('hit_slice')">SLICE HIT</button>
 </div>
 ```
 
@@ -88,18 +93,18 @@ function triggerAction(actionName) {
     navigator.vibrate(50); // 50ms vibration pulse
   }
   
-  window.FrameworkEvents.send('ACTION_TAP', { action: actionName });
+  window.FrameworkEvents.send('action', { action: actionName });
 }
 ```
 
 ### TV Screen Event Listener (`screen.html`)
 ```javascript
-window.FrameworkEvents.on('ACTION_TAP', (data) => {
-  if (data.action === 'HIT_FLAT') {
+window.FrameworkEvents.on('action', (data) => {
+  if (data.action === 'hit_flat') {
     player.playSwingAnimation('flat');
     ball.applyFlatPhysics();
   }
-  if (data.action === 'HIT_SLICE') {
+  if (data.action === 'hit_slice') {
     player.playSwingAnimation('slice');
     ball.applySlicePhysics();
   }

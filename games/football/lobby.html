@@ -136,7 +136,7 @@
         // Connect event hub
         window.FrameworkEvents.connect(code, 'bat');
         
-        window.FrameworkEvents.on('ROLE_ASSIGNED', () => {
+        window.FrameworkEvents.on('role', () => {
           // Send setup info
           window.FrameworkEvents.send('SETUP_GAME', {
             difficulty: difficultySelect.value
@@ -147,7 +147,7 @@
           }, 300);
         });
 
-        window.FrameworkEvents.on('ERROR', (err) => {
+        window.FrameworkEvents.on('error', (err) => {
           window.FrameworkUI.showToast(err.msg || 'Connection error', 3000, true);
         });
       };

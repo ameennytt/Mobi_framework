@@ -41,7 +41,7 @@ This document outlines critical pitfalls, architectural warnings, and best pract
 > Browsers block video and audio from playing automatically until a user interacts with the page (user gesture requirement).
 
 *   **The TV Problem**: The TV is passive and has no mouse/remote clicks to unlock media playback.
-*   **How to Fix**: Trigger the initialization of your `AudioContext` or audio elements on the TV immediately after it receives the first connection handshake package (`BAT_CONNECTED`) from the phone. The WebSocket trigger counts as an authorization signal in most modern smart TV browsers.
+*   **How to Fix**: Trigger the initialization of your `AudioContext` or audio elements on the TV immediately after it receives the first connection handshake package (`bat_connected`, or the `onPaired` callback of `FrameworkGame.init`) from the phone. The WebSocket trigger counts as an authorization signal in most modern smart TV browsers.
 
 ---
 
@@ -62,4 +62,4 @@ This document outlines critical pitfalls, architectural warnings, and best pract
 > **Session Expiry**
 > Rooms that have no active socket activity are automatically culled by the server's sweeper cycle after **10 minutes**.
 
-*   **Listen to Reconnects**: Always handle the `sys:disconnected` event on both the TV and mobile. Show the framework's warning overlay (`NotificationOverlay`) immediately so the player is prompted to reconnect or re-enter their room code instead of looking at a frozen screen.
+*   **Listen to Reconnects**: `FrameworkGame.init` already handles `sys:disconnected` (auto-reconnect + a "Reconnecting…" toast on the TV). For a full-screen prompt, call `FrameworkTemplates.renderTVDisconnected({ message })` and `hideTVDisconnected()` yourself. On reconnect the TV is told `bat_connected` again and the controller re-sends state on `screen_rejoined` (see `games/chase`).

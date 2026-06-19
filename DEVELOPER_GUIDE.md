@@ -1,172 +1,191 @@
 # Developer Guide: TV + Mobile Game Framework V1
 
-Welcome to the TV + Mobile Game Framework! This guide explains how to build new multiplayer games using a **Mobile Phone as a Controller** and a **Smart TV as the Screen Canvas**.
-
-The framework is built using simple HTML, CSS, and Vanilla JavaScript. It abstracts away complex networking and UI layout rendering so you can focus strictly on your game's rules and design.
-
----
-
-## 1. Architectural Philosophy
-
-The framework operates on a **Single Controller, Single Screen** model:
-1.  **TV (Screen)**: Acts as a passive, high-performance canvas. It renders characters, fields, ball paths, and displays match scoreboards.
-2.  **Phone (Controller)**: Acts as a gamepad. It displays button layouts, stance selectors, direction pads, and sends clean inputs (button clicks, taps, simple tilts) to the TV.
-3.  **Server (WebSockets)**: Automatically runs in the background. It pairs the phone and TV with a simple 4-letter code and relays inputs instantaneously.
+Build multiplayer-style games where the **phone is the controller** and the
+**Smart TV is the screen**. The framework handles pairing, connection, reconnect,
+navigation, sensors, and TV performance — you write only the game.
 
 ---
 
-## 2. Folder Structure
+## 1. Model
 
-Every custom game lives inside the `games/` folder as a pluggable extension. Here is what a typical game directory looks like:
+- **TV (`screen.html`)** — passive canvas. Draws the game, shows the score, runs
+  the result screen. Never needs the remote.
+- **Phone (`lobby.html` + `controller.html`)** — pairs with the TV, picks
+  options, then sends inputs.
+- **Server** — pairs the two by code and relays messages instantly.
 
-```text
-games/my-tennis-game/
-├── game-config.json      # Dynamic configuration: theme colors, score words, and logo mappings
-├── lobby.html            # Mobile room setup screen (enter pairing code, select modes/settings)
-├── controller.html       # Mobile active gamepad controller (sends button click/tap inputs)
-├── screen.html           # TV screen canvas (draws the court, players, and ball movement)
-├── game.js               # Core game engine (rules, collision math, scoring logic)
-└── assets/               # Local images, audio files, and game-specific style assets
+One call wires the plumbing on every page: **`FrameworkGame.init({ ... })`**.
+
+---
+
+## 2. Start a new game
+
+Two templates to copy from:
+
+```bash
+npm run new-game tennis                # minimal shell  → games/tennis
+npm run new-game tennis --from chase   # cricket-style chase flow
+npm run new-game tennis --from versus  # head-to-head (both-score) flow
+npm start                              # serve everything on :3000
+```
+
+- **starter** — a bare 3-screen shell (welcome → menu → setup). Smallest base.
+- **chase** — chase/target archetype: pick mode → team / chase-cup / chase-league →
+  format → difficulty → toss → target → play. Stadium (no players) + chase HUD.
+- **versus** — head-to-head archetype: pick team → length → kickoff → play, you vs CPU,
+  versus HUD + goal field overlay. Proves the platform beyond cricket.
+
+Both rich templates share ONE engine. The lobby is declared in `game-config.json`
+`flow:[...]` (step list); the HUD is `hud:"chase"|"versus"|"attempt"`; the field is
+`field:"goal"|"court"|"lanes"|"targetBoard"`. Change sport = change config + `gameplay.js`,
+no flow code. See [FRAMEWORK_API.md](FRAMEWORK_API.md).
+
+Open the TV at `http://localhost:3000/games/tennis/screen.html` (shows a code),
+and the phone at `http://localhost:3000/games/tennis/lobby.html` (type the code).
+
+### With the `chase` template you edit only TWO files
+
+The whole flow, navigation, pairing, reconnect, stadium and scorebar live in
+`framework/` — not in your game. You touch:
+
+```
+games/tennis/
+├── game-config.json   # name, colors, MODES, TEAMS, formats, difficulties (no code)
+└── gameplay.js        # your core rules + the game-screen draw(ctx,W,H)
+```
+
+`lobby.html` / `controller.html` / `screen.html` stay thin (a few lines that boot
+the framework) and rarely change. That's the point: **you focus on gameplay + the
+game screen — exactly like CricSwing's batting/swing code section — and everything
+else defaults.** To add motion/swing later: `game-config.json` `supportsMotion:true`
+and pass `motion:true` to `FrameworkGame.init` in the controller. The button input
+keeps working as a fallback.
+
+### With the `starter` template you edit four files
+
+Search the files for `EDIT`:
+
+```
+games/tennis/
+├── game-config.json   # name, colors, logo, score labels  (no code)
+├── lobby.html         # menu + setup screens
+├── controller.html    # phone buttons / inputs
+└── screen.html        # TV canvas drawing + game rules
 ```
 
 ---
 
-## 3. Step-by-Step Game Creation Guide
+## 3. The bootstrap — `FrameworkGame.init()`
 
-Let's walk through how to build a simple **Tennis** game where the player taps button controls to move left/right and hit the ball.
-
-### Step A: Configure Your Game (`game-config.json`)
-Create `games/tennis/game-config.json` to define your styles and terms:
-```json
-{
-  "theme": {
-    "--game-primary": "#0c1821",
-    "--game-accent": "#dfff4f",
-    "--game-text": "#f0f4f8",
-    "--game-font": "-apple-system, sans-serif"
+### TV (`screen.html`)
+```js
+const game = await FrameworkGame.init({
+  role: 'screen',
+  canvas: 'game-canvas',
+  draw: (ctx, W, H) => { /* draw your game */ },
+  onPaired: () => { /* phone connected */ },
+  handlers: {
+    action: (d) => { /* controller input arrived: d.choice ... */ },
   },
-  "assets": {
-    "APP_LOGO": "/games/tennis/assets/tennis-logo.png",
-    "SCREEN_HERO": "/games/tennis/assets/court-illustration.png"
+});
+game.showResult({ bannerText: 'Game Over', winner: '12 pts',
+  stats: [{label:'Score', value:12}], primaryText: 'PLAY AGAIN',
+  onPrimary: () => { game.hideResult(); /* restart */ } });
+```
+The framework shows the pairing overlay (code + status) and reconnect handling
+automatically. `game.text(slot)` / `game.asset(slot)` read `game-config.json`.
+
+### Phone controller (`controller.html`)
+```js
+const game = await FrameworkGame.init({
+  role: 'bat',
+  // motion: true,   // enable tilt/swing sensors (off by default)
+  handlers: {
+    game_state: (d) => { /* update HUD */ },
+    game_over:  (d) => { /* show dialog */ },
   },
-  "text": {
-    "APP_TITLE": "TennisSwing V1",
-    "PRIMARY_SCORE": "Sets",
-    "SECONDARY_SCORE": "Points",
-    "START_ACTION": "PLAY MATCH",
-    "EXIT_ACTION": "QUIT"
-  }
-}
+});
+game.send('action', { choice: 'left' });   // payload fields arrive top-level on the TV
 ```
 
-### Step B: Build the Phone Setup Screen (`lobby.html`)
-The phone lobby connects to the TV. You must import the Event Hub client and configure the connection:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="/framework/ui/framework.css">
-  <script src="/framework/services/event-hub.js"></script>
-</head>
-<body>
-  <div class="glass-panel">
-    <h2>Enter TV Code</h2>
-    <input type="text" id="code-input" placeholder="XXXXXX">
-    <button onclick="joinRoom()">Connect</button>
-  </div>
-
-  <script>
-    function joinRoom() {
-      const code = document.getElementById('code-input').value;
-      if (!code) return;
-
-      // Automatically pairs with the TV
-      window.FrameworkEvents.connect(code, 'bat');
-
-      // Listen for confirmation
-      window.FrameworkEvents.on('ROLE_ASSIGNED', () => {
-        // Redirect to the gameplay controller page
-        window.location.href = `/games/tennis/controller.html?room=${code}`;
-      });
-    }
-  </script>
-</body>
-</html>
-```
-
-### Step C: Build the Gamepad Controller (`controller.html`)
-The controller page renders buttons and relays click events to the TV:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="/framework/ui/framework.css">
-  <script src="/framework/services/event-hub.js"></script>
-</head>
-<body class="gamepad-layout">
-  <!-- D-Pad Buttons -->
-  <button class="btn" onclick="sendMove('left')">← Move Left</button>
-  <button class="btn" onclick="sendMove('right')">Move Right →</button>
-  
-  <!-- Action Button -->
-  <button class="btn-accent" onclick="sendHit()">SWING RACKET</button>
-
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get('room');
-
-    // Establish persistent controller socket
-    window.FrameworkEvents.connect(roomCode, 'bat');
-
-    function sendMove(dir) {
-      window.FrameworkEvents.send('MOVE_PLAYER', { direction: dir });
-    }
-
-    function sendHit() {
-      window.FrameworkEvents.send('HIT_BALL', { spin: 'top' });
-    }
-  </script>
-</body>
-</html>
-```
-
-### Step D: Build the TV Screen Canvas (`screen.html`)
-The TV screen receives input events from the controller and draws the tennis animation loop:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="/framework/ui/framework.css">
-  <script src="/framework/services/event-hub.js"></script>
-</head>
-<body>
-  <canvas id="gameCanvas" width="800" height="450"></canvas>
-
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get('room') || prompt('Enter Room Code:');
-
-    // Connect TV socket
-    window.FrameworkEvents.connect(roomCode, 'screen');
-
-    // Listen to Controller events
-    window.FrameworkEvents.on('MOVE_PLAYER', (data) => {
-      if (data.direction === 'left') player.x -= 20;
-      if (data.direction === 'right') player.x += 20;
-    });
-
-    window.FrameworkEvents.on('HIT_BALL', (data) => {
-      ball.hit(data.spin);
-    });
-  </script>
-</body>
-</html>
+### Phone lobby (`lobby.html`)
+Use `FrameworkRouter` for setup screens, and pair after the user types a code:
+```js
+const game = await FrameworkGame.init({ role: 'bat', autoConnect: false });
+game.connect(typedCode, () => FrameworkRouter.show('s-menu'), true /* ephemeral */);
 ```
 
 ---
 
-## 4. Standard developer Best Practices
+## 4. Messages
 
-1.  **Do not modify the `framework/` folder**: Keep your game files inside `games/<game-id>/`. This ensures you can easily upgrade the framework core later.
-2.  **Separate math from styling**: Put your score calculations, AI decisions, and collision bounds in `game.js`, and import it inside `screen.html`. This keeps rendering separate from the core physics.
-3.  **Always use `location.port` and `location.hostname`**: Do not hardcode ports (like `:3000`) or domains. The framework handles dynamic ports automatically when running behind LAN routers or proxies.
+`game.send(type, payload)` → the peer's `handlers[type](payload)` (payload fields
+are top-level, e.g. `d.choice`). System messages are framework-managed:
+`room_created`, `role`, `bat_connected`, `bat_disconnected`, `screen_disconnected`,
+`error`. Pick your own lowercase names for game messages (`action`, `game_state`,
+`game_over`, …).
+
+---
+
+## 5. Dev vs production pairing
+
+Same game code; flip one setting.
+
+| | `RENDEZVOUS_URL` | How TV pairs |
+|---|---|---|
+| **Dev** | `""` | Type the 6-char code shown on the TV |
+| **Prod** | `"https://mygame.com"` | TV opens your domain → phone enters short code → TV redirects to the phone |
+
+Ship each game as its own app + its own pairing site:
+- Native shell: `framework/native/` (set `GAME_ID`, `BRAND`, `USE_MOTION`).
+- Pairing site: `framework/rendezvous/` (a Cloudflare Worker on your domain).
+
+See `framework/native/README.md` and `framework/rendezvous/README.md`.
+
+---
+
+## 6. The reusable flow + stadium (chase template)
+
+The `chase` template wires three framework modules so you don't rebuild them:
+
+- **`FrameworkFlow.mount({ game, config, onLaunch })`** (`framework/flow/`) — builds
+  the entire lobby flow from `game-config.json` (`modes`, `teams`, `chaseData`,
+  `formats`, `difficulties`) and calls `onLaunch(selection)` at the end. Navigation,
+  the back stack and partial-state persistence are handled for you.
+- **`FrameworkArena.install()`** (`framework/renderer/arena-scene.js`) — the broadcast
+  stadium gallery (sky, stands, crowd, boundary, ad boards) plus `burst()`, `cheer()`
+  and `celebrate()` (particles / fireworks / trophy). No players — you draw your own
+  action on the `object` layer.
+- **`ShotVisuals`** (`framework/renderer/shot-visuals.js`) — pure ball/projectile math
+  (`computeShotLanding`, `computeArcParams`, `buildVisual`) so a ball lands exactly on
+  the drawn boundary.
+- **Scorebar / banner** — `FrameworkTemplates.renderTVScorebar()` / `updateTVScorebar()`
+  / `showTVBanner()`.
+
+It's modular on purpose (small, editable files — not CricSwing's monoliths) and costs
+no FPS: all modules load up-front via `<script>` tags, the static stadium is cached on
+the background layer, and `TvPerfManager` still drives resolution/idle-freeze.
+
+## 7. Examples to learn from
+- `games/chase` — chase/target archetype (cricket-style).
+- `games/versus` — head-to-head archetype (football, you vs CPU).
+- `games/starter` — the empty shell.
+- `games/cricswing` — full motion + ML reference.
+
+## 7b. Shipping a game
+```bash
+npm run publish <id>   # points the native shell + pairing worker at <id>, re-syncs the embedded payload
+```
+Then build the APK (`cd mobile && npx react-native run-android`) and, for cloud
+pairing, deploy the worker (`cd framework/rendezvous && wrangler deploy`) and set
+`RENDEZVOUS_URL` in the game config. See `framework/native/README.md` and
+`framework/rendezvous/README.md`.
+
+---
+
+## 8. Rules of thumb
+- Don't edit `framework/` — keep game code in `games/<id>/`.
+- Keep score math / rules on the TV (`screen.html`); the phone just sends inputs.
+- Send messages on state **changes**, not every animation frame (see
+  `BEST_PRACTICES.md`).
+- Let `TvPerfManager` scale resolution on weak TVs — don't fight it.

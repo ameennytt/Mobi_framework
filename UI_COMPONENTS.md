@@ -1,141 +1,130 @@
-# UI Components & Templates Guide: TV + Mobile Game Framework V1
+# UI Components & Templates Guide
 
-This guide catalogs the pre-built visual elements and page layouts provided by the framework. 
+Pre-built visual elements so you don't hand-write HTML grids or CSS cards. Two
+globals provide them:
 
-Developers do not have to write HTML grids or raw CSS card properties from scratch. They can instantiate styled, glassmorphic UI components directly using the JavaScript UI library.
+- **`FrameworkUI`** (`framework/ui/components.js`) — score card, stat grid, dialog,
+  toast, pairing overlay.
+- **`FrameworkTemplates`** (`framework/ui/templates.js`) — TV scorebar, result,
+  loading, banner, disconnected overlay, and mobile page shells.
 
----
+> These are plain method calls on the global objects — **not** `new ClassName()`.
+> Load the script, then call the method.
 
-## 1. Shared Styling Variables
-
-All UI components automatically theme themselves based on the variables declared in the active game's `game-config.json`. 
-
-By default, the components consume these CSS properties:
-*   `--game-primary`: Background gradients and base panel containers.
-*   `--game-accent`: Borders, text highlights, connection status badges, and main call-to-action buttons.
-*   `--game-text`: Primary typography color.
-*   `--game-font`: Global font family (e.g. system font, custom Google font).
-
----
-
-## 2. Reusable UI Components
-
-To use these components, import the UI kit in your HTML file:
 ```html
 <script src="/framework/ui/components.js"></script>
-```
-
-### A. ScoreCard Component
-Displays scores and metrics (e.g., Runs/Wickets, Goals/Fouls) with animations when values change.
-
-```javascript
-// Create a scorecard for primary game points
-const runScoreCard = new ScoreCard({
-  label: "Total Runs",   // Text label
-  value: 0,             // Initial score
-  colorClass: "accent"  // Theme accent highlighting
-});
-
-// Mount the scorecard into a DOM element container
-runScoreCard.mount("#hud-container");
-
-// Update the score on-screen (triggers micro-scale update animation)
-runScoreCard.update(6);
-```
-
-### B. Dialog Component
-A modal dialog box used for stance confirmations, settings overlays, or match-quit prompts.
-
-```javascript
-const quitDialog = new Dialog({
-  title: "Quit Match",
-  body: "Are you sure you want to exit to the lobby? Your progress will be lost.",
-  actions: [
-    {
-      label: "Keep Playing",
-      callback: () => quitDialog.hide()
-    },
-    {
-      label: "Quit Match",
-      callback: () => {
-        window.location.href = "/games/tennis/lobby.html";
-      }
-    }
-  ]
-});
-
-// Show the dialog modally
-quitDialog.show();
-```
-
-### C. NotificationOverlay Component
-Displays full-screen overlays (e.g. `"Phone Away / Disconnected"`) when WebSocket connectivity drops.
-
-```javascript
-const statusOverlay = new NotificationOverlay({
-  title: "Phone Disconnected",
-  subTitle: "Searching for controller session...",
-  loading: true
-});
-
-// Mount and display the overlay
-statusOverlay.mount("body");
-statusOverlay.show();
-
-// Hide the overlay when connection re-establishes
-statusOverlay.hide();
+<script src="/framework/ui/templates.js"></script>
 ```
 
 ---
 
-## 3. Base Layout Scaffolds
+## 1. Theming
 
-The framework provides layouts inside **[templates.js](file:///c:/Users/alame/Desktop/tv-mobile-game-framework/framework/ui/templates.js)**. Developers can inherit these layouts to speed up page design.
+Every component reads the active game's `game-config.json` `theme` block via CSS
+vars. Set them once (FrameworkTheme does this on boot); components recolor:
 
-### A. Lobby Layout (`LobbyTemplate`)
-Creates a standard split grid:
-*   **Left Column**: Game logo, Title, and TV Pairing Code.
-*   **Right Column**: Grid of game selection buttons and player lists.
+- `--game-primary` — backgrounds / base panels
+- `--game-accent` — borders, highlights, primary buttons
+- `--game-text` — main text
+- `--game-muted` — secondary text/labels
+- `--game-success`, `--game-danger` — status colors
+- `--game-font` — font family
 
-```javascript
-// Render a base lobby grid inside the body
-const myLobby = new LobbyTemplate({
-  title: "Tennis Cup V1",
-  logoSrc: "/games/tennis/assets/logo.png"
-});
-myLobby.render();
+---
+
+## 2. FrameworkUI components
+
+### ScoreCard
+```js
+FrameworkUI.renderScoreCard('hud-container', 'Total Runs', 0, 'accent');
+// update by calling again with the new value
+FrameworkUI.renderScoreCard('hud-container', 'Total Runs', 6, 'accent');
 ```
 
-### B. Gameplay Layout (`GameplayTemplate`)
-Creates the game HUD layout:
-*   **Top Bar**: Game title, scoreboard indicators, and LAN IP connection badge.
-*   **Center Area**: Full-screen canvas container (`#canvas-wrapper`).
-*   **Bottom Bar**: Quick tips/controls instructions.
-
-```javascript
-const gameLayout = new GameplayTemplate({
-  title: "Live Match - Court",
-  allowPause: true
-});
-gameLayout.render();
+### Stat grid
+```js
+FrameworkUI.renderStatGrid('stats', [
+  { label: 'Total Sets', value: '2 - 1' },
+  { label: 'Aces', value: 12 },
+]);
 ```
 
-### C. Result Scoreboard (`ResultTemplate`)
-Renders a premium glassmorphic match statistics recap:
-*   Winner declaration title header.
-*   Grids of comparative statistics (e.g., Match Time, Accuracies, Fouls/Wickets).
-*   Restart / Exit action buttons.
-
-```javascript
-const results = new ResultTemplate({
-  winner: "Player 1 Wins!",
-  stats: [
-    { name: "Total Sets", value: "2 - 1" },
-    { name: "Aces Served", value: "12" },
-    { name: "Unforced Errors", value: "3" }
-  ],
-  onRestart: () => restartMatch(),
-  onExit: () => exitToLobby()
+### Confirm dialog (quit / play-again prompts)
+```js
+FrameworkUI.showConfirmDialog({
+  title: 'Quit Match',
+  body: 'Exit to the lobby? Progress is lost.',
+  confirmText: 'Quit',
+  cancelText: 'Keep Playing',
+  onConfirm: () => location.href = '/games/tennis/lobby.html',
+  onCancel: () => {},
 });
-results.render();
 ```
+
+### Pairing overlay (TV) — usually automatic
+`FrameworkGame.init` shows/hides this for you. Manual:
+```js
+FrameworkUI.renderPairingOverlay('A7Q2K9', 'waiting', '/qr.png'); // 'connecting' | 'failed'
+FrameworkUI.hidePairingOverlay();
+```
+
+### Toast
+```js
+FrameworkUI.showToast('Reconnecting…', 2500, /*isError*/ true);
+```
+
+---
+
+## 3. FrameworkTemplates — TV screens
+
+### Broadcast scorebar (top score + bottom bar)
+```js
+FrameworkTemplates.renderTVScorebar({ title: 'Chase', chasingLabel: 'Target 30' });
+FrameworkTemplates.updateTVScorebar({ runs: 18, balls: 8, overs: 2, target: 30 });
+FrameworkTemplates.hideTVScorebar();
+```
+
+### Centre banner flash
+```js
+FrameworkTemplates.showTVBanner('SIX!', '#ffd700');   // auto-fades
+```
+
+### Result / game-over
+```js
+FrameworkTemplates.renderTVResult({
+  bannerText: 'Victory',
+  winner: '18/2',
+  stats: [{ label: 'Runs', value: 18 }, { label: 'Target', value: 18 }],
+  primaryText: 'PLAY AGAIN',
+  onPrimary: () => FrameworkTemplates.hideTVResult(),
+  secondaryText: 'QUIT', onSecondary: () => {},
+});
+```
+(`FrameworkGame.init` exposes this as `game.showResult(opts)` / `game.hideResult()`.)
+
+### Loading + disconnected overlays
+```js
+FrameworkTemplates.renderTVLoading({ logoUrl, message: 'Loading…' });
+FrameworkTemplates.updateTVLoading(60);   // %
+FrameworkTemplates.hideTVLoading();
+
+FrameworkTemplates.renderTVDisconnected({ message: 'Connection lost' });
+FrameworkTemplates.hideTVDisconnected();
+```
+
+---
+
+## 4. FrameworkTemplates — mobile shells
+
+```js
+FrameworkTemplates.renderMobileLobby(container, { gameTitle, subtitle, onStart, lobbyOptionsHtml });
+FrameworkTemplates.renderMobileControllerHUD(container, { gameTitle, primaryStatLabel, secondaryStatLabel, customControlsHtml });
+FrameworkTemplates.renderMobileCalibration(container, { title, instructions, onCalibrate });
+```
+
+> For a full polished lobby, prefer **`FrameworkFlow.mount()`** (see
+> [FRAMEWORK_API.md](FRAMEWORK_API.md)) — it builds the entire flow from config.
+
+---
+
+See [FRAMEWORK_API.md](FRAMEWORK_API.md) for the complete signature list.

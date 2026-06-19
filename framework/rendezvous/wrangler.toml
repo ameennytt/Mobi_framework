@@ -1,0 +1,19 @@
+# Per-game rendezvous Worker config. Copy this folder per game and edit:
+#   - name: unique worker name
+#   - routes.pattern: your game's domain (must be on Cloudflare)
+name = "versus-rendezvous"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+workers_dev = false
+
+routes = [
+  { pattern = "mygame.com", custom_domain = true }
+]
+
+[[durable_objects.bindings]]
+name = "PAIRS_DO"
+class_name = "PairingSession"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PairingSession"]

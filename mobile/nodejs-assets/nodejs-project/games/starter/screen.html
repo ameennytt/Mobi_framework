@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Starter — TV Screen</title>
+  <link rel="stylesheet" href="/framework/ui/framework.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: var(--game-primary); }
+    #game-canvas { width: 100vw; height: 100vh; display: block; }
+    .hud-title { position: absolute; top: 32px; left: 40px; font-size: 30px; font-weight: 900; color: var(--game-accent); z-index: 10; }
+    .hud-scores { position: absolute; top: 28px; right: 40px; display: flex; gap: 26px; align-items: center;
+      background: rgba(10,16,30,0.85); border: 2px solid var(--game-accent); border-radius: 16px; padding: 14px 26px; z-index: 10; }
+    .hud-col { text-align: center; }
+    .hud-lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--game-muted); }
+    .hud-val { font-size: 34px; font-weight: 900; color: var(--game-text); line-height: 1; }
+    .hud-sep { width: 1px; height: 36px; background: rgba(255,255,255,0.15); }
+    .banner { position: absolute; top: 42%; left: 50%; transform: translate(-50%,-50%); font-size: 92px; font-weight: 900;
+      color: var(--game-accent); text-shadow: 0 0 30px rgba(0,210,255,0.5); z-index: 20; display: none; text-transform: uppercase; }
+    .feed { position: absolute; bottom: 32px; left: 40px; max-width: 460px;
+      background: rgba(10,16,30,0.85); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; z-index: 10; }
+    .feed-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--game-muted); }
+    .feed-txt { font-size: 16px; font-weight: 700; color: var(--game-text); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="hud-title" id="hud-title">Starter Game</div>
+  <div class="hud-scores">
+    <div class="hud-col"><div class="hud-lbl" id="lbl-primary">Score</div><div class="hud-val" id="val-primary" style="color:var(--game-accent)">0</div></div>
+    <div class="hud-sep"></div>
+    <div class="hud-col"><div class="hud-lbl" id="lbl-secondary">Misses</div><div class="hud-val" id="val-secondary">0</div></div>
+    <div class="hud-sep"></div>
+    <div class="hud-col"><div class="hud-lbl" id="lbl-progress">Round</div><div class="hud-val" id="val-progress">0/5</div></div>
+  </div>
+  <div class="banner" id="banner">SCORE!</div>
+  <canvas id="game-canvas"></canvas>
+  <div class="feed"><div class="feed-lbl">Match Feed</div><div class="feed-txt" id="feed-txt">Waiting for phone…</div></div>
+
+  <!-- Framework (load order matters) -->
+  <script src="/framework/services/storage.js"></script>
+  <script src="/framework/services/event-hub.js"></script>
+  <script src="/framework/services/theme-loader.js"></script>
+  <script src="/framework/services/asset-loader.js"></script>
+  <script src="/framework/renderer/tv-perf-manager.js"></script>
+  <script src="/framework/renderer/layer-manager.js"></script>
+  <script src="/framework/renderer/renderer.js"></script>
+  <script src="/framework/ui/components.js"></script>
+  <script src="/framework/ui/templates.js"></script>
+  <script src="/framework/core/game.js"></script>
+
+  <script>
+    'use strict';
+    window.onload = async () => {
+      // ── Game state (EDIT: replace with your own) ──────────────────────────
+      const MAX_ROUNDS = 5;
+      let score = 0, misses = 0, round = 0, paired = false;
+      let bannerTimer = null;
+
+      // ── Boot: one call wires pairing, reconnect, renderer, messages ───────
+      const game = await window.FrameworkGame.init({
+        role: 'screen',
+        canvas: 'game-canvas',
+        draw: drawScene,
+        onPaired: () => { paired = true; resetGame(); setFeed('Connected — get ready!'); },
+        onUnpaired: () => { paired = false; setFeed('Phone disconnected…'); },
+        handlers: {
+          // Controller pressed an aim/action button.
+          action: (d) => onAction(d),
+          // Controller picked options in the lobby.
+          setup: () => resetGame(),
+        },
+      });
+
+      // Apply config-driven labels (from game-config.json text slots).
+      document.getElementById('hud-title').textContent = game.text('APP_TITLE');
+      document.getElementById('lbl-primary').textContent = game.text('PRIMARY_SCORE');
+      document.getElementById('lbl-secondary').textContent = game.text('SECONDARY_SCORE');
+      document.getElementById('lbl-progress').textContent = game.text('PROGRESS_METRIC');
+
+      // ── Game rules (EDIT: this placeholder loop = "tap to score") ─────────
+      function onAction(d) {
+        if (!paired || round >= MAX_ROUNDS) return;
+        round++;
+        const hit = Math.random() < 0.6;          // EDIT: real outcome logic
+        if (hit) score++; else misses++;
+        updateHUD();
+        flashBanner(hit ? 'SCORE!' : 'MISS');
+        setFeed(`Round ${round}: ${(d && d.choice) || 'play'} → ${hit ? 'scored' : 'missed'}`);
+        game.send('game_state', { score, misses, round });
+        if (round >= MAX_ROUNDS) setTimeout(endGame, 1200);
+      }
+
+      function endGame() {
+        game.send('game_over', { score, misses });
+        game.showResult({
+          bannerText: 'Game Over',
+          winner: `${score} pts`,
+          stats: [
+            { label: game.text('PRIMARY_SCORE'), value: score },
+            { label: game.text('SECONDARY_SCORE'), value: misses },
+          ],
+          primaryText: 'PLAY AGAIN',
+          onPrimary: () => { game.hideResult(); resetGame(); setFeed('Get ready!'); },
+        });
+      }
+
+      function resetGame() {
+        score = 0; misses = 0; round = 0;
+        window.FrameworkTemplates.hideTVResult();
+        updateHUD();
+      }
+
+      // ── HUD + feedback helpers ────────────────────────────────────────────
+      function updateHUD() {
+        document.getElementById('val-primary').textContent = score;
+        document.getElementById('val-secondary').textContent = misses;
+        document.getElementById('val-progress').textContent = `${round}/${MAX_ROUNDS}`;
+      }
+      function setFeed(t) { document.getElementById('feed-txt').textContent = t; }
+      function flashBanner(t) {
+        const b = document.getElementById('banner');
+        b.textContent = t; b.style.display = 'block';
+        clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => { b.style.display = 'none'; }, 1000);
+      }
+
+      // ── TV drawing (EDIT: draw your game here) ────────────────────────────
+      function drawScene(ctx, W, H) {
+        ctx.clearRect(0, 0, W, H);
+        // Centre target placeholder
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.18, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(paired ? 'PLAY ON YOUR PHONE' : 'WAITING FOR PHONE', W / 2, H / 2 + 8);
+      }
+    };
+  </script>
+</body>
+</html>
