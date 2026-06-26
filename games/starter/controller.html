@@ -3,80 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Starter — Controller</title>
+  <title>My Game — Controller</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
   <style>
-    body { background: radial-gradient(ellipse at bottom, #141d33 0%, #060a14 100%); margin: 0;
-      height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
+    body { margin: 0; height: 100dvh; display: flex; flex-direction: column; padding: 16px;
+      box-sizing: border-box; touch-action: manipulation; }
     .top { display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
+      border-bottom: 1.5px solid var(--fw-line); padding-bottom: 12px; }
     .top .name { font-size: 16px; font-weight: 800; color: var(--game-accent); }
-    .chip { font-size: 11px; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px; color: var(--game-warning); }
     .hud { display: flex; gap: 12px; margin: 16px 0; }
-    .hud .score-card { flex: 1; padding: 10px; text-align: center; }
+    .hud .score-card { flex: 1; }
     .hud .lbl { font-size: 11px; text-transform: uppercase; color: var(--game-muted); }
-    .hud .num { font-size: 26px; font-weight: 900; color: var(--game-text); }
-    .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
-    .aim-row { display: flex; gap: 10px; width: 100%; }
-    .aim { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: var(--game-text);
-      padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; }
-    .aim.active { background: rgba(0,210,255,0.2); border-color: var(--game-accent); color: var(--game-accent); }
-    .go { width: 100%; height: 64px; font-size: 20px; font-weight: 900; border: none; border-radius: 14px;
-      background: var(--game-accent); color: var(--game-primary); box-shadow: 0 8px 22px rgba(0,210,255,0.3); }
-    .tip { text-align: center; font-size: 11px; color: var(--game-muted); margin-top: 8px; }
+    .hud .num { font-size: 26px; font-weight: 900; color: var(--game-text); font-family: var(--game-mono); }
+    .mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .go { width: 100%; height: 84px; font-size: 22px; }
+    .tip { text-align: center; font-size: 11px; color: var(--game-muted); margin-top: 10px; }
   </style>
 </head>
 <body>
   <div class="top">
-    <div class="name" id="title">Starter</div>
-    <div class="chip" id="conn">CONNECTING…</div>
+    <div class="name" id="title">My Game</div>
+    <div class="pill" id="conn">CONNECTING…</div>
   </div>
 
   <div class="hud">
-    <div class="score-card"><div class="lbl" id="lbl-primary">Score</div><div class="num" id="val-primary">0</div></div>
-    <div class="score-card"><div class="lbl" id="lbl-secondary">Misses</div><div class="num" id="val-secondary">0</div></div>
+    <div class="score-card"><div class="lbl">Score</div><div class="num" id="val-score">0</div></div>
+    <div class="score-card"><div class="lbl">Left</div><div class="num" id="val-left">0</div></div>
+    <div class="score-card"><div class="lbl">Best</div><div class="num" id="val-best">0</div></div>
   </div>
 
   <div class="mid">
-    <div style="font-size:14px;color:var(--game-muted);" id="aim-text">Aim: Center</div>
-    <div class="aim-row">
-      <button class="aim" id="aim-left">LEFT</button>
-      <button class="aim active" id="aim-center">CENTER</button>
-      <button class="aim" id="aim-right">RIGHT</button>
-    </div>
+    <button class="btn btn-primary go" id="go-btn">TAP</button>
   </div>
-
-  <div>
-    <button class="go" id="go-btn">GO!</button>
-    <div class="tip">Pick a direction, then tap GO</div>
-  </div>
+  <div class="tip">This is the generic controller — replace TAP with your game's inputs.</div>
 
   <script src="/framework/services/storage.js"></script>
   <script src="/framework/services/event-hub.js"></script>
   <script src="/framework/services/theme-loader.js"></script>
   <script src="/framework/services/asset-loader.js"></script>
-  <script src="/framework/inputs/motion-input.js"></script>
-  <script src="/framework/inputs/input-bridge.js"></script>
   <script src="/framework/ui/components.js"></script>
   <script src="/framework/core/game.js"></script>
 
   <script>
     'use strict';
     window.onload = async () => {
-      let aim = 'center';
-      let busy = false;
+      const params = new URLSearchParams(location.search);
+      const attempts = parseInt(params.get('attempts') || '5', 10);
 
       const game = await window.FrameworkGame.init({
         role: 'bat',
-        // motion: true,   // ← flip on later for tilt/swing games (config supportsMotion)
         onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
-        onDisconnect: () => setChip('RECONNECTING…', 'var(--game-warning)'),
+        onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
+        onPaired: () => game.send('start', { attempts }),
         handlers: {
-          game_state: (d) => { setNum('val-primary', d.score); setNum('val-secondary', d.misses); release(); },
+          screen_rejoined: () => game.send('start', { attempts }),
+          game_state: (d) => { setNum('val-score', d.score); setNum('val-left', d.left); setNum('val-best', d.best); },
           game_over: (d) => {
             window.FrameworkUI.showConfirmDialog({
-              title: 'Game Over',
-              body: `Final: ${d.score} score, ${d.misses} misses.`,
+              title: 'Game Over', body: `Score: ${d.score} · Best: ${d.best}`,
               confirmText: 'Play Again',
               onConfirm: () => { window.location.href = '/games/starter/lobby.html'; },
             });
@@ -84,31 +68,13 @@
         },
       });
 
-      // Config labels.
       document.getElementById('title').textContent = game.text('APP_TITLE');
-      document.getElementById('lbl-primary').textContent = game.text('PRIMARY_SCORE');
-      document.getElementById('lbl-secondary').textContent = game.text('SECONDARY_SCORE');
-
-      // ── Input: aim selection + GO (EDIT: your controls) ───────────────────
-      function setAim(a) {
-        aim = a;
-        for (const id of ['left', 'center', 'right']) {
-          document.getElementById('aim-' + id).classList.toggle('active', id === a);
-        }
-        document.getElementById('aim-text').textContent = 'Aim: ' + a.charAt(0).toUpperCase() + a.slice(1);
-      }
-      document.getElementById('aim-left').onclick = () => setAim('left');
-      document.getElementById('aim-center').onclick = () => setAim('center');
-      document.getElementById('aim-right').onclick = () => setAim('right');
-
+      // The ONE input. Swap for your controls; send any payload your gameplay reads.
       document.getElementById('go-btn').onclick = () => {
-        if (busy) return;
-        busy = true;
-        if (navigator.vibrate) navigator.vibrate(30);
-        game.send('action', { choice: aim });
+        if (navigator.vibrate) navigator.vibrate(25);
+        game.send('action', {});
       };
 
-      function release() { busy = false; }
       function setChip(t, c) { const e = document.getElementById('conn'); e.textContent = t; e.style.color = c; }
       function setNum(id, v) { document.getElementById(id).textContent = (v == null ? 0 : v); }
     };

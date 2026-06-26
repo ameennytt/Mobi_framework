@@ -3,75 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Starter — Lobby</title>
+  <title>My Game — Lobby</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
-  <style>
-    body { background: radial-gradient(ellipse at bottom, #141d33 0%, #060a14 100%); margin: 0; min-height: 100dvh; }
-    .screen { display: none; min-height: 100dvh; padding: 28px 22px; box-sizing: border-box; flex-direction: column; }
-    .screen.active { display: flex; }
-    .brand { text-align: center; margin-top: 12px; }
-    .brand img { width: 96px; height: 96px; }
-    .brand h1 { font-size: 26px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
-    .brand p { font-size: 13px; color: var(--game-muted); margin: 0; }
-    .spacer { flex: 1; }
-    .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; }
-    label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--game-muted); display: block; margin-bottom: 8px; }
-    input[type=text] { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.15);
-      border-radius: 10px; color: var(--game-accent); font-size: 30px; font-weight: 900; text-align: center; letter-spacing: 6px;
-      padding: 12px; text-transform: uppercase; outline: none; }
-    select { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1.5px solid rgba(255,255,255,0.15);
-      border-radius: 10px; color: var(--game-text); padding: 14px; font-weight: bold; outline: none; }
-    .btn-full { width: 100%; font-size: 17px; padding: 15px; margin-top: 16px; }
-    .status { text-align: center; font-size: 13px; color: var(--game-muted); margin-top: 14px; }
-    h2 { color: var(--game-text); font-size: 20px; margin: 0 0 16px; }
-  </style>
+  <link rel="stylesheet" href="/framework/flow/flow.css">
+  <style> body { margin: 0; min-height: 100dvh; } </style>
 </head>
 <body>
-
-  <!-- 1. WELCOME / PAIR -->
-  <div id="s-welcome" class="screen active">
-    <div class="brand">
-      <img id="logo" src="/games/starter/assets/logo1.svg" alt="logo">
-      <h1 id="title">Starter Game</h1>
-      <p>Pair with your TV to play</p>
-    </div>
-    <div class="spacer"></div>
-    <div class="card">
-      <label for="code">Enter TV Code</label>
-      <input type="text" id="code" maxlength="4" placeholder="CODE">
-      <button class="btn btn-primary btn-full" id="connect-btn">CONNECT</button>
-      <div class="status" id="welcome-status"></div>
-    </div>
-    <div class="spacer"></div>
-  </div>
-
-  <!-- 2. MENU -->
-  <div id="s-menu" class="screen">
-    <div class="brand"><h1 id="title2">Starter Game</h1><p>✓ TV Paired</p></div>
-    <div class="spacer"></div>
-    <div class="card">
-      <h2>Main Menu</h2>
-      <button class="btn btn-primary btn-full" id="menu-play">START</button>
-    </div>
-    <div class="spacer"></div>
-  </div>
-
-  <!-- 3. SETUP (EDIT: your game's options) -->
-  <div id="s-setup" class="screen">
-    <div class="brand"><h1>Setup</h1><p>Pick your options</p></div>
-    <div class="spacer"></div>
-    <div class="card">
-      <label for="difficulty">Difficulty</label>
-      <select id="difficulty">
-        <option value="easy">Easy</option>
-        <option value="normal" selected>Normal</option>
-        <option value="hard">Hard</option>
-      </select>
-      <button class="btn btn-primary btn-full" id="setup-play">PLAY</button>
-    </div>
-    <div class="spacer"></div>
-  </div>
-
+  <!-- The whole lobby (pair → pick → ready) is built by FrameworkFlow from
+       game-config.json `flow`. You normally don't edit this file. -->
   <script src="/framework/services/storage.js"></script>
   <script src="/framework/services/event-hub.js"></script>
   <script src="/framework/services/theme-loader.js"></script>
@@ -79,49 +18,23 @@
   <script src="/framework/services/router.js"></script>
   <script src="/framework/ui/components.js"></script>
   <script src="/framework/core/game.js"></script>
+  <script src="/framework/flow/lobby-flow.js"></script>
 
   <script>
     'use strict';
     window.onload = async () => {
-      // Register the lobby screens with the framework router (handles back button).
-      const R = window.FrameworkRouter;
-      R.registerRoute('s-welcome', 's-welcome');
-      R.registerRoute('s-menu', 's-menu');
-      R.registerRoute('s-setup', 's-setup');
-      R.resetTo('s-welcome');
-
-      // Boot as a controller, but don't connect until the user enters a code.
       const game = await window.FrameworkGame.init({ role: 'bat', autoConnect: false });
+      const config = await fetch('/games/starter/game-config.json').then(r => r.json()).catch(() => ({}));
 
-      // Config-driven branding.
-      document.getElementById('logo').src = game.asset('APP_LOGO');
-      document.getElementById('title').textContent = game.text('APP_TITLE');
-      document.getElementById('title2').textContent = game.text('APP_TITLE');
-
-      const codeInput = document.getElementById('code');
-      const status = document.getElementById('welcome-status');
-
-      // Native app auto-pair: the shell injects window.__roomCode.
-      if (window.__roomCode) { codeInput.value = window.__roomCode; doConnect(); }
-
-      function doConnect() {
-        const code = codeInput.value.trim().toUpperCase();
-        if (code.length < 4) { status.textContent = 'Enter the code shown on the TV'; return; }
-        status.textContent = 'Connecting…';
-        // Ephemeral: this lobby socket only validates the code; controller.html
-        // opens the real play socket — so closing the lobby won't unpair the TV.
-        game.connect(code, () => { sessionStorage.setItem('starter_room', code); R.show('s-menu'); }, true);
-      }
-
-      document.getElementById('connect-btn').onclick = doConnect;
-      document.getElementById('menu-play').onclick = () => R.show('s-setup');
-
-      document.getElementById('setup-play').onclick = () => {
-        const code = sessionStorage.getItem('starter_room') || codeInput.value.trim().toUpperCase();
-        const difficulty = document.getElementById('difficulty').value;
-        game.send('setup', { difficulty });
-        window.location.href = `/games/starter/controller.html?room=${code}&difficulty=${difficulty}`;
-      };
+      window.FrameworkFlow.mount({
+        game,
+        config,
+        onLaunch: (sel) => {
+          const code = sel.room || sessionStorage.getItem('starter_room') || '';
+          const q = new URLSearchParams({ room: code, attempts: sel.attempts || 5 });
+          window.location.href = `/games/starter/controller.html?${q.toString()}`;
+        },
+      });
     };
   </script>
 </body>

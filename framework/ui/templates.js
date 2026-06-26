@@ -317,6 +317,153 @@ class GameTemplates {
   }
 
   /**
+   * TV match intro — sport-neutral "A  VS  B" hero with optional sub + accent.
+   * Works for any sport (cricket/baseball/tennis/football); theme-driven. Pair with
+   * startTVCountdown() for the 3-2-1. opts: { titleA, titleB, sub, colorA, colorB }
+   */
+  renderTVIntro(opts = {}) {
+    let o = document.getElementById('fw-tv-intro');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-intro';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9300;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.06), rgba(5,10,22,.96) 70%);';
+      document.body.appendChild(o);
+    }
+    const dot = (c) => `<span style="display:inline-block;width:18px;height:18px;border-radius:50%;background:${c || 'var(--game-accent)'};box-shadow:0 0 0 3px rgba(255,255,255,.12);vertical-align:middle;margin-bottom:10px;"></span>`;
+    const side = (t, c) => `<div style="text-align:center;min-width:200px;"><div>${dot(c)}</div>
+      <div style="font-size:40px;font-weight:900;color:var(--game-text);">${t || ''}</div></div>`;
+    o.innerHTML = `
+      <div style="text-align:center;padding:40px;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:40px;">
+          ${side(opts.titleA, opts.colorA)}
+          <div style="font-size:30px;font-weight:900;color:var(--game-muted);">VS</div>
+          ${side(opts.titleB, opts.colorB)}
+        </div>
+        ${opts.sub ? `<div style="margin-top:22px;font-size:18px;font-weight:700;color:var(--game-accent);letter-spacing:.04em;">${opts.sub}</div>` : ''}
+      </div>`;
+    o.style.display = 'flex';
+  }
+  hideTVIntro() { const o = document.getElementById('fw-tv-intro'); if (o) o.style.display = 'none'; }
+
+  /**
+   * TV countdown — big 3-2-1 pops, then onDone(). Sport-neutral broadcast polish.
+   * Uses requestAnimationFrame timing supplied by the caller's setTimeout (no Date).
+   * @param {number} from start number (e.g. 3) @param {function} onDone
+   */
+  startTVCountdown(from = 3, onDone) {
+    let o = document.getElementById('fw-tv-countdown');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-countdown';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9350;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+      document.body.appendChild(o);
+    }
+    o.style.display = 'flex';
+    let n = from;
+    const tick = () => {
+      if (n <= 0) {
+        o.style.display = 'none';
+        if (onDone) onDone();
+        return;
+      }
+      o.innerHTML = `<div style="font-family:var(--game-mono);font-size:180px;font-weight:900;color:var(--game-accent);text-shadow:0 8px 40px rgba(0,0,0,.6);animation:fwCdPop .9s var(--fw-ease-pop,ease-out);">${n}</div>
+        <style>@keyframes fwCdPop{0%{transform:scale(.4);opacity:0}30%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:.9}}</style>`;
+      n--;
+      this._cdTimer = setTimeout(tick, 1000);
+    };
+    tick();
+  }
+  stopTVCountdown() { clearTimeout(this._cdTimer); const o = document.getElementById('fw-tv-countdown'); if (o) o.style.display = 'none'; }
+
+  /**
+   * TV milestone flash — generic "kicker / BIG / sub" celebration (50, 100, streaks,
+   * new best…). Sport-neutral; auto-fades. opts: { kicker, big, sub, color }
+   */
+  showTVMilestone({ kicker, big, sub, color } = {}) {
+    let o = document.getElementById('fw-tv-milestone');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-milestone';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9450;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.30), rgba(0,0,0,.72));opacity:0;transition:opacity .25s;';
+      document.body.appendChild(o);
+    }
+    const c = color || 'var(--game-accent)';
+    o.innerHTML = `
+      <div style="font-size:18px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:${c};">${kicker || ''}</div>
+      <div style="font-family:var(--game-mono);font-size:160px;font-weight:900;line-height:1;color:${c};text-shadow:0 10px 50px rgba(0,0,0,.6);animation:fwMiPop .6s var(--fw-ease-pop, ease-out);">${big != null ? big : ''}</div>
+      ${sub ? `<div style="font-size:22px;font-weight:700;color:var(--game-text);margin-top:8px;">${sub}</div>` : ''}
+      <style>@keyframes fwMiPop{0%{transform:scale(.3);opacity:0}45%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}</style>`;
+    o.style.opacity = '1';
+    clearTimeout(this._miTimer);
+    this._miTimer = setTimeout(() => { o.style.opacity = '0'; }, 2600);
+  }
+
+  /** Mobile pause overlay — Resume / Quit. opts: { title, onResume, onQuit } */
+  renderMobilePause({ title, onResume, onQuit } = {}) {
+    let o = document.getElementById('fw-mobile-pause');
+    if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-pause'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
+    o.innerHTML = `<div class="dialog-card"><div class="dialog-title">${title || 'Paused'}</div>
+      <div class="dialog-btns"><button class="btn btn-secondary" id="fw-pause-quit">Quit</button>
+      <button class="btn btn-primary" id="fw-pause-resume">Resume</button></div></div>`;
+    o.classList.add('show');
+    const r = o.querySelector('#fw-pause-resume'), q = o.querySelector('#fw-pause-quit');
+    if (r) r.onclick = () => { this.hideMobilePause(); if (onResume) onResume(); };
+    if (q) q.onclick = () => { this.hideMobilePause(); if (onQuit) onQuit(); };
+  }
+  hideMobilePause() { const o = document.getElementById('fw-mobile-pause'); if (o) o.classList.remove('show'); }
+
+  /**
+   * Mobile home menu — title + logo + tappable cards. Sport-neutral.
+   * opts: { title, subtitle, logoUrl, items:[{ label, sub, icon, onSelect }] }
+   */
+  renderMobileHome(container, { title, subtitle, logoUrl, items = [] } = {}) {
+    const el = typeof container === 'string' ? document.getElementById(container) : container;
+    if (!el) return;
+    el.innerHTML = `<div style="padding:24px 18px;display:flex;flex-direction:column;min-height:100dvh;">
+      <div style="text-align:center;margin:18px 0 22px;">
+        ${logoUrl ? `<img src="${logoUrl}" style="width:88px;height:88px;object-fit:contain;">` : ''}
+        <h1 style="font-size:30px;font-weight:900;color:var(--game-accent);margin-top:10px;">${title || ''}</h1>
+        ${subtitle ? `<p style="font-size:13px;color:var(--game-muted);margin-top:4px;">${subtitle}</p>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        ${items.map((it, i) => `<button class="card" data-i="${i}" style="display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;color:var(--game-text);font-family:inherit;">
+          ${it.icon ? `<span style="font-size:26px;">${it.icon}</span>` : ''}
+          <span style="flex:1;"><span style="display:block;font-size:17px;font-weight:800;">${it.label}</span>
+          ${it.sub ? `<span style="font-size:12px;color:var(--game-muted);">${it.sub}</span>` : ''}</span>
+          <span style="color:var(--game-muted);font-size:22px;">›</span></button>`).join('')}
+      </div></div>`;
+    el.querySelectorAll('button[data-i]').forEach(b => { b.onclick = () => { const it = items[+b.getAttribute('data-i')]; if (it && it.onSelect) it.onSelect(); }; });
+  }
+
+  /**
+   * Mobile settings overlay — toggle rows + action rows. Sport-neutral.
+   * opts: { title, items:[{ label, type:'toggle'|'button', value, action, onChange }], onClose }
+   */
+  renderMobileSettings({ title, items = [], onClose } = {}) {
+    let o = document.getElementById('fw-mobile-settings');
+    if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-settings'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
+    o.innerHTML = `<div class="dialog-card" style="max-width:360px;">
+      <div class="dialog-title">${title || 'Settings'}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0;text-align:left;">
+        ${items.map((it, i) => `<div data-i="${i}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:rgba(255,255,255,.05);border:1px solid var(--fw-line);border-radius:var(--fw-r-2);">
+          <span style="font-size:14px;font-weight:700;color:var(--game-text);">${it.label}</span>
+          ${it.type === 'toggle'
+            ? `<span style="width:46px;height:26px;border-radius:99px;background:${it.value ? 'var(--game-accent)' : 'rgba(255,255,255,.15)'};position:relative;transition:background .15s;"><span style="position:absolute;top:3px;left:${it.value ? '23px' : '3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;"></span></span>`
+            : `<button class="btn btn-secondary" style="flex:0 0 auto;min-height:0;padding:8px 14px;font-size:12px;">${it.action || 'Open'}</button>`}
+        </div>`).join('')}
+      </div>
+      <button class="btn btn-primary" id="fw-set-close">Done</button></div>`;
+    o.classList.add('show');
+    items.forEach((it, i) => {
+      const row = o.querySelector(`[data-i="${i}"]`); if (!row) return;
+      if (it.type === 'toggle') { row.onclick = () => { it.value = !it.value; if (it.onChange) it.onChange(it.value); this.renderMobileSettings({ title, items, onClose }); }; }
+      else { const btn = row.querySelector('button'); if (btn) btn.onclick = () => { if (it.onChange) it.onChange(); }; }
+    });
+    const c = o.querySelector('#fw-set-close'); if (c) c.onclick = () => { this.hideMobileSettings(); if (onClose) onClose(); };
+  }
+  hideMobileSettings() { const o = document.getElementById('fw-mobile-settings'); if (o) o.classList.remove('show'); }
+
+  /**
    * Full-screen TV Loading overlay (logo + progress bar + message).
    * Call updateTVLoading(pct) to advance the bar; hideTVLoading() to dismiss.
    */

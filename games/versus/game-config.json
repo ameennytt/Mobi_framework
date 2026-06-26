@@ -5,10 +5,8 @@
   "supportsMobile": true,
   "supportsMotion": false,
   "enableEnrichment": false,
-
   "hud": "versus",
   "field": "goal",
-
   "_comment_code": "MODULAR game layout — load order (entry index.js last). Add an extension by listing it here before index.js (see extensions/README.md).",
   "code": [
     "gameplay/rules.js",
@@ -16,21 +14,10 @@
     "gameplay/visuals.js",
     "gameplay/index.js"
   ],
-
-  "theme": {
-    "--game-primary": "#06140c",
-    "--game-accent": "#39ff14",
-    "--game-text": "#eafff0",
-    "--game-muted": "#7fae90",
-    "--game-success": "#39ff14",
-    "--game-font": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  },
-
   "assets": {
     "APP_LOGO": "/games/versus/assets/logo1.svg",
     "SCREEN_HERO": "/games/versus/assets/icon1.svg"
   },
-
   "text": {
     "APP_TITLE": "Striker Duel",
     "PRIMARY_SCORE": "Goals",
@@ -41,28 +28,81 @@
     "START_ACTION": "PLAY",
     "EXIT_ACTION": "QUIT"
   },
-
   "teams": [
-    { "name": "Red Lions", "short": "RED", "color": "#e0443e" },
-    { "name": "Blue Sharks", "short": "BLU", "color": "#3a7bd5" },
-    { "name": "Green Bolts", "short": "GRN", "color": "#2faa55" },
-    { "name": "Gold Hawks", "short": "GLD", "color": "#e0a83e" },
-    { "name": "Purple Storm", "short": "PUR", "color": "#8e44ad" },
-    { "name": "Teal Tigers", "short": "TEA", "color": "#16a89a" }
+    {
+      "name": "Red Lions",
+      "short": "RED",
+      "color": "#e0443e"
+    },
+    {
+      "name": "Blue Sharks",
+      "short": "BLU",
+      "color": "#3a7bd5"
+    },
+    {
+      "name": "Green Bolts",
+      "short": "GRN",
+      "color": "#2faa55"
+    },
+    {
+      "name": "Gold Hawks",
+      "short": "GLD",
+      "color": "#e0a83e"
+    },
+    {
+      "name": "Purple Storm",
+      "short": "PUR",
+      "color": "#8e44ad"
+    },
+    {
+      "name": "Teal Tigers",
+      "short": "TEA",
+      "color": "#16a89a"
+    }
   ],
-
   "formats": [
-    { "id": "f3", "name": "Quick", "sub": "3 rounds", "rounds": 3 },
-    { "id": "f5", "name": "Match", "sub": "5 rounds", "rounds": 5 },
-    { "id": "f7", "name": "Shootout", "sub": "7 rounds", "rounds": 7 }
+    {
+      "id": "f3",
+      "name": "Quick",
+      "sub": "3 rounds",
+      "rounds": 3
+    },
+    {
+      "id": "f5",
+      "name": "Match",
+      "sub": "5 rounds",
+      "rounds": 5
+    },
+    {
+      "id": "f7",
+      "name": "Shootout",
+      "sub": "7 rounds",
+      "rounds": 7
+    }
   ],
-
   "_comment_flow": "Head-to-head flow: no toss/overs. Pick team, length, kick off, play.",
   "flow": [
-    { "type": "pair" },
-    { "type": "choice", "key": "team", "title": "Pick your team", "source": "teams" },
-    { "type": "choice", "key": "format", "title": "Match length", "source": "formats" },
-    { "type": "ceremony", "kind": "kickoff" },
-    { "type": "briefing" }
+    {
+      "type": "pair"
+    },
+    {
+      "type": "choice",
+      "key": "team",
+      "title": "Pick your team",
+      "source": "teams"
+    },
+    {
+      "type": "choice",
+      "key": "format",
+      "title": "Match length",
+      "source": "formats"
+    },
+    {
+      "type": "ceremony",
+      "kind": "kickoff"
+    },
+    {
+      "type": "briefing"
+    }
   ]
 }

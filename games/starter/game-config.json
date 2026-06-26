@@ -5,28 +5,62 @@
   "supportsMobile": true,
   "supportsMotion": false,
   "enableEnrichment": false,
-  "rendezvousUrl": "",
-  "maxPlayers": 1,
-  "tvKind": "canvas",
-  "theme": {
-    "--game-primary": "#0a0f1c",
-    "--game-accent": "#00d2ff",
-    "--game-text": "#eef3ff",
-    "--game-font": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-  },
+  "RENDEZVOUS_URL": "",
   "assets": {
     "APP_LOGO": "/games/starter/assets/logo1.svg",
-    "SCREEN_HERO": "/games/starter/assets/icon1.svg",
-    "SCREEN_BACKGROUND": "radial-gradient(ellipse at 30% 0%, #141d33 0%, #060a14 100%)"
+    "SCREEN_HERO": "/games/starter/assets/icon1.svg"
   },
   "text": {
-    "APP_TITLE": "Starter Game",
+    "APP_TITLE": "My Game",
     "PRIMARY_SCORE": "Score",
-    "SECONDARY_SCORE": "Misses",
-    "PROGRESS_METRIC": "Round",
-    "ACTIVITY_FEED": "Match Feed",
-    "RESULT_PANEL": "Results",
+    "SECONDARY_SCORE": "Best",
+    "PROGRESS_METRIC": "Tries",
+    "RESULT_PANEL": "Game Over",
     "START_ACTION": "PLAY",
     "EXIT_ACTION": "QUIT"
-  }
+  },
+  "hud": "attempt",
+  "field": "",
+  "_comment_code": "Your game code, loaded in order (entry index.js last). This is the ONLY code you write. Split further or merge into one gameplay.js — your call.",
+  "code": [
+    "gameplay/rules.js",
+    "gameplay/scoring.js",
+    "gameplay/visuals.js",
+    "gameplay/index.js"
+  ],
+  "formats": [
+    {
+      "id": "a3",
+      "name": "Quick",
+      "sub": "3 tries",
+      "attempts": 3
+    },
+    {
+      "id": "a5",
+      "name": "Standard",
+      "sub": "5 tries",
+      "attempts": 5
+    },
+    {
+      "id": "a10",
+      "name": "Long",
+      "sub": "10 tries",
+      "attempts": 10
+    }
+  ],
+  "_comment_flow": "These are the lobby SCREENS, in order. The framework builds each one. REMOVE a screen by deleting its line; ADD team-pick / ceremony by inserting a step (see games/versus, games/cricket). Nothing else changes.",
+  "flow": [
+    {
+      "type": "pair"
+    },
+    {
+      "type": "choice",
+      "key": "format",
+      "title": "How many tries?",
+      "source": "formats"
+    },
+    {
+      "type": "briefing"
+    }
+  ]
 }

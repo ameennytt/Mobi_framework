@@ -177,6 +177,27 @@ class UIComponents {
       toast.style.opacity = '0';
     }, duration);
   }
+
+  // ── Premium building blocks (CricSwing-extracted, theme-driven) ──────────
+
+  /**
+   * Paintable team/club crest — a colored disc with initials. Returns HTML.
+   * @param {object} o { short, color, size }
+   */
+  crest({ short = '', color = 'var(--game-accent)', size = 56 } = {}) {
+    const grad = `radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(0,0,0,.15)), ${color}`;
+    return `<span class="crest" style="width:${size}px;height:${size}px;background:${grad};font-size:${Math.round(size * 0.27)}px;">${String(short).slice(0, 3).toUpperCase()}</span>`;
+  }
+
+  /** Premium pill/eyebrow. Returns HTML. */
+  pill(text, accent = false) {
+    return `<span class="pill${accent ? ' pill-accent' : ''}">${text}</span>`;
+  }
+
+  /** Premium card wrapper. Returns HTML. */
+  card(innerHtml, extraStyle = '') {
+    return `<div class="card" style="${extraStyle}">${innerHtml}</div>`;
+  }
 }
 
 if (typeof window !== 'undefined') {

@@ -44,7 +44,21 @@
       "Bash(node -c framework/core/game.js)",
       "Bash(node -c framework/flow/lobby-flow.js)",
       "Bash(cp framework/ui/templates.js __TRACKED_VAR__/framework/ui/templates.js)",
-      "Bash(cp framework/core/game.js __TRACKED_VAR__/framework/core/game.js)"
+      "Bash(cp framework/core/game.js __TRACKED_VAR__/framework/core/game.js)",
+      "Bash(node scripts/new-game.js cricswing --from chase)",
+      "Bash(mkdir -p games/cricswing/assets/fonts games/cricswing/data)",
+      "Bash(cp \"C:/Users/alame/Desktop/cricswing-production/web/fonts/\"* games/cricswing/assets/fonts/)",
+      "Bash(cp \"C:/Users/alame/Desktop/cricswing-production/web/chase-data.js\" \"C:/Users/alame/Desktop/cricswing-production/web/chase-featured.js\" games/cricswing/data/)",
+      "Bash(node -c games/cricswing/gameplay.js)",
+      "Bash(node -c games/cricswing/chase-shot.js)",
+      "Bash(git mv *)",
+      "Bash(mv games/cricswing games/cricket)",
+      "Bash(node -e ' *)",
+      "Bash(xargs echo \"new template methods:\")",
+      "Bash(xargs echo \"generic templates:\")",
+      "Bash(rm -rf games/socc games/soccer)",
+      "Bash(ls -d games/*/)",
+      "Bash(rm -rf games/cricket)"
     ]
   }
 }

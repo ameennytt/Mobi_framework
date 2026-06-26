@@ -1,20 +1,50 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Framework base styles — PREMIUM design system (extracted from CricSwing).
+   Loaded by every surface, so every game inherits the polished look by default.
+   Brand vars (--game-*) are themeable per game via game-config.json `theme`.
+   Structural vars (--fw-*) are the shared spacing/radius/easing/shadow system.
+   Fonts ship with the framework (framework/ui/fonts) so EVERY game gets the same
+   Selawik UI + JetBrains Mono numbers + Montserrat wordmark out of the box.
+   ────────────────────────────────────────────────────────────────────────── */
+@font-face { font-family: 'Selawik'; font-weight: 400; font-display: swap; src: url('fonts/selawik-400.ttf') format('truetype'); }
+@font-face { font-family: 'Selawik'; font-weight: 600; font-display: swap; src: url('fonts/selawik-600.ttf') format('truetype'); }
+@font-face { font-family: 'Selawik'; font-weight: 700; font-display: swap; src: url('fonts/selawik-700.ttf') format('truetype'); }
+@font-face { font-family: 'JetBrains Mono'; font-weight: 500; font-display: swap; src: url('fonts/jetbrains-mono-500.ttf') format('truetype'); }
+@font-face { font-family: 'Montserrat'; font-weight: 800; font-display: swap; src: url('fonts/montserrat-800.woff2') format('woff2'); }
+@font-face { font-family: 'Montserrat'; font-weight: 900; font-display: swap; src: url('fonts/montserrat-900.woff2') format('woff2'); }
+
 :root {
-  /* Default Framework Branding Variables */
-  --game-primary: #050a16;
-  --game-accent: #9ADF6B;
-  --game-text: #e8f4e8;
-  --game-muted: #7a9aaa;
-  --game-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --game-danger: #ff4444;
-  --game-warning: #ffd700;
-  --game-success: #7edb7e;
+  /* Brand (themeable per game) — premium dark + green/gold defaults */
+  --game-primary: #0b0f14;
+  --game-accent:  #9ADF6B;          /* primary CTA / accent */
+  --game-gold:    #F3D86B;          /* scores / highlights */
+  --game-text:    #f5f5f5;
+  --game-text-2:  rgba(245, 245, 245, 0.62);
+  --game-muted:   rgba(245, 245, 245, 0.38);
+  --game-success: #9ADF6B;
+  --game-danger:  #ff4444;
+  --game-warning: #F3D86B;
+  --game-font:    'Selawik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --game-mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Structural design tokens (shared) */
+  --fw-s-1: 4px;  --fw-s-2: 8px;  --fw-s-3: 12px; --fw-s-4: 16px;
+  --fw-s-5: 24px; --fw-s-6: 32px; --fw-s-7: 48px; --fw-s-8: 64px;
+  --fw-r-1: 4px;  --fw-r-2: 10px; --fw-r-3: 14px; --fw-r-4: 18px; --fw-r-5: 24px;
+  --fw-line:   rgba(255, 255, 255, 0.08);
+  --fw-line-2: rgba(255, 255, 255, 0.12);
+  --fw-ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --fw-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
+  --fw-d-fast: 140ms; --fw-d-base: 260ms; --fw-d-slow: 480ms;
+  --fw-shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --fw-shadow-card: 0 8px 28px rgba(0, 0, 0, 0.45);
+  --fw-shadow-glow: 0 0 18px rgba(154, 223, 107, 0.18);
+  /* type scale */
+  --fw-t-hero: 56px; --fw-t-h1: 32px; --fw-t-h2: 24px; --fw-t-h3: 18px;
+  --fw-t-body: 14px; --fw-t-caption: 12px; --fw-t-micro: 10px;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body, html {
   height: 100%;
@@ -23,156 +53,106 @@ body, html {
   background: var(--game-primary);
   color: var(--game-text);
   user-select: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* SPA Screen Container */
-.screen {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100dvh;
-  display: none;
-  z-index: 1;
-}
+.screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; display: none; z-index: 1; }
+.screen.active { display: block; }
 
-.screen.active {
-  display: block;
-}
-
-/* Generic Score Card Container */
-.score-card {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.score-num {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--game-accent);
-}
-
-/* Stat Cards */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 10px;
-  text-align: center;
-}
-
-.stat-val {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* Dialogue overlays (CSConfirm) */
-.dialog-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.85);
-  z-index: 9999;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-}
-
-.dialog-overlay.show {
-  display: flex;
-}
-
-.dialog-card {
-  width: 90%;
-  max-width: 400px;
-  background: rgba(10, 20, 35, 0.95);
-  border: 2px solid var(--game-accent);
-  border-radius: 20px;
-  padding: 24px;
-  text-align: center;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  animation: popUp 0.3s cubic-bezier(0.2, 1.2, 0.4, 1);
-}
-
-@keyframes popUp {
-  from { transform: scale(0.65); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.dialog-title {
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--game-accent);
-  margin-bottom: 8px;
-}
-
-.dialog-body {
-  font-size: 14px;
-  color: var(--game-muted);
-  line-height: 1.6;
-  margin-bottom: 20px;
-}
-
-.dialog-btns {
-  display: flex;
-  gap: 12px;
-}
-
-/* Standard Buttons */
+/* ── Buttons (premium) ─────────────────────────────────────────────────── */
 .btn {
   flex: 1;
   border: none;
-  border-radius: 10px;
-  padding: 12px;
-  font-size: 14px;
+  border-radius: var(--fw-r-3);
+  min-height: 48px;
+  padding: 13px 18px;
+  font-family: inherit;
+  font-size: 15px;
   font-weight: 800;
+  letter-spacing: 0.4px;
   cursor: pointer;
-  letter-spacing: 0.5px;
-  transition: all 0.2s;
+  transition: transform var(--fw-d-fast) var(--fw-ease-out),
+              box-shadow var(--fw-d-fast) var(--fw-ease-out),
+              background var(--fw-d-fast) var(--fw-ease-out),
+              opacity var(--fw-d-fast) var(--fw-ease-out);
 }
-
+.btn:active { transform: scale(0.97); }
 .btn-primary {
   background: var(--game-accent);
-  color: var(--game-primary);
+  color: #06140c;
+  box-shadow: var(--fw-shadow-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+.btn-primary:hover { box-shadow: 0 0 26px rgba(154, 223, 107, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.btn-secondary, .btn-outline {
+  background: rgba(255, 255, 255, 0.06);
   color: var(--game-text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1.5px solid var(--fw-line-2);
+}
+.btn-secondary:hover, .btn-outline:hover { border-color: var(--game-accent); background: rgba(255, 255, 255, 0.10); }
+.btn[disabled] { opacity: 0.45; pointer-events: none; }
+
+/* ── Pills / eyebrows ──────────────────────────────────────────────────── */
+.pill, .ui-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 99px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.06); color: var(--game-text-2);
+  border: 1px solid var(--fw-line);
+}
+.pill-accent { background: var(--game-accent); color: #06140c; border: none; }
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1.5px solid var(--fw-line);
+  border-radius: var(--fw-r-4);
+  padding: var(--fw-s-4);
+  box-shadow: var(--fw-shadow-soft);
 }
 
-/* Dynamic Reconnect / Pairing Overlay */
-.pairing-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--game-primary);
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* Crest — paintable team/club badge */
+.crest {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 15px; color: #fff;
+  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Score / stat cards (premium) */
+.score-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1.5px solid var(--fw-line);
+  border-radius: var(--fw-r-3);
+  padding: var(--fw-s-4);
   text-align: center;
-  padding: 24px;
+  box-shadow: var(--fw-shadow-soft);
 }
+.score-num { font-family: var(--game-mono); font-size: 32px; font-weight: 800; color: var(--game-accent); font-feature-settings: "tnum"; }
 
-.pairing-code {
-  font-size: 80px;
-  font-weight: 900;
-  letter-spacing: 6px;
-  font-family: monospace;
-  color: var(--game-accent);
-  text-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
-  margin: 16px 0;
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: var(--fw-s-3); margin-top: var(--fw-s-4); }
+.stat-card { background: rgba(255, 255, 255, 0.03); border: 1.5px solid var(--fw-line); border-radius: var(--fw-r-2); padding: var(--fw-s-3); text-align: center; }
+.stat-val { font-family: var(--game-mono); font-size: 18px; font-weight: 700; }
+
+/* ── Dialog overlay (premium) ──────────────────────────────────────────── */
+.dialog-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+.dialog-overlay.show { display: flex; }
+.dialog-card {
+  width: 90%; max-width: 380px;
+  background: linear-gradient(180deg, #15201a, #0c130f);
+  border: 1.5px solid var(--fw-line-2);
+  border-radius: var(--fw-r-5);
+  padding: 26px; text-align: center;
+  box-shadow: var(--fw-shadow-card);
+  animation: popUp 0.28s var(--fw-ease-pop);
 }
+@keyframes popUp { from { transform: scale(0.9) translateY(8px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.dialog-title { font-size: 22px; font-weight: 900; color: var(--game-accent); margin-bottom: 8px; }
+.dialog-body { font-size: 14px; color: var(--game-muted); line-height: 1.6; margin-bottom: 20px; }
+.dialog-btns { display: flex; gap: 12px; }
+
+/* ── Pairing overlay (premium) ─────────────────────────────────────────── */
+.pairing-overlay { position: fixed; inset: 0; background: radial-gradient(ellipse at 50% 0%, #141d14 0%, var(--game-primary) 70%); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.pairing-code { font-family: var(--game-mono); font-size: 84px; font-weight: 900; letter-spacing: 10px; color: var(--game-accent); text-shadow: 0 0 30px rgba(154, 223, 107, 0.35); margin: 16px 0; }
