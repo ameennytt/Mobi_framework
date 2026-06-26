@@ -5,107 +5,9 @@
  * Minimizes HTML boilerplates in game extensions.
  */
 class GameTemplates {
-  /**
-   * Inject Mobile Lobby shell
-   */
-  renderMobileLobby(container, { gameTitle, subtitle, onStart, lobbyOptionsHtml }) {
-    container.innerHTML = `
-      <div style="padding: 20px; display: flex; flex-direction: column; height: 100dvh; justify-content: space-between;">
-        <div style="text-align: center; margin-top: 16px;">
-          <h1 style="font-size: 28px; font-weight: 900; color: var(--game-accent); margin-bottom: 4px;">${gameTitle}</h1>
-          <p style="font-size: 13px; color: var(--game-muted);">${subtitle}</p>
-        </div>
-
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px; margin: 20px 0;">
-          ${lobbyOptionsHtml || `
-            <div style="background: rgba(255, 255, 255, 0.05); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.08);">
-              <div style="font-size: 14px; font-weight: 700; color: var(--game-text);">Controller Connected</div>
-              <div style="font-size: 12px; color: var(--game-muted); margin-top: 4px;">Waiting for host to start...</div>
-            </div>
-          `}
-        </div>
-
-        <div style="margin-bottom: 16px; display: flex; flex-direction: column; gap: 10px;">
-          <button class="btn btn-primary" id="fw-lobby-start" style="width: 100%;">${onStart ? 'START GAME' : 'WAITING FOR HOST'}</button>
-        </div>
-      </div>
-    `;
-
-    const startBtn = container.querySelector('#fw-lobby-start');
-    if (onStart && startBtn) {
-      startBtn.onclick = onStart;
-    } else if (startBtn) {
-      startBtn.disabled = true;
-      startBtn.style.opacity = '0.5';
-    }
-  }
-
-  /**
-   * Inject Mobile Sensor Calibration / Stance screen
-   */
-  renderMobileCalibration(container, { title, instructions, onCalibrate }) {
-    container.innerHTML = `
-      <div style="padding: 24px; display: flex; flex-direction: column; height: 100dvh; justify-content: space-between; text-align: center;">
-        <div style="margin-top: 24px;">
-          <h2 style="font-size: 24px; font-weight: 900; color: var(--game-accent); margin-bottom: 8px;">${title || 'Stance Lock'}</h2>
-          <p style="font-size: 14px; color: var(--game-muted); line-height: 1.5;">${instructions || 'Hold the device in your starting position and lock orientation.'}</p>
-        </div>
-
-        <div style="margin: 40px auto; width: 140px; height: 140px; border-radius: 50%; border: 3px dashed var(--game-accent); display: flex; align-items: center; justify-content: center; animation: spin 20s linear infinite;">
-          <div style="font-size: 36px;">📱</div>
-        </div>
-
-        <div style="margin-bottom: 24px;">
-          <button class="btn btn-primary" id="fw-calibrate-btn" style="width: 100%; font-size: 16px; padding: 14px;">SET MY POSITION</button>
-        </div>
-      </div>
-    `;
-
-    const calBtn = container.querySelector('#fw-calibrate-btn');
-    if (calBtn) {
-      calBtn.onclick = onCalibrate;
-    }
-  }
-
-  /**
-   * Inject Mobile Active Play screen shell (HUD elements, active buttons)
-   */
-  renderMobileControllerHUD(container, { gameTitle, primaryStatLabel, secondaryStatLabel, customControlsHtml }) {
-    container.innerHTML = `
-      <div style="padding: 16px; display: flex; flex-direction: column; height: 100dvh; justify-content: space-between;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
-          <div style="font-size: 16px; font-weight: 800; color: var(--game-accent);">${gameTitle}</div>
-          <div style="display: flex; gap: 8px; font-size: 11px; align-items: center; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px;">
-            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--game-success);"></span>
-            CONNECTED
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 12px; margin: 16px 0;">
-          <div class="score-card" style="flex: 1; padding: 10px;">
-            <div style="font-size: 11px; text-transform: uppercase; color: var(--game-muted);">${primaryStatLabel || 'Score'}</div>
-            <div id="fw-hud-primary" class="score-num" style="font-size: 24px;">0</div>
-          </div>
-          <div class="score-card" style="flex: 1; padding: 10px;">
-            <div style="font-size: 11px; text-transform: uppercase; color: var(--game-muted);">${secondaryStatLabel || 'Details'}</div>
-            <div id="fw-hud-secondary" class="score-num" style="font-size: 24px; color: var(--game-text);">0</div>
-          </div>
-        </div>
-
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 16px;">
-          ${customControlsHtml || `
-            <div style="text-align: center; color: var(--game-muted); font-size: 14px;">
-              Perform action on controller or tilt to play!
-            </div>
-          `}
-        </div>
-
-        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-          <button class="btn btn-secondary" id="fw-ctrl-recal">RE-SET STANCE</button>
-        </div>
-      </div>
-    `;
-  }
+  // Mobile screen shells live in framework/ui/templates.mobile.js (augment this
+  // instance via Object.assign): renderMobileLobby / renderMobileCalibration /
+  // renderMobileControllerHUD / renderMobileHome / renderMobilePause / renderMobileSettings.
 
   /**
    * Inject TV Gameplay overlay HUD (top status, bottom feed)
@@ -162,26 +64,28 @@ class GameTemplates {
       o.style.cssText = 'position:fixed;inset:0;z-index:20;pointer-events:none;display:none;';
       document.body.appendChild(o);
     }
+    const HB = 'background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);box-shadow:var(--fw-shadow-card);border-radius:12px;';
+    const SCORE = 'font-family:var(--game-mono);font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);';
     o.innerHTML = `
-      <div style="position:absolute;top:28px;left:28px;background:rgba(10,20,30,.85);border:2.5px solid var(--game-accent);border-radius:16px;padding:14px 22px;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+      <div style="position:absolute;top:28px;left:28px;${HB}padding:8px 16px;">
         <div style="font-size:12px;font-weight:800;letter-spacing:1px;color:var(--game-muted);text-transform:uppercase;">${title || ''}</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-top:2px;">
-          <div id="fw-sb-score" style="font-size:46px;font-weight:900;color:var(--game-accent);line-height:1;">0</div>
-          <div id="fw-sb-over" style="font-size:16px;font-weight:700;color:var(--game-text);">0.0</div>
+          <div id="fw-sb-score" style="${SCORE}font-size:44px;">0</div>
+          <div id="fw-sb-over" style="font-family:var(--game-mono);font-size:16px;font-weight:700;color:var(--game-text);">0.0</div>
         </div>
       </div>
-      <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:0;background:rgba(10,20,30,.88);border:1.5px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+      <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:0;${HB}overflow:hidden;">
         <div style="padding:12px 22px;">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${chasingLabel || 'Target'}</div>
-          <div id="fw-sb-target" style="font-size:22px;font-weight:900;color:var(--game-text);">—</div>
+          <div id="fw-sb-target" style="font-family:var(--game-mono);font-size:22px;font-weight:900;color:var(--game-text);">—</div>
         </div>
-        <div style="padding:12px 22px;border-left:1px solid rgba(255,255,255,.12);">
+        <div style="padding:12px 22px;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">Need</div>
-          <div id="fw-sb-need" style="font-size:22px;font-weight:900;color:var(--game-accent);">—</div>
+          <div id="fw-sb-need" style="font-family:var(--game-mono);font-size:22px;font-weight:900;color:var(--game-accent);">—</div>
         </div>
-        <div style="padding:12px 22px;border-left:1px solid rgba(255,255,255,.12);">
+        <div style="padding:12px 22px;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">Run Rate</div>
-          <div id="fw-sb-rate" style="font-size:22px;font-weight:900;color:var(--game-text);">0.0</div>
+          <div id="fw-sb-rate" style="font-family:var(--game-mono);font-size:22px;font-weight:900;color:var(--game-text);">0.0</div>
         </div>
       </div>`;
     o.style.display = 'block';
@@ -220,18 +124,18 @@ class GameTemplates {
     this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
-      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:rgba(10,20,30,.88);border:2px solid var(--game-accent);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
         <div style="padding:12px 24px;text-align:center;">
           <div style="font-size:12px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${titleA || 'You'}</div>
-          <div id="fw-vs-a" style="font-size:42px;font-weight:900;color:var(--game-accent);line-height:1;">0</div>
+          <div id="fw-vs-a" style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);">0</div>
         </div>
         <div style="padding:12px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.25);">
-          <div id="fw-vs-clock" style="font-size:14px;font-weight:800;color:var(--game-text);">—</div>
+          <div id="fw-vs-clock" style="font-family:var(--game-mono);font-size:14px;font-weight:800;color:var(--game-text);">—</div>
           <div style="font-size:10px;color:var(--game-muted);text-transform:uppercase;">vs</div>
         </div>
         <div style="padding:12px 24px;text-align:center;">
           <div style="font-size:12px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${titleB || 'CPU'}</div>
-          <div id="fw-vs-b" style="font-size:42px;font-weight:900;color:var(--game-text);line-height:1;">0</div>
+          <div id="fw-vs-b" style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-text);line-height:1;">0</div>
         </div>
       </div>`;
     o.style.display = 'block';
@@ -249,18 +153,18 @@ class GameTemplates {
     this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
-      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(10,20,30,.88);border:2px solid var(--game-accent);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);">
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
         <div style="padding:12px 24px;text-align:center;">
           <div style="font-size:12px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${title || 'Score'}</div>
-          <div id="fw-at-score" style="font-size:42px;font-weight:900;color:var(--game-accent);line-height:1;">0</div>
+          <div id="fw-at-score" style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);">0</div>
         </div>
-        <div style="padding:12px 22px;text-align:center;border-left:1px solid rgba(255,255,255,.12);">
+        <div style="padding:12px 22px;text-align:center;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);">Left</div>
-          <div id="fw-at-left" style="font-size:24px;font-weight:900;color:var(--game-text);">0</div>
+          <div id="fw-at-left" style="font-family:var(--game-mono);font-size:24px;font-weight:900;color:var(--game-text);">0</div>
         </div>
-        <div style="padding:12px 22px;text-align:center;border-left:1px solid rgba(255,255,255,.12);">
+        <div style="padding:12px 22px;text-align:center;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);">Best</div>
-          <div id="fw-at-best" style="font-size:24px;font-weight:900;color:var(--game-text);">0</div>
+          <div id="fw-at-best" style="font-family:var(--game-mono);font-size:24px;font-weight:900;color:var(--game-text);">0</div>
         </div>
       </div>`;
     o.style.display = 'block';
@@ -398,71 +302,6 @@ class GameTemplates {
     this._miTimer = setTimeout(() => { o.style.opacity = '0'; }, 2600);
   }
 
-  /** Mobile pause overlay — Resume / Quit. opts: { title, onResume, onQuit } */
-  renderMobilePause({ title, onResume, onQuit } = {}) {
-    let o = document.getElementById('fw-mobile-pause');
-    if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-pause'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
-    o.innerHTML = `<div class="dialog-card"><div class="dialog-title">${title || 'Paused'}</div>
-      <div class="dialog-btns"><button class="btn btn-secondary" id="fw-pause-quit">Quit</button>
-      <button class="btn btn-primary" id="fw-pause-resume">Resume</button></div></div>`;
-    o.classList.add('show');
-    const r = o.querySelector('#fw-pause-resume'), q = o.querySelector('#fw-pause-quit');
-    if (r) r.onclick = () => { this.hideMobilePause(); if (onResume) onResume(); };
-    if (q) q.onclick = () => { this.hideMobilePause(); if (onQuit) onQuit(); };
-  }
-  hideMobilePause() { const o = document.getElementById('fw-mobile-pause'); if (o) o.classList.remove('show'); }
-
-  /**
-   * Mobile home menu — title + logo + tappable cards. Sport-neutral.
-   * opts: { title, subtitle, logoUrl, items:[{ label, sub, icon, onSelect }] }
-   */
-  renderMobileHome(container, { title, subtitle, logoUrl, items = [] } = {}) {
-    const el = typeof container === 'string' ? document.getElementById(container) : container;
-    if (!el) return;
-    el.innerHTML = `<div style="padding:24px 18px;display:flex;flex-direction:column;min-height:100dvh;">
-      <div style="text-align:center;margin:18px 0 22px;">
-        ${logoUrl ? `<img src="${logoUrl}" style="width:88px;height:88px;object-fit:contain;">` : ''}
-        <h1 style="font-size:30px;font-weight:900;color:var(--game-accent);margin-top:10px;">${title || ''}</h1>
-        ${subtitle ? `<p style="font-size:13px;color:var(--game-muted);margin-top:4px;">${subtitle}</p>` : ''}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        ${items.map((it, i) => `<button class="card" data-i="${i}" style="display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;color:var(--game-text);font-family:inherit;">
-          ${it.icon ? `<span style="font-size:26px;">${it.icon}</span>` : ''}
-          <span style="flex:1;"><span style="display:block;font-size:17px;font-weight:800;">${it.label}</span>
-          ${it.sub ? `<span style="font-size:12px;color:var(--game-muted);">${it.sub}</span>` : ''}</span>
-          <span style="color:var(--game-muted);font-size:22px;">›</span></button>`).join('')}
-      </div></div>`;
-    el.querySelectorAll('button[data-i]').forEach(b => { b.onclick = () => { const it = items[+b.getAttribute('data-i')]; if (it && it.onSelect) it.onSelect(); }; });
-  }
-
-  /**
-   * Mobile settings overlay — toggle rows + action rows. Sport-neutral.
-   * opts: { title, items:[{ label, type:'toggle'|'button', value, action, onChange }], onClose }
-   */
-  renderMobileSettings({ title, items = [], onClose } = {}) {
-    let o = document.getElementById('fw-mobile-settings');
-    if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-settings'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
-    o.innerHTML = `<div class="dialog-card" style="max-width:360px;">
-      <div class="dialog-title">${title || 'Settings'}</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0;text-align:left;">
-        ${items.map((it, i) => `<div data-i="${i}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:rgba(255,255,255,.05);border:1px solid var(--fw-line);border-radius:var(--fw-r-2);">
-          <span style="font-size:14px;font-weight:700;color:var(--game-text);">${it.label}</span>
-          ${it.type === 'toggle'
-            ? `<span style="width:46px;height:26px;border-radius:99px;background:${it.value ? 'var(--game-accent)' : 'rgba(255,255,255,.15)'};position:relative;transition:background .15s;"><span style="position:absolute;top:3px;left:${it.value ? '23px' : '3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s;"></span></span>`
-            : `<button class="btn btn-secondary" style="flex:0 0 auto;min-height:0;padding:8px 14px;font-size:12px;">${it.action || 'Open'}</button>`}
-        </div>`).join('')}
-      </div>
-      <button class="btn btn-primary" id="fw-set-close">Done</button></div>`;
-    o.classList.add('show');
-    items.forEach((it, i) => {
-      const row = o.querySelector(`[data-i="${i}"]`); if (!row) return;
-      if (it.type === 'toggle') { row.onclick = () => { it.value = !it.value; if (it.onChange) it.onChange(it.value); this.renderMobileSettings({ title, items, onClose }); }; }
-      else { const btn = row.querySelector('button'); if (btn) btn.onclick = () => { if (it.onChange) it.onChange(); }; }
-    });
-    const c = o.querySelector('#fw-set-close'); if (c) c.onclick = () => { this.hideMobileSettings(); if (onClose) onClose(); };
-  }
-  hideMobileSettings() { const o = document.getElementById('fw-mobile-settings'); if (o) o.classList.remove('show'); }
-
   /**
    * Full-screen TV Loading overlay (logo + progress bar + message).
    * Call updateTVLoading(pct) to advance the bar; hideTVLoading() to dismiss.
@@ -508,20 +347,34 @@ class GameTemplates {
       o.style.cssText = 'position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(5,10,22,0.92);';
       document.body.appendChild(o);
     }
+    const loss = opts.won === false;
+    const bannerBg = loss
+      ? 'linear-gradient(135deg,rgba(42,24,24,.95) 0%,rgba(26,13,18,.95) 100%)'
+      : 'linear-gradient(135deg,rgba(26,40,16,.95) 0%,rgba(13,36,16,.95) 100%)';
+    const bannerBorder = loss ? 'rgba(122,32,32,.65)' : 'rgba(118,185,0,.45)';
+    const bannerGlow = loss ? 'rgba(255,80,80,.14)' : 'rgba(126,219,126,.14)';
+    const icon = opts.icon != null ? opts.icon : (loss ? '' : '🏆');
+
+    // stats grid — JetBrains-mono gold values, uppercase muted labels (CricSwing .me-stat)
     const stats = (opts.stats || []).map(s => `
-      <div style="text-align:center;padding:0 18px;">
-        <div style="font-size:14px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${s.label}</div>
-        <div style="font-size:40px;font-weight:900;color:var(--game-text);">${s.value}</div>
-      </div>`).join('<div style="width:1px;height:48px;background:rgba(255,255,255,0.15);"></div>');
+      <div style="background:rgba(0,0,0,.28);border-radius:11px;padding:12px 6px;text-align:center;">
+        <div style="font-family:var(--game-mono);font-size:30px;font-weight:900;color:var(--game-gold);line-height:1;">${s.value}</div>
+        <div style="font-size:10px;color:var(--game-muted);text-transform:uppercase;letter-spacing:.14em;margin-top:.45em;font-weight:700;">${s.label}</div>
+      </div>`).join('');
 
     o.innerHTML = `
-      <div style="text-align:center;max-width:760px;padding:40px;">
-        <div style="font-size:18px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--game-accent);">${opts.bannerText || 'Match Over'}</div>
-        ${opts.winner ? `<div style="font-size:56px;font-weight:900;color:var(--game-text);margin:12px 0 28px;">${opts.winner}</div>` : '<div style="height:24px;"></div>'}
-        <div style="display:flex;align-items:center;justify-content:center;margin-bottom:36px;">${stats}</div>
-        <div style="display:flex;gap:16px;justify-content:center;">
-          ${opts.primaryText ? `<button class="btn btn-primary" id="fw-result-primary" style="font-size:18px;padding:14px 36px;">${opts.primaryText}</button>` : ''}
-          ${opts.secondaryText ? `<button class="btn btn-secondary" id="fw-result-secondary" style="font-size:18px;padding:14px 36px;">${opts.secondaryText}</button>` : ''}
+      <div style="width:min(92vw,820px);display:flex;flex-direction:column;gap:16px;padding:24px;">
+        <div style="padding:18px 24px;border-radius:18px;text-align:center;background:${bannerBg};border:2px solid ${bannerBorder};box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 90px ${bannerGlow} inset;animation:fwBannerIn .6s var(--fw-ease-out) both;">
+          ${icon ? `<div style="font-size:54px;line-height:1;filter:drop-shadow(0 6px 20px rgba(255,215,0,.45));animation:fwPop .7s var(--fw-ease-pop) backwards;">${icon}</div>` : ''}
+          <div style="font-size:20px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:${loss ? '#ff8866' : 'var(--game-accent)'};margin-top:6px;">${opts.bannerText || 'Match Over'}</div>
+          ${opts.winner ? `<div style="font-family:var(--game-mono);font-size:52px;font-weight:900;color:var(--game-text);line-height:1.05;margin-top:6px;">${opts.winner}</div>` : ''}
+          ${opts.sub ? `<div style="font-size:14px;color:var(--game-accent);font-weight:700;margin-top:6px;">${opts.sub}</div>` : ''}
+        </div>
+        ${opts.pom ? `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;text-align:left;background:rgba(7,16,12,.62);border:1.5px solid rgba(118,185,0,.28);">${opts.pom}</div>` : ''}
+        ${stats ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;">${stats}</div>` : ''}
+        <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
+          ${opts.primaryText ? `<button class="btn btn-primary" id="fw-result-primary" style="flex:0 0 auto;font-size:18px;padding:14px 36px;">${opts.primaryText}</button>` : ''}
+          ${opts.secondaryText ? `<button class="btn btn-secondary" id="fw-result-secondary" style="flex:0 0 auto;font-size:18px;padding:14px 36px;">${opts.secondaryText}</button>` : ''}
         </div>
       </div>
     `;

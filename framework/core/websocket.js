@@ -109,8 +109,18 @@ class WebSocketLayer {
     }
   }
 
+  // Per-socket flood guard: allow ~MAX msgs per 1s window, else drop the message.
+  _rateOk(ws) {
+    const now = Date.now();
+    if (!ws._rlStart || now - ws._rlStart > 1000) { ws._rlStart = now; ws._rlCount = 0; }
+    ws._rlCount++;
+    return ws._rlCount <= 40;
+  }
+
   init(server) {
-    this.wss = new WebSocketServer({ server });
+    // maxPayload caps a single message at 64 KB (game messages are tiny) — stops a
+    // misbehaving/malicious LAN client from sending huge frames.
+    this.wss = new WebSocketServer({ server, maxPayload: 64 * 1024 });
 
     // Set up heartbeat to detect silently dropped connections
     const HEARTBEAT_MS = 10000;
@@ -196,6 +206,7 @@ class WebSocketLayer {
     if (global.__rnBridge) { try { global.__rnBridge.send(JSON.stringify({ type: 'room-created', code: room.code })); } catch (_) {} }
 
     ws.on('message', (raw) => {
+      if (!this._rateOk(ws)) return;          // flood guard
       room.lastActivity = Date.now();
       const txt = raw.toString();
 
@@ -266,6 +277,7 @@ class WebSocketLayer {
     }
 
     ws.on('message', (raw) => {
+      if (!this._rateOk(ws)) return;          // flood guard
       room.lastActivity = Date.now();
       const txt = raw.toString();
 

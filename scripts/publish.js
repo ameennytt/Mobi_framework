@@ -82,6 +82,17 @@ t = t.replace(/const GAME_ID = '[^']*';/, `const GAME_ID = '${id}';`)
      .replace(/const USE_MOTION = (?:true|false);/, `const USE_MOTION = ${motion};`);
 fs.writeFileSync(appTsx, t);
 
+// 3b. per-game Android applicationId so two published games install side-by-side.
+// appId from game-config (android.appId) or derived com.tvgame.<id> (no dashes/leading digits).
+const appId = (cfg.android && cfg.android.appId) || ('com.tvgame.' + id.replace(/[^a-z0-9]/g, ''));
+const gradle = path.join(appDir, 'android', 'app', 'build.gradle');
+if (fs.existsSync(gradle)) {
+  let g = fs.readFileSync(gradle, 'utf8')
+    .replace(/namespace\s+"[^"]*"/, `namespace "${appId}"`)
+    .replace(/applicationId\s+"[^"]*"/, `applicationId "${appId}"`);
+  fs.writeFileSync(gradle, g);
+}
+
 // NOTE: the pairing site (framework/rendezvous/) is a SINGLE central hub deployed
 // once for ALL games — publish no longer patches it per game. Point each game at it
 // via RENDEZVOUS_URL in game-config.json.

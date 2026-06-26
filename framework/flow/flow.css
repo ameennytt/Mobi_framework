@@ -20,6 +20,26 @@
 .fw-brand img { width: 88px; height: 88px; object-fit: contain; }
 .fw-brand h1 { font-size: 26px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
 .fw-brand p { font-size: 13px; color: var(--game-muted); margin: 0; }
+/* hero entrance on the pair screen (CricSwing logoHeroIn) */
+.fw-hero { animation: fwLogoHeroIn 0.55s var(--fw-ease-out, ease-out) both; }
+
+/* pairing status chip (pulse) */
+.fw-pair-chip {
+  display: inline-flex; align-items: center; gap: 8px; align-self: center;
+  margin: 14px auto 0; padding: 6px 14px; border-radius: 99px;
+  background: rgba(154, 223, 107, 0.10); border: 1px solid rgba(154, 223, 107, 0.30);
+  font-size: 12px; font-weight: 700; color: var(--game-text-2, #ccc);
+}
+.fw-pair-chip.paired { color: var(--game-accent); }
+.fw-pair-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--game-accent); animation: fwPairPulse 1.6s ease-out infinite; }
+
+/* 4 code-boxes wrapper + Wi-Fi hint */
+#fw-code-visual { margin: 6px 0 4px; outline: none; }
+.fw-wifi-hint {
+  margin-top: 14px; padding: 10px 14px; border-radius: 12px;
+  background: rgba(154, 223, 107, 0.08); border: 1px solid rgba(154, 223, 107, 0.25);
+  font-size: 12px; color: var(--game-text-2, #bcd); line-height: 1.5; text-align: center;
+}
 
 .fw-cardbox {
   background: rgba(255, 255, 255, 0.05);

@@ -67,6 +67,7 @@ window.Gameplay = (function () {
     game.send('game_over', { you: score.you, cpu: score.cpu, won });
     setTimeout(() => {
       game.showResult({
+        won,
         bannerText: won ? 'Full Time — Win' : r === 'draw' ? 'Full Time — Draw' : 'Full Time — Loss',
         winner: `${score.you} - ${score.cpu}`,
         stats: [

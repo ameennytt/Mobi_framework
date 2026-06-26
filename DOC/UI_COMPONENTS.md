@@ -1,12 +1,17 @@
 # UI Components & Templates Guide
 
+> **This doc = copy-paste recipes.** For exact signatures see
+> [FRAMEWORK_API.md](FRAMEWORK_API.md); to build a whole game see
+> [MAKING_A_GAME.md](MAKING_A_GAME.md).
+
 Pre-built visual elements so you don't hand-write HTML grids or CSS cards. Two
 globals provide them:
 
 - **`FrameworkUI`** (`framework/ui/components.js`) — score card, stat grid, dialog,
-  toast, pairing overlay.
-- **`FrameworkTemplates`** (`framework/ui/templates.js`) — TV scorebar, result,
-  loading, banner, disconnected overlay, and mobile page shells.
+  toast, pairing overlay, + premium blocks: crest, pill, card, codeInput, tabs, dots.
+- **`FrameworkTemplates`** (`framework/ui/templates.js`) — TV scorebar, result, intro,
+  countdown, milestone, banner, loading, disconnect, setup-mirror, + mobile home/pause/
+  settings/lobby/controller/calibration shells.
 
 > These are plain method calls on the global objects — **not** `new ClassName()`.
 > Load the script, then call the method.
@@ -73,6 +78,16 @@ FrameworkUI.hidePairingOverlay();
 FrameworkUI.showToast('Reconnecting…', 2500, /*isError*/ true);
 ```
 
+### Premium building blocks (return HTML strings — inject where you like)
+```js
+FrameworkUI.crest({ short: 'IND', color: '#1f7ae0', size: 56 }); // painted team/club badge
+FrameworkUI.pill('LIVE', /*accent*/ true);                       // eyebrow / status pill
+FrameworkUI.card('<inner html>');                                // gradient card wrapper
+FrameworkUI.codeInput({ n: 4 });   FrameworkUI.setCode('RHFW', /*paired*/ true);
+FrameworkUI.tabs(['Asia', 'Europe'], 0);                         // pill tabs (groups/brackets)
+FrameworkUI.dots(5, 2);                                          // progress dots
+```
+
 ---
 
 ## 3. FrameworkTemplates — TV screens
@@ -89,11 +104,21 @@ FrameworkTemplates.hideTVScorebar();
 FrameworkTemplates.showTVBanner('SIX!', '#ffd700');   // auto-fades
 ```
 
-### Result / game-over
+### Match intro · countdown · milestone
+```js
+FrameworkTemplates.renderTVIntro({ titleA: 'India', titleB: 'Australia', sub: '5 overs' });
+FrameworkTemplates.startTVCountdown(3, () => { FrameworkTemplates.hideTVIntro(); /* start */ });
+FrameworkTemplates.showTVMilestone({ kicker: 'MILESTONE', big: '50', sub: 'Half century!' });
+```
+
+### Result / game-over (banner gradient + POM slot + stats grid)
 ```js
 FrameworkTemplates.renderTVResult({
+  won: true,                       // green banner (false = red)
+  icon: '🏆',                      // optional
   bannerText: 'Victory',
   winner: '18/2',
+  pom: '<b>Player of the match</b> …', // optional HTML slot (game-supplied)
   stats: [{ label: 'Runs', value: 18 }, { label: 'Target', value: 18 }],
   primaryText: 'PLAY AGAIN',
   onPrimary: () => FrameworkTemplates.hideTVResult(),
@@ -117,6 +142,9 @@ FrameworkTemplates.hideTVDisconnected();
 ## 4. FrameworkTemplates — mobile shells
 
 ```js
+FrameworkTemplates.renderMobileHome(container, { title, subtitle, logoUrl, items });   // menu cards
+FrameworkTemplates.renderMobilePause({ title, onResume, onQuit });                      // hideMobilePause()
+FrameworkTemplates.renderMobileSettings({ title, items, onClose });                     // toggles/actions
 FrameworkTemplates.renderMobileLobby(container, { gameTitle, subtitle, onStart, lobbyOptionsHtml });
 FrameworkTemplates.renderMobileControllerHUD(container, { gameTitle, primaryStatLabel, secondaryStatLabel, customControlsHtml });
 FrameworkTemplates.renderMobileCalibration(container, { title, instructions, onCalibrate });

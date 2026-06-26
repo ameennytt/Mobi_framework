@@ -42,7 +42,8 @@ games/versus/
 - The framework loads these via `game-config.json` `"code": [...]` (paths relative to the game
   dir, in order, **entry last**). `screen.html` calls `await FrameworkGame.loadGameplay()` once
   before `FrameworkGame.init()`. With **no** `code` field the framework falls back to a single
-  `gameplay.js`, so simple games (e.g. `games/chase`) keep one file.
+  `gameplay.js` (a tiny game can still do that). All shipped templates (`starter`, `chase`,
+  `versus`) use the modular `gameplay/` layout.
 - The framework only ever sees one entry point — `window.Gameplay`
   (`attach/draw/start/setPaired/handlers`). How you split behind it is your call.
 - Enable an extension by listing its file in `code` before `index.js`; `index.js` guards on

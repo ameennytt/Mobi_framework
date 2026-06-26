@@ -16,14 +16,16 @@ This whole journey lives in `framework/flow/lobby-flow.js`, driven by the `flow:
 array in the config. Reorder or delete steps freely.
 
 ## What you edit
-- **`game-config.json`** — title, colors (`theme`), score labels (`text`), and the lobby
-  data: `modes`, `teams`, `chaseData` (cup regions + leagues), `formats` (with `overs`),
-  `difficulties`, and the `flow` step list. `hud` is `"chase"`.
-- **`gameplay.js`** — the only code. The sample is a button game:
-  - `handlers.action({choice})` → rolls a shot via `ShotVisuals`, flies the ball across the
-    `FrameworkArena` stadium, adds runs, chases `target`.
-  - `draw(ctx,W,H)` → draws the moving ball (object layer; the stadium draws itself).
-  - Replace the roll with real rules; later flip to motion/swing.
+- **`game-config.json`** — title, colors (`theme`), score labels (`text`), lobby data
+  (`modes`, `teams`, `chaseData`, `formats` with `overs`, `difficulties`), the `flow` step
+  list, `hud:"chase"`, and `code:[]` (the gameplay load order). The toss target is computed by
+  a `mount({ onCeremony })` hook in `lobby.html` (cricket math, kept out of the framework).
+- **`gameplay/`** — MODULAR, the only code you write:
+  - `rules.js` (`GameRules`) — roll the shot outcome (runs/wicket); swap for real rules.
+  - `scoring.js` (`GameScoring`) — runs/balls/wickets + target/overs.
+  - `visuals.js` (`GameVisuals`) — build + draw the ball (uses `chase-shot.js` cricket math).
+  - `index.js` (`Gameplay`) — wires them + the chase flow.
+  - `chase-shot.js` — cricket ball/landing math (listed first in `code:[]`).
 
 ## Scoreboard
 Uses the `chase` HUD: runs · target · need · run-rate (`FrameworkTemplates.updateScorebar('chase', …)`).
@@ -35,4 +37,4 @@ npm start
 # Phone: http://localhost:3000/games/chase/lobby.html
 ```
 
-See the root [README.md](../../README.md) and [FRAMEWORK_API.md](../../FRAMEWORK_API.md).
+See [DOC/MAKING_A_GAME.md](../../DOC/MAKING_A_GAME.md) and [DOC/FRAMEWORK_API.md](../../DOC/FRAMEWORK_API.md).

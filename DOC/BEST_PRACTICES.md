@@ -12,6 +12,7 @@ This document outlines critical pitfalls, architectural warnings, and best pract
 
 *   **State Changes Only**: Never send input states (like `"button_held"`) inside a `requestAnimationFrame` loop. Only send messages when the button state *changes* (e.g., when `onmousedown` / `touchstart` fires once, and when `onmouseup` / `touchend` fires once).
 *   **Debounce Tilts**: If you are using phone tilt/orientation measurements to aim, throttle the updates using a timeout or interval (e.g., send the position at most once every 30-50 milliseconds), instead of sending updates on every sensor tick.
+*   **Server limits (enforced)**: the relay caps each socket at **~40 messages/second** and **64 KB per message** (`framework/core/websocket.js`). Stay well under both — anything above is dropped. Throttling tilts (above) keeps you safe.
 
 ---
 

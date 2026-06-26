@@ -51,6 +51,7 @@ window.Gameplay = (function () {
     A().celebrate(score.score > 0);
     game.send('game_over', { score: score.score, best });
     game.showResult({
+      won: score.score > 0,
       bannerText: 'Game Over',
       winner: String(score.score),
       stats: [{ label: 'Score', value: score.score }, { label: 'Best', value: best }, { label: 'Tries', value: score.attempts }],

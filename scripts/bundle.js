@@ -12,6 +12,12 @@
  * the game to work, and runtime FPS is identical either way (file count is a load-
  * time concern only). Minification is intentionally left out (no extra deps); add a
  * minifier here later if you want smaller files.
+ *
+ * EXPERIMENTAL / caveat: this only bundles STATIC `<script src>` tags. Modular games
+ * load their gameplay/ via `FrameworkGame.loadGameplay()` (game-config.json `code:[]`),
+ * which this does NOT bundle — so for modular games it bundles the framework scripts
+ * only. Fine as a load-time optimisation; not a full packager. Run before production
+ * if you want it; safe to ignore otherwise.
  */
 const fs = require('fs');
 const path = require('path');

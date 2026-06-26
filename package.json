@@ -5,11 +5,14 @@
   "main": "framework/core/server.js",
   "scripts": {
     "start": "node framework/core/server.js",
-    "test": "node games/chase/chase-shot.test.js",
+    "test": "node scripts/test.js",
+    "lint": "node scripts/lint.js",
     "new-game": "node scripts/new-game.js",
     "bundle": "node scripts/bundle.js",
     "publish": "node scripts/publish.js",
-    "tv-link": "node scripts/tv-link.js"
+    "sync": "node scripts/sync.js",
+    "tv-link": "node scripts/tv-link.js",
+    "visual": "node scripts/visual-test.js"
   },
   "dependencies": {
     "ws": "^8.16.0"

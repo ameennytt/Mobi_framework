@@ -24,15 +24,15 @@
   <script src="/framework/renderer/arena-scene.js"></script>
   <script src="/framework/ui/components.js"></script>
   <script src="/framework/ui/templates.js"></script>
+  <script src="/framework/ui/templates.mobile.js"></script>
   <script src="/framework/core/game.js"></script>
-
-  <!-- Your game: chase-shot.js = cricket math (moved out of core), then gameplay -->
-  <script src="/games/chase/chase-shot.js"></script>
-  <script src="/games/chase/gameplay.js"></script>
 
   <script>
     'use strict';
     window.onload = async () => {
+      // Loads this game's modular code from game-config.json `code` (chase-shot + gameplay/*).
+      await window.FrameworkGame.loadGameplay();
+
       // The reusable stadium gallery (no players) — registers bg/ground/fx layers.
       window.FrameworkArena.install();
 

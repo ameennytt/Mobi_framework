@@ -43,12 +43,18 @@ window.FrameworkFlow = (function () {
   // ── html helpers ─────────────────────────────────────────────────────────
   const esc = (s) => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
   function gridHtml(items, cls) {
-    return `<div class="fw-grid">${items.map(it => `
-      <button class="fw-card ${cls || ''}" data-id="${esc(it.id)}">
-        ${it.color ? `<span class="fw-dot" style="background:${esc(it.color)}"></span>` : ''}
+    const U = window.FrameworkUI;
+    return `<div class="fw-grid">${items.map(it => {
+      // entity cards (teams/clubs/countries) get a painted crest; others a colour dot
+      const badge = (it.short && U && U.crest)
+        ? U.crest({ short: it.short, color: it.color, size: 44 })
+        : (it.color ? `<span class="fw-dot" style="background:${esc(it.color)}"></span>` : '');
+      return `<button class="fw-card ${cls || ''}" data-id="${esc(it.id)}">
+        ${badge}
         <span class="fw-card-title">${esc(it.title)}</span>
         ${it.sub ? `<span class="fw-card-sub">${esc(it.sub)}</span>` : ''}
-      </button>`).join('')}</div>`;
+      </button>`;
+    }).join('')}</div>`;
   }
   function headHtml(title, step, total) {
     return `<div class="fw-flowhead">
@@ -100,15 +106,26 @@ window.FrameworkFlow = (function () {
     host.innerHTML = flow.map((st, i) => {
       const id = idFor(i);
       if (st.type === 'pair') {
+        // CricSwing-fidelity pair screen: hero logo, pulse status chip, 4 animated
+        // code-boxes (mirror a hidden real input), Wi-Fi hint. Visual boxes come from
+        // FrameworkUI.codeInput; the hidden #fw-code keeps connect/auto-pair logic intact.
+        const boxes = (window.FrameworkUI && window.FrameworkUI.codeInput)
+          ? window.FrameworkUI.codeInput({ n: 4 })
+          : '<div class="fw-codebox-row"></div>';
         return `<div class="fw-screen" id="${id}">
-          <div class="fw-brand">${logo ? `<img src="${esc(logo)}" alt="">` : ''}
+          <div class="fw-spacer"></div>
+          <div class="fw-brand fw-hero">${logo ? `<img src="${esc(logo)}" alt="">` : ''}
             <h1>${esc(title)}</h1><p>Pair with your TV to play</p></div>
+          <div class="fw-pair-chip" id="fw-pair-chip"><span class="fw-pair-dot"></span><span id="fw-pair-status">Looking for TV…</span></div>
           <div class="fw-spacer"></div>
           <div class="fw-cardbox">
             <label>Enter TV Code</label>
-            <input type="text" id="fw-code" maxlength="4" placeholder="CODE" autocomplete="off">
+            <div id="fw-code-visual" tabindex="0">${boxes}</div>
+            <input type="text" id="fw-code" maxlength="4" inputmode="latin" autocomplete="off"
+              autocapitalize="characters" style="position:absolute;opacity:0;pointer-events:none;height:0;width:0;">
             <button class="btn btn-primary fw-full" id="fw-connect">CONNECT</button>
             <div class="fw-status" id="fw-welcome-status"></div>
+            <div class="fw-wifi-hint">📶 Phone &amp; TV must be on the <b>same Wi-Fi</b>.</div>
           </div>
           <div class="fw-spacer"></div></div>`;
       }
@@ -153,7 +170,22 @@ window.FrameworkFlow = (function () {
       const opts = resolveSource(st.source);
       const cls = st.source === 'modes' ? 'fw-mode' : '';
       const host = document.querySelector(`.fw-grid-host[data-step="${i}"]`);
-      if (host) host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
+      if (!host) return;
+      // Tabbed picker: `tabs: '<field>'` groups options by that field (e.g. region) and
+      // shows pill tabs above the grid. Generic — works for any sport's groups/brackets.
+      const U = window.FrameworkUI;
+      if (st.tabs && U && U.tabs) {
+        const byG = {}, groups = [];
+        opts.forEach(o => { const g = (o._raw && o._raw[st.tabs]) || 'All'; if (!byG[g]) { byG[g] = []; groups.push(g); } byG[g].push(o); });
+        let active = 0;
+        const renderG = () => {
+          host.innerHTML = headHtml(st.title, i, flow.length) + U.tabs(groups, active) + gridHtml(byG[groups[active]], cls);
+          host.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => { active = +b.getAttribute('data-tab'); renderG(); }; });
+        };
+        renderG();
+      } else {
+        host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
+      }
     } else if (st.type === 'ceremony') {
       const msg = document.querySelector(`[data-msg="${i}"]`);
       if (msg) msg.textContent = st.kind === 'kickoff' ? 'Tap the ball to kick off' : 'Tap the coin';
@@ -264,6 +296,11 @@ window.FrameworkFlow = (function () {
       game.connect(code, () => {
         S.room = code;
         try { sessionStorage.setItem(`${game._gid}_room`, code); } catch (_) {}
+        const chipStatus = document.getElementById('fw-pair-status');
+        const chip = document.getElementById('fw-pair-chip');
+        if (chipStatus) chipStatus.textContent = 'TV Paired!';
+        if (chip) chip.classList.add('paired');
+        if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode(code, true);
         next();
         sendTV('connected');
       }, true);
@@ -280,6 +317,18 @@ window.FrameworkFlow = (function () {
     if (cbtn) cbtn.onclick = connect;
     if (codeInput) codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
 
+    // Mirror the hidden input into the visual 4 code-boxes; tapping the boxes focuses
+    // the input (so the OS keyboard opens). Auto-connect once 4 chars are entered.
+    const visual = document.getElementById('fw-code-visual');
+    if (codeInput) {
+      codeInput.addEventListener('input', () => {
+        codeInput.value = (codeInput.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+        if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode(codeInput.value);
+        if (codeInput.value.length === 4) connect();
+      });
+    }
+    if (visual && codeInput) visual.addEventListener('click', () => codeInput.focus());
+
     // Native auto-pair: the RN shell injects window.__roomCode once the TV creates a
     // room. It can arrive before OR after this lobby loads, so handle both: read it
     // now, and listen for the __roomCodeChanged event the shell fires on update.
@@ -290,6 +339,7 @@ window.FrameworkFlow = (function () {
       if (currentIdx() > 0) return;
       autoPaired = true;
       codeInput.value = window.__roomCode;
+      if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode(codeInput.value);
       connect();
     }
     autoPair();

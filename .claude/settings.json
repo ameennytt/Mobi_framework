@@ -58,7 +58,19 @@
       "Bash(xargs echo \"generic templates:\")",
       "Bash(rm -rf games/socc games/soccer)",
       "Bash(ls -d games/*/)",
-      "Bash(rm -rf games/cricket)"
+      "Bash(rm -rf games/cricket)",
+      "Bash(node -c framework/ui/components.js)",
+      "Bash(node -c games/versus/gameplay/index.js)",
+      "Bash(node -c games/starter/gameplay/index.js)",
+      "Bash(rm games/chase/gameplay.js)",
+      "Bash(node -e \"const c=JSON.parse\\(require\\('fs'\\).readFileSync\\('games/chase/game-config.json','utf8'\\)\\); console.log\\('has code:', !!c.code, '| hud:', c.hud\\)\")",
+      "Bash(mv DOC/README.md games/README.md)",
+      "Bash(grep -n \"]\\(\\\\.\\\\./\\\\.\\\\./\" games/starter/README.md games/versus/README.md)",
+      "Bash(grep -c '```' DOC/PHILOSOPHY.md)",
+      "Bash(echo \"code fences in PHILOSOPHY.md: $\\(grep -c '```' DOC/PHILOSOPHY.md\\)\")",
+      "Bash(node scripts/lint.js)",
+      "Bash(node scripts/test.js)",
+      "Bash(node framework/core/room-manager.test.js)"
     ]
   }
 }

@@ -30,4 +30,4 @@ npm start
 # Phone: http://localhost:3000/games/mygame/lobby.html
 ```
 
-See the root [README.md](../../README.md) and [FRAMEWORK_API.md](../../FRAMEWORK_API.md).
+See the root [README.md](../../README.md) and [DOC/MAKING_A_GAME.md](../../DOC/MAKING_A_GAME.md).

@@ -24,10 +24,12 @@
   --game-success: #9ADF6B;
   --game-danger:  #ff4444;
   --game-warning: #F3D86B;
+  --game-offwhite:#F5F7EF;          /* CricSwing --cs-offwhite */
+  --game-blue:    #4af;
   --game-font:    'Selawik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --game-mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
-  /* Structural design tokens (shared) */
+  /* Structural design tokens (shared) — exact CricSwing values */
   --fw-s-1: 4px;  --fw-s-2: 8px;  --fw-s-3: 12px; --fw-s-4: 16px;
   --fw-s-5: 24px; --fw-s-6: 32px; --fw-s-7: 48px; --fw-s-8: 64px;
   --fw-r-1: 4px;  --fw-r-2: 10px; --fw-r-3: 14px; --fw-r-4: 18px; --fw-r-5: 24px;
@@ -35,14 +37,26 @@
   --fw-line-2: rgba(255, 255, 255, 0.12);
   --fw-ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
   --fw-ease-pop: cubic-bezier(0.2, 1.4, 0.4, 1);
-  --fw-d-fast: 140ms; --fw-d-base: 260ms; --fw-d-slow: 480ms;
+  --fw-d-fast: 200ms; --fw-d-base: 350ms; --fw-d-slow: 600ms; --fw-d-stadium: 1400ms;
   --fw-shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.45);
   --fw-shadow-card: 0 8px 28px rgba(0, 0, 0, 0.45);
   --fw-shadow-glow: 0 0 18px rgba(154, 223, 107, 0.18);
   /* type scale */
   --fw-t-hero: 56px; --fw-t-h1: 32px; --fw-t-h2: 24px; --fw-t-h3: 18px;
   --fw-t-body: 14px; --fw-t-caption: 12px; --fw-t-micro: 10px;
+  /* pill tokens (CricSwing canonical) */
+  --fw-pill-pad: 6px 14px; --fw-pill-font: 11px; --fw-pill-weight: 800; --fw-pill-track: 0.10em;
 }
+
+/* ── Reusable keyframes (extracted from CricSwing; theme-driven) ─────────── */
+@keyframes fwPairPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(154,223,107,.0); } 50% { box-shadow: 0 0 0 8px rgba(154,223,107,.10); } }
+@keyframes fwPairFrameGlow { from { box-shadow: 0 0 0 0 rgba(154,223,107,0); } to { box-shadow: 0 0 22px 0 rgba(154,223,107,.45); } }
+@keyframes fwLogoHeroIn { from { transform: translateY(32px) scale(.75); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fwCoinFlip { 0% { transform: rotateY(0) scale(1); } 50% { transform: rotateY(1440deg) scale(1.25); } 100% { transform: rotateY(2880deg) scale(1); } }
+@keyframes fwPop { 0% { transform: scale(.3); opacity: 0; } 45% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes fwBannerIn { from { transform: translateY(18px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fwBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes fwCaret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -113,13 +127,45 @@ body, html {
   box-shadow: var(--fw-shadow-soft);
 }
 
-/* Crest — paintable team/club badge */
+/* Crest — paintable team/club badge (exact CricSwing .t-crest) */
 .crest {
   width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 900; font-size: 15px; color: #fff;
-  box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.25), 0 4px 12px rgba(0, 0, 0, 0.4);
+  font-weight: 900; font-size: 15px; color: #fff; letter-spacing: 0.5px;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }
+
+/* Code-input boxes (pairing) — exact CricSwing .pair-code-box */
+.fw-codebox-row { display: flex; gap: 10px; justify-content: center; }
+.fw-code-box {
+  width: 72px; height: 72px; border-radius: 13px;
+  background: linear-gradient(180deg, #0e0e0e, #050505);
+  border: 1.5px solid rgba(154, 223, 107, 0.18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900; color: var(--game-accent);
+  font-family: var(--game-font);
+  text-shadow: 0 0 0.5em rgba(154, 223, 107, 0.50);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.fw-code-box.active { border-color: var(--game-accent); box-shadow: 0 0 0 2px rgba(154, 223, 107, 0.25); }
+.fw-codebox-row.paired .fw-code-box { animation: fwPairFrameGlow 0.85s var(--fw-ease-out) forwards; }
+
+/* Tabs — exact CricSwing .region-tab */
+.fw-tabs { display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.fw-tab {
+  color: var(--game-text-2); background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--fw-line); cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  padding: var(--fw-pill-pad); border-radius: 99px;
+  font-size: var(--fw-pill-font); font-weight: var(--fw-pill-weight);
+  letter-spacing: var(--fw-pill-track); text-transform: uppercase; font-family: inherit;
+}
+.fw-tab.active { background: rgba(154, 223, 107, 0.15); border-color: var(--game-accent); color: var(--game-accent); }
+
+/* Progress dots — exact CricSwing .td-dots */
+.fw-dots { display: flex; gap: 8px; }
+.fw-dots i { width: 12px; height: 12px; border-radius: 50%; background: rgba(154, 223, 107, 0.18); transition: background 0.3s; }
+.fw-dots i.on { background: var(--game-accent); box-shadow: 0 0 0.6em rgba(154, 223, 107, 0.6); }
 
 /* Score / stat cards (premium) */
 .score-card {

@@ -111,23 +111,25 @@ class UIComponents {
       document.body.appendChild(overlay);
     }
 
-    let statusText = 'Waiting for phone to connect...';
-    if (connectionStatus === 'connecting') statusText = 'Connecting controller...';
-    if (connectionStatus === 'failed') statusText = 'Connection failed. Trying again...';
+    let statusText = 'Waiting for phone to connect…';
+    if (connectionStatus === 'connecting') statusText = 'Connecting controller…';
+    if (connectionStatus === 'failed') statusText = 'Connection failed. Trying again…';
+    const title = (window.FrameworkAssets && window.FrameworkAssets.text('APP_TITLE')) || 'Pair Your Phone';
 
     overlay.innerHTML = `
-      <div style="max-width: 500px; width: 90%;">
-        <div style="font-size: 20px; font-weight: 800; text-transform: uppercase; color: var(--game-muted); letter-spacing: 2px;">
-          Pair Your Controller
+      <div style="max-width: 640px; width: 92%; text-align:center;">
+        <div style="font-size: clamp(40px,7vw,64px); font-weight: 900; letter-spacing: 2px; color: var(--game-accent); animation: fwLogoHeroIn .55s var(--fw-ease-out) both;">${title}</div>
+        <div style="font-size: 14px; color: var(--game-muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px;">TV + Phone</div>
+        <div style="margin: 28px auto 0; max-width: 560px; background: rgba(255,255,255,.04); border: 2px solid rgba(154,223,107,.35); border-radius: 24px; padding: 30px 24px;">
+          <div style="font-size: 11px; color: var(--game-accent); letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">Enter on Phone</div>
+          <div class="pairing-code">${roomCode || '————'}</div>
+          ${qrCodeUrl ? `<img src="${qrCodeUrl}" style="width: 180px; height: 180px; margin: 12px auto 0; border-radius: 12px; border: 4px solid var(--game-accent); display:block;" alt="Pairing QR"/>` : ''}
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:22px;font-size:14px;color:var(--game-muted);">
+            <span style="width:10px;height:10px;border-radius:50%;background:var(--game-accent);animation:fwPairPulse 1.4s ease-out infinite;"></span>
+            <span>${statusText}</span>
+          </div>
         </div>
-        <div style="font-size: 14px; color: var(--game-muted); margin-top: 8px;">
-          Go to the web link on your mobile phone or scan the QR:
-        </div>
-        <div class="pairing-code">${roomCode}</div>
-        ${qrCodeUrl ? `<img src="${qrCodeUrl}" style="width: 200px; height: 200px; margin: 16px auto; border-radius: 12px; border: 4px solid var(--game-accent);" alt="Pairing QR"/>` : ''}
-        <div style="font-size: 14px; font-weight: 700; color: var(--game-accent); margin-top: 10px; animation: pulse 1.5s infinite;">
-          ${statusText}
-        </div>
+        <div style="max-width:560px;margin:18px auto 0;padding:12px 16px;border-radius:14px;background:rgba(154,223,107,.08);border:1.5px solid rgba(154,223,107,.30);font-size:14px;color:#aee9c0;line-height:1.5;">📶 Phone &amp; TV must be on the <b>same Wi-Fi</b>.</div>
       </div>
     `;
     overlay.style.display = 'flex';
@@ -197,6 +199,42 @@ class UIComponents {
   /** Premium card wrapper. Returns HTML. */
   card(innerHtml, extraStyle = '') {
     return `<div class="card" style="${extraStyle}">${innerHtml}</div>`;
+  }
+
+  /**
+   * Code-input boxes (e.g. a 4-char pairing code). Returns HTML for N boxes; fill
+   * via `setCode`. Sport-neutral. opts: { n, value }
+   */
+  codeInput({ n = 4, value = '' } = {}) {
+    const v = String(value).toUpperCase();
+    let boxes = '';
+    for (let i = 0; i < n; i++) {
+      boxes += `<div class="fw-code-box${i === v.length ? ' active' : ''}" data-i="${i}">${v[i] || ''}</div>`;
+    }
+    return `<div class="fw-codebox-row" id="fw-codebox-row">${boxes}</div>`;
+  }
+  /** Paint a value into a rendered codeInput row. */
+  setCode(value, paired) {
+    const row = document.getElementById('fw-codebox-row'); if (!row) return;
+    const v = String(value || '').toUpperCase();
+    row.classList.toggle('paired', !!paired);
+    row.querySelectorAll('.fw-code-box').forEach((b, i) => {
+      b.textContent = v[i] || '';
+      b.classList.toggle('active', i === v.length && !paired);
+    });
+  }
+
+  /** Pill tabs (region/group/bracket). Returns HTML; wire clicks via [data-tab]. */
+  tabs(items = [], activeIdx = 0) {
+    return `<div class="fw-tabs">${items.map((t, i) =>
+      `<button class="fw-tab${i === activeIdx ? ' active' : ''}" data-tab="${i}">${t}</button>`).join('')}</div>`;
+  }
+
+  /** Progress dots. Returns HTML. */
+  dots(n = 3, active = 0) {
+    let s = '';
+    for (let i = 0; i < n; i++) s += `<i class="${i <= active ? 'on' : ''}"></i>`;
+    return `<div class="fw-dots">${s}</div>`;
   }
 }
 

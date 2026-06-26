@@ -2,8 +2,11 @@
 
 One-page map of every framework global. Each is a `window.*` object created by a
 file in `framework/`. Load the file with a `<script>` tag, then call the methods.
-All examples are real (verified against source). For the big picture read
-[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md); this is the lookup sheet.
+All examples are real (verified against source).
+
+> **This doc = exact signatures (the lookup sheet).** To *build a game* step-by-step see
+> [MAKING_A_GAME.md](MAKING_A_GAME.md); for copy-paste UI recipes see
+> [UI_COMPONENTS.md](UI_COMPONENTS.md); for the why see [PHILOSOPHY.md](PHILOSOPHY.md).
 
 ---
 
@@ -203,13 +206,21 @@ FrameworkTemplates.renderTVScorebar({ title:'Chase', chasingLabel:'Target 30' })
 FrameworkTemplates.updateTVScorebar({ runs, balls, overs, target });
 FrameworkTemplates.hideTVScorebar();
 FrameworkTemplates.showTVBanner('SIX!', '#ffd700', 'optional sub');
-FrameworkTemplates.renderTVResult({ bannerText, winner, stats:[{label,value}],
-  primaryText, onPrimary, secondaryText, onSecondary });
-FrameworkTemplates.hideTVResult();
+// TV broadcast screens (sport-neutral, theme-driven)
+FrameworkTemplates.renderTVIntro({ titleA, titleB, sub, colorA, colorB }); // hideTVIntro()
+FrameworkTemplates.startTVCountdown(3, onDone);                            // stopTVCountdown()
+FrameworkTemplates.showTVMilestone({ kicker, big, sub, color });          // 50! / NEW BEST!
+FrameworkTemplates.renderTVResult({ won, icon, bannerText, winner, sub, pom,
+  stats:[{label,value}], primaryText, onPrimary, secondaryText, onSecondary }); // hideTVResult()
 FrameworkTemplates.renderTVLoading({ logoUrl, message });
 FrameworkTemplates.updateTVLoading(pct); FrameworkTemplates.hideTVLoading();
 FrameworkTemplates.renderTVDisconnected({ message }); // hideTVDisconnected()
-// mobile shells: renderMobileLobby / renderMobileControllerHUD / renderMobileCalibration
+FrameworkTemplates.showTVSetup(state); FrameworkTemplates.hideTVSetup(); // live lobby mirror
+// mobile screens
+FrameworkTemplates.renderMobileHome(container, { title, subtitle, logoUrl, items });
+FrameworkTemplates.renderMobilePause({ title, onResume, onQuit });        // hideMobilePause()
+FrameworkTemplates.renderMobileSettings({ title, items, onClose });        // hideMobileSettings()
+FrameworkTemplates.renderMobileLobby / renderMobileControllerHUD / renderMobileCalibration(...);
 ```
 
 ## FrameworkUI — `framework/ui/components.js`
@@ -221,6 +232,13 @@ FrameworkUI.showConfirmDialog({ title, body, confirmText, cancelText, onConfirm,
 FrameworkUI.renderPairingOverlay(code, 'waiting'|'connecting'|'failed', qrUrl);
 FrameworkUI.hidePairingOverlay();
 FrameworkUI.showToast('Reconnecting…', 2500, /*isError*/ true);
+// premium building blocks (return HTML strings; theme-driven)
+FrameworkUI.crest({ short:'IND', color:'#1f7ae0', size:56 });   // painted team/club badge
+FrameworkUI.pill('LIVE', /*accent*/ true);                       // eyebrow / status pill
+FrameworkUI.card('<inner html>');                                // gradient card wrapper
+FrameworkUI.codeInput({ n:4, value:'' });  FrameworkUI.setCode('RHFW', /*paired*/ true);
+FrameworkUI.tabs(['Asia','Europe'], 0);                          // pill tabs (groups/brackets)
+FrameworkUI.dots(5, 2);                                          // progress dots
 ```
 
 ---
@@ -236,6 +254,9 @@ FrameworkFlow.mount({
   onLaunch: (sel) => {        // sel = {mode,team,opp,format,overs,difficulty,target,room}
     location.href = `controller.html?room=${sel.room}&target=${sel.target}&overs=${sel.overs}`;
   },
+  onCeremony: (kind, S) => {  // OPTIONAL — game supplies ceremony outcome (sport-neutral core)
+    if (kind === 'toss') return { target: 142, message: 'Chase 142!' };  // merged into S
+  },
 });
 FrameworkFlow.selection();    // current picks
 FrameworkFlow.go(1);          // jump to a step index
@@ -243,16 +264,18 @@ FrameworkFlow.go(1);          // jump to a step index
 
 The flow is declared in `config.flow` (a `[]` of steps). Step types:
 ```jsonc
-{ "type": "pair" }                                              // welcome + code (first)
+{ "type": "pair" }                                              // welcome + 4-box code (first)
 { "type": "choice", "key": "team", "title": "...", "source": "teams",
+  "tabs": "region",                                             // OPTIONAL group into pill tabs
   "branch": true,                                               // store chosen .branch in S.branch
   "when": { "key": "branch", "equals": "cup" } }                // show only if a prior pick matches
-{ "type": "ceremony", "kind": "toss" }                          // 'toss' sets target; 'kickoff' just advances
+{ "type": "ceremony", "kind": "toss" }                          // coin/whistle; outcome via onCeremony
 { "type": "target" }   // or  { "type": "briefing" }            // summary + launch
 ```
 `choice.source` = a config key (`teams`/`formats`/`modes`/`difficulties`), a path
-(`chaseData.cup`), or `$league.teams` (clubs of the league picked earlier). No `flow`
-in config → the default chase flow is used.
+(`chaseData.cup`), or `$league.teams` (clubs of the league picked earlier). Options with a
+`short` render a painted crest; `tabs` groups them. No `flow` in config → a neutral
+pair→briefing default (real games declare their own).
 
 ## FrameworkMotion — `framework/inputs/motion-input.js`
 
@@ -296,7 +319,15 @@ Your own game messages use any lowercase name (`action`, `game_state`,
 ```bash
 npm start                              # dev server :3000
 npm run new-game <id> [--from chase|versus|starter]   # scaffold a game
-npm run publish <id>                   # wire native shell + worker + embedded payload
-npm run bundle <id>                    # (optional) concat scripts → dist/*.bundle.js
-npm test
+npm run publish <id>                   # generate games/<id>/app (RN + embedded payload, per-game appId)
+npm run sync <id>                      # fast re-embed framework+game into an existing app (no rebuild)
+npm test                               # run every *.test.js
+npm run lint                           # node --check every .js (zero-dep)
+npm run bundle <id>                    # (optional) concat static scripts → dist/*.bundle.js
+npm run visual                         # (local; needs playwright) screenshot-diff template screens
+npm run tv-link <id>                   # print TV URL (USB-proof) for a phone-hosted game
 ```
+
+> **Mobile templates** (`renderMobile*`) live in `framework/ui/templates.mobile.js`, which
+> augments the same `FrameworkTemplates` instance — load it right after `templates.js` (the
+> game `screen.html` files already do). Public API is unchanged.

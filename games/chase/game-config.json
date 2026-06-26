@@ -5,6 +5,14 @@
   "supportsMobile": true,
   "supportsMotion": false,
   "enableEnrichment": false,
+  "_comment_code": "Modular game code, loaded in order (entry index.js last). chase-shot.js = cricket ball math.",
+  "code": [
+    "chase-shot.js",
+    "gameplay/rules.js",
+    "gameplay/scoring.js",
+    "gameplay/visuals.js",
+    "gameplay/index.js"
+  ],
   "assets": {
     "APP_LOGO": "/games/chase/assets/logo1.svg",
     "SCREEN_HERO": "/games/chase/assets/icon1.svg",

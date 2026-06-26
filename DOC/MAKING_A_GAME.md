@@ -117,12 +117,37 @@ your own lowercase names for game messages (`action`, `game_state`, `game_over`)
 
 ---
 
-## 7. Ship
+## 7. The bootstrap (one call per page)
+
+Each surface boots with `FrameworkGame.init({ role, ... })` — TV uses `role:'screen'`, phone
+uses `role:'bat'`. `screen.html` also calls `FrameworkGame.loadGameplay()` first (loads your
+`gameplay/` from `code:[]`). The thin HTML files already do this; you rarely touch them. Full
+signatures + handler list: [FRAMEWORK_API.md](FRAMEWORK_API.md).
+
+## 8. Pairing: dev vs production
+
+Same game code; flip one setting — `RENDEZVOUS_URL` in `game-config.json`:
+
+| | `RENDEZVOUS_URL` | How the TV pairs |
+|---|---|---|
+| **Dev** | `""` | TV shows a 4-char code; type it on the phone (same Wi-Fi). |
+| **Prod** | `"https://play.yourstudio.com"` | TV opens the central hub; phone enters the code; the hub redirects the TV to the phone. |
+
+One central pairing site serves every game — see
+[../framework/rendezvous/README.md](../framework/rendezvous/README.md).
+
+## 9. Ship
 
 ```bash
-npm run publish mygame           # generates games/mygame/app (RN + embedded server)
+npm run lint && npm test         # syntax sweep + run tests before shipping
+npm run publish mygame           # generates games/mygame/app (RN + embedded; per-game appId)
 cd games/mygame/app && npm install && npx react-native run-android
 node scripts/tv-link.js mygame   # TV URL (USB-proof) for testing
 ```
 
-See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) and [FRAMEWORK_API.md](FRAMEWORK_API.md) for every API.
+Iterating on-device after edits? `npm run sync mygame` re-embeds `framework/` + your game into
+the existing app (no full rebuild). `publish` also sets a unique Android `applicationId`
+(`com.tvgame.<id>`, or `android.appId` in config) so multiple games install side-by-side.
+
+See [FRAMEWORK_API.md](FRAMEWORK_API.md) for every API, [UI_COMPONENTS.md](UI_COMPONENTS.md)
+for screen/component recipes, and [PHILOSOPHY.md](PHILOSOPHY.md) for the framework's intent.
