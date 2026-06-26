@@ -34,6 +34,16 @@
       window.FrameworkFlow.mount({
         game,
         config,
+        // Cricket toss → set the chase target. Lives HERE (the game), not the
+        // framework, which is sport-neutral. Returns extra state merged into S.
+        onCeremony: (kind, S) => {
+          if (kind !== 'toss') return null;
+          const overs = S.overs || 2;
+          const rate = S.difficulty === 'hard' ? 11 : S.difficulty === 'easy' ? 6 : 8.5;
+          const variance = (Math.random() * 2 - 1) * 1.5;
+          const cpu = Math.max(8, Math.round(overs * (rate + variance)));
+          return { cpu, target: cpu + 1, message: `${S.opp || 'Opponent'} set ${cpu} — you chase!` };
+        },
         onLaunch: (sel) => {
           const code = sel.room || sessionStorage.getItem('chase_room') || '';
           const q = new URLSearchParams({

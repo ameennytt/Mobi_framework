@@ -18,7 +18,7 @@ class EventHub {
 
   /**
    * Initializes the socket channel.
-   * @param {string} roomCode 4-character room ID
+   * @param {string} roomCode 6-character room ID
    * @param {string} role 'bat' or 'screen'
    * @param {boolean} ephemeral true if short-lived lobby check
    */

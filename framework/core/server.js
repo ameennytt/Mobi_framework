@@ -21,7 +21,7 @@ const os = require('os');
 const wsLayer = require('./websocket');
 const roomManager = require('./room-manager');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Static-serving roots. Resolved paths must stay inside one of these — see the
 // containment check in the router below (blocks /games/x/../../.. traversal).

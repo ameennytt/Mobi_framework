@@ -13,15 +13,46 @@
 const fs = require('fs');
 const path = require('path');
 
+const KNOWN = ['starter', 'chase', 'versus'];
+
 const args = process.argv.slice(2);
 const id = (args.find(a => !a.startsWith('-')) || '').trim();
 const fromIdx = args.indexOf('--from');
-const template = (fromIdx !== -1 && args[fromIdx + 1]) ? args[fromIdx + 1].trim() : 'starter';
 
 if (!/^[a-z][a-z0-9-]{1,30}$/.test(id)) {
-  console.error('Usage: npm run new-game <id> [--from starter|chase]');
+  console.error('Usage: npm run new-game <id> [--from starter|chase|versus]');
   console.error('  <id>: lowercase letters/digits/dashes, starts with a letter (e.g. tennis, air-hockey)');
   process.exit(1);
+}
+
+// Resolve the template, but FAIL LOUD on a typo'd/empty --from so a football/cricket
+// game can never silently fall back to the blank starter shell.
+// `npm run` swallows `--from versus` into the env var npm_config_from (unless you
+// use `npm run new-game -- <id> --from versus`), so accept that too.
+function bad(template) {
+  if (!template || template.startsWith('-')) {
+    console.error('--from needs a template name. Pick one: ' + KNOWN.join(' | '));
+    process.exit(1);
+  }
+  if (!KNOWN.includes(template)) {
+    console.error(`Unknown template "${template}". Pick one: ${KNOWN.join(' | ')}`);
+    console.error('  chase = cricket-style · versus = football (head-to-head) · starter = blank shell');
+    process.exit(1);
+  }
+}
+
+let template;
+const envFrom = (process.env.npm_config_from || '').trim();   // set by `npm run … --from x`
+if (fromIdx !== -1) {
+  template = (args[fromIdx + 1] || '').trim();
+  bad(template);
+} else if (envFrom) {
+  template = envFrom;
+  bad(template);
+} else {
+  template = 'starter';
+  console.warn('NOTE: no --from given → using the blank "starter" shell.');
+  console.warn('      For football use  --from versus   ·  for cricket use  --from chase');
 }
 
 const root = path.join(__dirname, '..');

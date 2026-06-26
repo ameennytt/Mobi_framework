@@ -154,6 +154,7 @@ class GameTemplates {
    * screen.html stays thin. Hidden until shown.
    */
   renderTVScorebar({ title, chasingLabel } = {}) {
+    this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = document.getElementById('fw-tv-scorebar');
     if (!o) {
       o = document.createElement('div');
@@ -216,6 +217,7 @@ class GameTemplates {
 
   /** versus HUD — two scores either side of a centre round/clock chip. */
   renderVersusScorebar({ titleA, titleB } = {}) {
+    this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
       <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:rgba(10,20,30,.88);border:2px solid var(--game-accent);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);">
@@ -244,6 +246,7 @@ class GameTemplates {
 
   /** attempt HUD — score, attempts remaining, personal best. */
   renderAttemptScorebar({ title } = {}) {
+    this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
       <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(10,20,30,.88);border:2px solid var(--game-accent);border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.5);">
@@ -384,6 +387,87 @@ class GameTemplates {
 
   hideTVResult() {
     const o = document.getElementById('fw-tv-result');
+    if (o) o.style.display = 'none';
+  }
+
+  /**
+   * TV Setup overlay — mirrors the phone lobby live on the big screen while the
+   * player picks team / format / kicks off, CricSwing-style. Driven by the
+   * `lobby_step` messages the phone relays (see framework/flow/lobby-flow.js); the
+   * generic listener in framework/core/game.js (_initScreen) calls this. It auto-
+   * hides the moment a real game HUD renders (see renderTVScorebar etc.).
+   *
+   * @param {object} state { phase:'connected'|'pick'|'ceremony'|'ready', kind?,
+   *   selection:{ title, team, teamShort, teamColor, opp, oppShort, oppColor,
+   *               format, formatName, rounds, overs, target, cpu } }
+   */
+  showTVSetup(state = {}) {
+    const s = state.selection || {};
+    const phase = state.phase || 'connected';
+    let o = document.getElementById('fw-tv-setup');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-setup';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 120%, rgba(255,255,255,.06), rgba(5,10,22,.94) 70%);';
+      document.body.appendChild(o);
+    }
+
+    const dot = (c) => `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${c || 'var(--game-accent)'};box-shadow:0 0 0 3px rgba(255,255,255,.12);vertical-align:middle;"></span>`;
+    const lengthLine = s.formatName
+      ? s.formatName
+      : (s.rounds ? `${s.rounds} rounds` : (s.overs ? `${s.overs} overs` : ''));
+
+    // Centre piece changes by phase.
+    let centre = '';
+    if (phase === 'ceremony') {
+      const emoji = state.kind === 'toss' ? '🪙' : '⚽';
+      const anim = state.kind === 'toss' ? 'fwCoinFlip 1.4s ease-in-out infinite' : 'fwBallKick 1.1s ease-in-out infinite';
+      const label = state.kind === 'toss' ? 'Tossing…' : 'Kicking off…';
+      centre = `<div style="font-size:120px;line-height:1;animation:${anim};filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));">${emoji}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--game-text);margin-top:18px;">${label}</div>`;
+    } else if (phase === 'ready') {
+      const target = s.target
+        ? `<div style="font-size:18px;color:var(--game-muted);margin-top:14px;">Target <b style="color:var(--game-accent);font-size:30px;">${s.target}</b>${s.overs ? ` in ${s.overs} over${s.overs > 1 ? 's' : ''}` : ''}</div>`
+        : '';
+      centre = `<div style="font-size:46px;font-weight:900;letter-spacing:2px;color:var(--game-accent);animation:fwPulse 1.1s ease-in-out infinite;">MATCH READY</div>${target}`;
+    } else {
+      centre = `<div style="font-size:22px;font-weight:700;color:var(--game-muted);">Choosing on the phone…</div>`;
+    }
+
+    // VS strip — shown once a team is picked.
+    const vs = s.team ? `
+      <div style="display:flex;align-items:center;justify-content:center;gap:26px;margin:6px 0 22px;">
+        <div style="text-align:center;min-width:160px;">
+          <div style="margin-bottom:8px;">${dot(s.teamColor)}</div>
+          <div style="font-size:30px;font-weight:900;color:var(--game-text);">${s.team}</div>
+          <div style="font-size:13px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">You</div>
+        </div>
+        <div style="font-size:26px;font-weight:900;color:var(--game-muted);">VS</div>
+        <div style="text-align:center;min-width:160px;">
+          <div style="margin-bottom:8px;">${dot(s.oppColor)}</div>
+          <div style="font-size:30px;font-weight:900;color:var(--game-text);">${s.opp || 'Opponent'}</div>
+          <div style="font-size:13px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">CPU</div>
+        </div>
+      </div>` : '';
+
+    o.innerHTML = `
+      <style>
+        @keyframes fwBallKick { 0%,100%{ transform:translateY(0) rotate(0);} 50%{ transform:translateY(-26px) rotate(180deg);} }
+        @keyframes fwCoinFlip { 0%,100%{ transform:rotateY(0) scale(1);} 50%{ transform:rotateY(900deg) scale(1.15);} }
+        @keyframes fwPulse { 0%,100%{ transform:scale(1); opacity:1;} 50%{ transform:scale(1.06); opacity:.82;} }
+      </style>
+      <div style="text-align:center;max-width:820px;padding:40px;">
+        <div style="font-size:16px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--game-accent);margin-bottom:18px;">${s.title || ''}</div>
+        ${vs}
+        ${lengthLine ? `<div style="font-size:17px;font-weight:700;color:var(--game-text);margin-bottom:26px;">${lengthLine}</div>` : '<div style="height:18px;"></div>'}
+        <div style="min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;">${centre}</div>
+        <div style="font-size:14px;color:var(--game-muted);margin-top:24px;">Setting up on your phone…</div>
+      </div>`;
+    o.style.display = 'flex';
+  }
+
+  hideTVSetup() {
+    const o = document.getElementById('fw-tv-setup');
     if (o) o.style.display = 'none';
   }
 

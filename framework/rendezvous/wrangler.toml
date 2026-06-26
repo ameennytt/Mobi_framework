@@ -1,13 +1,12 @@
-# Per-game rendezvous Worker config. Copy this folder per game and edit:
-#   - name: unique worker name
-#   - routes.pattern: your game's domain (must be on Cloudflare)
-name = "versus-rendezvous"
+# Central rendezvous Worker — ONE deploy serves every game. Edit:
+#   - routes.pattern: your hub domain (must be on Cloudflare), e.g. play.yourstudio.com
+name = "game-hub-rendezvous"
 main = "worker.js"
 compatibility_date = "2025-01-01"
 workers_dev = false
 
 routes = [
-  { pattern = "mygame.com", custom_domain = true }
+  { pattern = "play.yourstudio.com", custom_domain = true }
 ]
 
 [[durable_objects.bindings]]

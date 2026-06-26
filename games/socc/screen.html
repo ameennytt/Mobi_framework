@@ -26,13 +26,11 @@
   <script src="/framework/ui/templates.js"></script>
   <script src="/framework/core/game.js"></script>
 
+  <script src="/games/socc/gameplay.js"></script>
+
   <script>
     'use strict';
     window.onload = async () => {
-      // Load this game's code — single gameplay.js OR a modular gameplay/ folder,
-      // per game-config.json `code: [...]`. Defines window.Gameplay.
-      await window.FrameworkGame.loadGameplay();
-
       // Stadium + the football goal field overlay.
       window.FrameworkArena.install({ field: 'goal' });
 

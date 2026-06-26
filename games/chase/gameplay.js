@@ -10,7 +10,8 @@
  * across the reused FrameworkArena, add runs, and chase a target. Swap the roll
  * for real rules (or later, a swing/ML input) without touching anything else.
  *
- * Reuses: ShotVisuals (ball math), FrameworkArena (stadium + particles +
+ * Reuses: ChaseShot (cricket ball math, games/chase/chase-shot.js) + Projectile
+ * geometry, FrameworkArena (stadium + particles +
  * trophy), FrameworkTemplates (scorebar + banner + result). window.Gameplay.
  */
 window.Gameplay = (function () {
@@ -56,7 +57,7 @@ window.Gameplay = (function () {
 
   function fireBall(out) {
     const W = window.FrameworkRenderer.W, H = window.FrameworkRenderer.H;
-    const vis = window.ShotVisuals.buildVisual(
+    const vis = window.ChaseShot.buildVisual(
       { runs: out.runs, dir: out.dir, dismissed: out.dismissed, name: out.name,
         score: { runs: score.runs, balls: score.balls, wickets: score.wickets } },
       { W, H, tvTarget: target, tvOvers: overs, roomCode: game.getCode() }

@@ -16,8 +16,8 @@
  * The game draws its own action on the `object` layer (via the draw fn passed to
  * FrameworkGame.init / FrameworkRenderer.init).
  *
- * Perspective + ball math come from ShotVisuals so a ball fired with
- * ShotVisuals.computeShotLanding lands exactly on the rope drawn here.
+ * Perspective + boundary geometry come from Projectile so a ball fired with the
+ * same perspective lands exactly on the rope drawn here.
  *
  * Usage (TV screen.html):
  *   FrameworkArena.install({ ads: [...] });   // before FrameworkGame.init
@@ -63,7 +63,7 @@ class ArenaScene {
   }
 
   // ── geometry (matches ShotVisuals so landings align with the rope) ──────────
-  perspective(W, H) { return window.ShotVisuals.perspective(W, H); }
+  perspective(W, H) { return (window.Projectile || window.ShotVisuals).perspective(W, H); }
 
   boundary(W, H) {
     const horizY = H * 0.30;
@@ -168,7 +168,10 @@ class ArenaScene {
     gnd.addColorStop(0, '#102810'); gnd.addColorStop(0.5, '#2d5e1f'); gnd.addColorStop(1, '#4a8b3a');
     c.fillStyle = gnd; c.fillRect(0, horizY, W, H - horizY);
     c.save();
-    c.beginPath(); c.ellipse(W / 2, ey, erx, ery, 0, 0, Math.PI * 2); c.clip();
+    // Field-overlay sports (football/court/…) want grass edge-to-edge; cricket keeps
+    // the oval. Clip the stripes to a full rectangle when a field overlay is set.
+    if (this.field) { c.beginPath(); c.rect(0, horizY, W, H - horizY); c.clip(); }
+    else { c.beginPath(); c.ellipse(W / 2, ey, erx, ery, 0, 0, Math.PI * 2); c.clip(); }
     const sh = Math.max(10, (H - horizY) / 20);
     for (let sy = horizY; sy < H; sy += sh) {
       const even = Math.floor((sy - horizY) / sh) % 2 === 0;
@@ -205,17 +208,21 @@ class ArenaScene {
     const { ey, erx, ery } = this.boundary(W, H);
     const rip = this.crowdWave > 0 ? Math.sin(Date.now() / 75) * 2.5 : 0;
 
-    // Boundary rope.
-    c.beginPath(); c.ellipse(W / 2, ey + rip * 0.4, erx + rip + 2, ery + rip * 0.5 + 2, 0, 0, Math.PI * 2);
-    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 7; c.stroke();
-    c.beginPath(); c.ellipse(W / 2, ey + rip * 0.4, erx + rip, ery + rip * 0.5, 0, 0, Math.PI * 2);
-    c.strokeStyle = 'rgba(240,240,240,.9)'; c.lineWidth = 3; c.stroke();
+    // Cricket oval markings (boundary rope + infield circle). A field-overlay sport
+    // draws its own pitch lines (see FrameworkFields), so skip these when field set.
+    if (!this.field) {
+      // Boundary rope.
+      c.beginPath(); c.ellipse(W / 2, ey + rip * 0.4, erx + rip + 2, ery + rip * 0.5 + 2, 0, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 7; c.stroke();
+      c.beginPath(); c.ellipse(W / 2, ey + rip * 0.4, erx + rip, ery + rip * 0.5, 0, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(240,240,240,.9)'; c.lineWidth = 3; c.stroke();
 
-    // Infield circle.
-    const cy = horizY + (H - horizY) * 0.52;
-    c.beginPath(); c.ellipse(W / 2, cy, W * 0.225, (H - horizY) * 0.275, 0, 0, Math.PI * 2);
-    c.strokeStyle = 'rgba(255,255,255,.065)'; c.lineWidth = 1.5;
-    c.setLineDash([7, 9]); c.stroke(); c.setLineDash([]);
+      // Infield circle.
+      const cy = horizY + (H - horizY) * 0.52;
+      c.beginPath(); c.ellipse(W / 2, cy, W * 0.225, (H - horizY) * 0.275, 0, 0, Math.PI * 2);
+      c.strokeStyle = 'rgba(255,255,255,.065)'; c.lineWidth = 1.5;
+      c.setLineDash([7, 9]); c.stroke(); c.setLineDash([]);
+    }
 
     // Outfield ad boards.
     const { cx, nearY, nearW } = this.perspective(W, H);

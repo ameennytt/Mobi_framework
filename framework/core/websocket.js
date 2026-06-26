@@ -3,7 +3,7 @@
 /**
  * WebSocket relay + room lifecycle (Node).
  *
- * One room = one TV (screen) + one phone (bat), matched by a 6-char code. This
+ * One room = one TV (screen) + one phone (bat), matched by a 4-char code. This
  * layer accepts /ws/screen and /ws/bat connections, pairs them, and forwards
  * every message between them. It also manages reconnect: a refreshed TV reclaims
  * its room (and is told `bat_connected` if the phone is still there); a dropped
@@ -169,7 +169,7 @@ class WebSocketLayer {
       }
     } else {
       // Create new room under the re-offered code or a fresh one
-      const code = (/^[A-Z2-9]{6}$/.test(wantedCode) && !roomManager.getRoom(wantedCode))
+      const code = (/^[A-Z2-9]{4}$/.test(wantedCode) && !roomManager.getRoom(wantedCode))
         ? wantedCode
         : roomManager.generateCode();
       room = roomManager.createRoom(code);

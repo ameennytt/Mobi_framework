@@ -9,6 +9,14 @@
   "hud": "versus",
   "field": "goal",
 
+  "_comment_code": "MODULAR game layout — load order (entry index.js last). Add an extension by listing it here before index.js (see extensions/README.md).",
+  "code": [
+    "gameplay/rules.js",
+    "gameplay/scoring.js",
+    "gameplay/visuals.js",
+    "gameplay/index.js"
+  ],
+
   "theme": {
     "--game-primary": "#06140c",
     "--game-accent": "#39ff14",

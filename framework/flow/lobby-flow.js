@@ -28,23 +28,16 @@
  * window.FrameworkFlow.
  */
 window.FrameworkFlow = (function () {
-  let cfg = null, game = null, R = null, flow = null, onLaunch = null;
+  let cfg = null, game = null, R = null, flow = null, onLaunch = null, onCeremony = null;
   const S = {};
   const ROOT_ID = 'fw-flow-root';
   const storeKey = () => `${(game && game._gid) || 'fw'}_lobby_partial`;
 
-  // Default flow = the chase journey, so a config without `flow` still works.
+  // Neutral default flow (sport-agnostic) — used only when a config omits `flow`.
+  // Real games declare their own `flow:[...]` (see games/chase, games/versus).
   const DEFAULT_FLOW = [
     { type: 'pair' },
-    { type: 'choice', key: 'mode', title: 'Pick your mode', source: 'modes', branch: true },
-    { type: 'choice', key: 'team', title: 'Pick your team', source: 'teams', when: { key: 'branch', equals: 'team' } },
-    { type: 'choice', key: 'team', title: 'Pick your team', source: 'chaseData.cup', when: { key: 'branch', equals: 'cup' } },
-    { type: 'choice', key: 'league', title: 'Pick your league', source: 'chaseData.leagues', when: { key: 'branch', equals: 'league' } },
-    { type: 'choice', key: 'team', title: 'Pick your club', source: '$league.teams', when: { key: 'branch', equals: 'league' } },
-    { type: 'choice', key: 'format', title: 'Pick your format', source: 'formats' },
-    { type: 'choice', key: 'difficulty', title: 'Pick your challenge', source: 'difficulties' },
-    { type: 'ceremony', kind: 'toss' },
-    { type: 'target' },
+    { type: 'briefing' },
   ];
 
   // ── html helpers ─────────────────────────────────────────────────────────
@@ -113,7 +106,7 @@ window.FrameworkFlow = (function () {
           <div class="fw-spacer"></div>
           <div class="fw-cardbox">
             <label>Enter TV Code</label>
-            <input type="text" id="fw-code" maxlength="6" placeholder="CODE" autocomplete="off">
+            <input type="text" id="fw-code" maxlength="4" placeholder="CODE" autocomplete="off">
             <button class="btn btn-primary fw-full" id="fw-connect">CONNECT</button>
             <div class="fw-status" id="fw-welcome-status"></div>
           </div>
@@ -170,6 +163,7 @@ window.FrameworkFlow = (function () {
   }
 
   function renderSummary(st, i) {
+    sendTV('ready');
     const host = document.querySelector(`[data-sum="${i}"]`);
     if (!host) return;
     if (S.target) {
@@ -189,16 +183,17 @@ window.FrameworkFlow = (function () {
     const key = st.key;
     if (st.branch) S.branch = opt.branch || opt.id;
     if (key === 'mode') { S.mode = opt.id; }
-    else if (key === 'team') { S.team = opt.title; S.teamShort = opt.short || String(opt.id).slice(0, 3).toUpperCase(); pickOpp(); }
+    else if (key === 'team') { S.team = opt.title; S.teamShort = opt.short || String(opt.id).slice(0, 3).toUpperCase(); S.teamColor = opt.color; pickOpp(); }
     else if (key === 'league') { S.league = opt.title; S._leagueObj = opt._raw; }
-    else if (key === 'format') { S.format = opt.id; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; }
+    else if (key === 'format') { S.format = opt.id; S.formatName = opt.sub || opt.title; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; }
     else { S[key] = opt.id; }
     save();
+    sendTV('pick');
   }
   function pickOpp() {
     const pool = (cfg.teams || []).filter(t => t.name !== S.team);
     const o = pool.length ? pool[(Math.random() * pool.length) | 0] : { name: 'Rivals', short: 'RIV' };
-    S.opp = o.name; S.oppShort = o.short;
+    S.opp = o.name; S.oppShort = o.short; S.oppColor = o.color;
   }
   // A "quick" branch skips team screens — make sure a team + opponent still exist.
   function ensureTeam() {
@@ -208,31 +203,51 @@ window.FrameworkFlow = (function () {
   }
 
   // ── ceremony ──────────────────────────────────────────────────────────
+  // The framework knows nothing sport-specific here: it spins the coin/ball, then
+  // (if the game supplied one) calls onCeremony(kind, S) to merge extra state — e.g.
+  // the chase game computes a run target there. Returned { message } overrides the
+  // settle text. No game hook → a plain "ready" with a generic message.
+  function settleCeremony(st, coin, msg) {
+    const extra = onCeremony ? onCeremony(st.kind, Object.assign({}, S)) : null;
+    if (extra && typeof extra === 'object') { Object.assign(S, extra); save(); }
+    const fallback = st.kind === 'toss' ? 'Ready!' : 'Kick off!';
+    if (msg) msg.textContent = (extra && extra.message) || fallback;
+    sendTV('ready');
+    setTimeout(() => { coin.classList.remove('spin'); next(); }, st.kind === 'toss' ? 1200 : 1100);
+  }
   function runCeremony(st, i) {
     const coin = document.querySelector(`.fw-coin[data-step="${i}"]`);
     const msg = document.querySelector(`[data-msg="${i}"]`);
     if (!coin || coin.classList.contains('spin')) return;
     coin.classList.add('spin');
     ensureTeam();
+    sendTV('ceremony', { kind: st.kind });
     if (st.kind === 'toss') {
-      msg.textContent = 'Tossing…';
-      setTimeout(() => {
-        buildTarget();
-        msg.textContent = `${S.opp || 'Opponent'} bats first — you chase!`;
-        setTimeout(() => { coin.classList.remove('spin'); next(); }, 1200);
-      }, 1500);
+      if (msg) msg.textContent = 'Tossing…';
+      setTimeout(() => settleCeremony(st, coin, msg), 1500);
     } else {
-      msg.textContent = 'Kick off!';
-      setTimeout(() => { coin.classList.remove('spin'); next(); }, 1100);
+      settleCeremony(st, coin, msg);
     }
   }
-  function buildTarget() {
-    const overs = S.overs || 2;
-    const rate = S.difficulty === 'hard' ? 11 : S.difficulty === 'easy' ? 6 : 8.5;
-    const variance = (Math.random() * 2 - 1) * 1.5;
-    S.cpu = Math.max(8, Math.round(overs * (rate + variance)));
-    S.target = S.cpu + 1;
-    save();
+
+  // ── TV setup mirror ───────────────────────────────────────────────────────
+  // Relay each lobby step to the TV so the big screen mirrors setup (team / format
+  // / kickoff / ready). The ephemeral bat connection stays open through the lobby,
+  // and the server forwards bat→screen, so a plain game.send reaches screen.html,
+  // where game.js shows it via FrameworkTemplates.showTVSetup. See the plan.
+  let lastTV = null;
+  function snapshot() {
+    return {
+      title: (cfg.text && cfg.text.APP_TITLE) || 'Game',
+      team: S.team, teamShort: S.teamShort, teamColor: S.teamColor,
+      opp: S.opp, oppShort: S.oppShort, oppColor: S.oppColor,
+      format: S.format, formatName: S.formatName,
+      rounds: S.rounds, overs: S.overs, target: S.target, cpu: S.cpu,
+    };
+  }
+  function sendTV(phase, extra) {
+    lastTV = Object.assign({ phase, selection: snapshot() }, extra || {});
+    try { game && game.send && game.send('lobby_step', lastTV); } catch (_) {}
   }
 
   // ── wiring ─────────────────────────────────────────────────────────────
@@ -250,12 +265,35 @@ window.FrameworkFlow = (function () {
         S.room = code;
         try { sessionStorage.setItem(`${game._gid}_room`, code); } catch (_) {}
         next();
+        sendTV('connected');
       }, true);
     }
+
+    // If the TV reloads mid-setup it asks the phone to rebroadcast — re-push the
+    // last setup state so the mirror restores instead of going blank.
+    try {
+      window.FrameworkEvents.on('screen_rejoined', () => {
+        if (lastTV) { try { game.send('lobby_step', lastTV); } catch (_) {} }
+      });
+    } catch (_) {}
     const cbtn = document.getElementById('fw-connect');
     if (cbtn) cbtn.onclick = connect;
     if (codeInput) codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
-    if (window.__roomCode && codeInput) { codeInput.value = window.__roomCode; connect(); }
+
+    // Native auto-pair: the RN shell injects window.__roomCode once the TV creates a
+    // room. It can arrive before OR after this lobby loads, so handle both: read it
+    // now, and listen for the __roomCodeChanged event the shell fires on update.
+    let autoPaired = false;
+    function autoPair() {
+      if (autoPaired || !window.__roomCode || !codeInput) return;
+      // Only auto-pair while still on the pair step (don't yank a user mid-setup).
+      if (currentIdx() > 0) return;
+      autoPaired = true;
+      codeInput.value = window.__roomCode;
+      connect();
+    }
+    autoPair();
+    window.addEventListener('__roomCodeChanged', autoPair);
 
     // delegated: card picks, coin taps, launch
     host.addEventListener('click', (e) => {
@@ -283,6 +321,7 @@ window.FrameworkFlow = (function () {
     cfg = options.config || {};
     game = options.game;
     onLaunch = options.onLaunch || function () {};
+    onCeremony = typeof options.onCeremony === 'function' ? options.onCeremony : null;
     if (!game._gid) { const p = location.pathname.split('/'); const idx = p.indexOf('games'); game._gid = (idx !== -1 && p[idx + 1]) ? p[idx + 1] : 'fw'; }
     R = window.FrameworkRouter;
     flow = (cfg.flow && cfg.flow.length) ? cfg.flow : DEFAULT_FLOW;

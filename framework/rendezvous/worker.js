@@ -1,17 +1,19 @@
-// Generic rendezvous Worker — one per game, deployed to the game's own domain.
-// Pairs a TV browser with a phone via a short code, then redirects the TV to the
-// phone's LAN URL (the phone runs the embedded game server). After the redirect
-// the cloud is out of the loop — all gameplay is local phone↔TV over Wi-Fi.
+// Central rendezvous Worker — ONE deploy serves EVERY game (like cricswing.com).
+// Pairs a TV browser with a phone via a short 4-char code, then redirects the TV to
+// the phone's LAN URL (the phone runs the embedded game server, and that URL already
+// names the game: /games/<id>/screen.html). After the redirect the cloud is out of
+// the loop — all gameplay is local phone↔TV over Wi-Fi. Game-agnostic: the phone
+// supplies which game via its lanUrl, so the same site works for all of them.
 //
-// Per-game setup:
-//   1. Edit BRAND below (name shown on the landing page).
+// Setup (once, not per game):
+//   1. (Optional) edit BRAND below — the hub's landing name.
 //   2. Set your domain in wrangler.toml (routes + name).
 //   3. `wrangler deploy`
-//   4. In the game's lobby.html set RENDEZVOUS_URL to this domain.
+//   4. In each game's game-config.json set RENDEZVOUS_URL to this one domain.
 //
 // Uses a Durable Object for strong consistency (sub-second pairing).
 
-const BRAND = { name: 'Striker Duel', tagline: 'TV Game', emoji: '🎮' }; // EDIT per game
+const BRAND = { name: 'Game Hub', tagline: 'TV + Phone', emoji: '🎮' }; // the central hub brand
 
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1
 const TTL_MS = 5 * 60 * 1000;

@@ -1,2 +1,19 @@
 node_modules/
+**/node_modules/
 *.jpgbak
+
+# generated per-game apps (rebuild with `npm run publish <id>`)
+games/*/app/
+
+# optional bundles (rebuild with `npm run bundle <id>`)
+games/*/dist/
+
+# native build caches
+**/android/build/
+**/android/.gradle/
+**/android/app/build/
+**/android/app/.cxx/
+
+# misc
+.DS_Store
+*.log

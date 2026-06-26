@@ -10,13 +10,13 @@ class RoomManager {
   }
 
   /**
-   * Generates a unique 6-character room code.
+   * Generates a unique 4-character room code (matches the rendezvous pairing site).
    */
   generateCode() {
     const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code;
     do {
-      code = Array.from({ length: 6 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
+      code = Array.from({ length: 4 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('');
     } while (this.rooms.has(code));
     return code;
   }

@@ -3,7 +3,7 @@
 /**
  * FrameworkFields — sport "field" overlays drawn on top of the FrameworkArena stadium.
  *
- * Each entry is a pure draw fn (ctx, W, H) positioned with ShotVisuals.perspective
+ * Each entry is a pure draw fn (ctx, W, H) positioned with Projectile.perspective
  * so it lines up with the pitch/boundary. The arena draws the chosen one in its
  * ground layer: FrameworkArena.install({ field: 'goal' }). No field = bare stadium.
  *
@@ -15,7 +15,7 @@
  * window.FrameworkFields.
  */
 window.FrameworkFields = (function () {
-  function P(W, H) { return window.ShotVisuals.perspective(W, H); }
+  function P(W, H) { return (window.Projectile || window.ShotVisuals).perspective(W, H); }
   function accent() {
     try { return getComputedStyle(document.documentElement).getPropertyValue('--game-accent').trim() || '#ffffff'; }
     catch (_) { return '#ffffff'; }

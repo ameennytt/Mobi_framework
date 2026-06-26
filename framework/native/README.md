@@ -36,9 +36,9 @@ a `sync-native` step). Keep `framework/core/server.js` paths intact: it resolves
 
 ## Pairing: dev vs prod
 - **Dev**: run the framework server (`npm start`), open the game in two browser
-  tabs — type the 6-char code. No native build needed.
-- **Prod**: deploy the game's rendezvous worker (see `framework/rendezvous/`),
-  set `RENDEZVOUS_URL` in the game's `lobby.html`. The TV opens the game's domain,
+  tabs — type the 4-char code. No native build needed.
+- **Prod**: deploy the ONE central rendezvous worker (see `framework/rendezvous/`),
+  set `RENDEZVOUS_URL` in the game's `game-config.json`. The TV opens the hub domain,
   the phone enters the short code, the TV redirects to the phone's LAN server.
 
 The bridge flow: server boots → `server-ready`; a TV pairs → `room-created` (RN

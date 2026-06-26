@@ -42,6 +42,8 @@ class FrameworkGameClass {
     this.code = '';
     this.paired = false;
     this._cfg = {};
+    this.stageName = null;      // current lifecycle stage (see STAGES)
+    this._lifecycleWired = false;
   }
 
   /** Derive the game id from the URL (/games/<id>/...) unless explicitly given. */
@@ -54,6 +56,43 @@ class FrameworkGameClass {
 
   _storageKey() {
     return `${this.gameId || 'fw'}_tv_room`;
+  }
+
+  /**
+   * Load a game's code, simple OR modular, from its `game-config.json`.
+   *
+   * Small games keep one `gameplay.js`. Larger (CricSwing-scale) games split into
+   * a `gameplay/` folder (+ optional `extensions/`) and list the load order in
+   * config under `code: [...]` — paths relative to the game dir, loaded in order,
+   * the last one being the entry that defines `window.Gameplay`. With no `code`
+   * field this falls back to `gameplay.js`, so existing games keep working.
+   *
+   * Call this once before init() in screen.html (the TV runs the rules):
+   *   await FrameworkGame.loadGameplay();
+   *
+   * @param {string} [explicitId] override the URL-derived game id
+   * @returns {Promise<void>}
+   */
+  async loadGameplay(explicitId) {
+    const id = this._resolveGameId(explicitId) || this.gameId;
+    let list = ['gameplay.js'];
+    try {
+      const cfg = await fetch(`/games/${id}/game-config.json`).then(r => r.json());
+      if (Array.isArray(cfg.code) && cfg.code.length) list = cfg.code;
+    } catch (_) {}
+    for (const rel of list) {
+      await this._injectScript(`/games/${id}/${rel}`);
+    }
+  }
+
+  _injectScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Failed to load ' + src));
+      document.head.appendChild(s);
+    });
   }
 
   /**
@@ -93,6 +132,10 @@ class FrameworkGameClass {
       await this._initBat(cfg, autoOverlay);
     }
 
+    // Lifecycle: wire framework-owned transitions, then enter 'boot'.
+    this._wireLifecycle();
+    this.stage('boot');
+
     return this._api();
   }
 
@@ -102,6 +145,15 @@ class FrameworkGameClass {
       window.FrameworkRenderer.init(cfg.canvas, cfg.draw);
       window.FrameworkRenderer.start();
     }
+
+    // TV setup mirror: the phone relays `lobby_step` while the player picks team/
+    // format/kicks off. Wired here so every game inherits it (no per-game code).
+    // The overlay auto-hides when a game HUD renders (FrameworkTemplates).
+    window.FrameworkEvents.on('lobby_step', (d) => {
+      if (window.FrameworkTemplates && window.FrameworkTemplates.showTVSetup) {
+        window.FrameworkTemplates.showTVSetup(d);
+      }
+    });
 
     window.FrameworkEvents.on('room_created', (d) => {
       this.code = d.code;
@@ -168,6 +220,32 @@ class FrameworkGameClass {
     window.FrameworkEvents.connect(this.code, 'bat', ephemeral);
   }
 
+  /**
+   * Standard game lifecycle stage. Optional — games name their phases from this set
+   * instead of inventing their own. The framework auto-fires the ones it owns
+   * (boot on init; paused/resume from the RN app background/foreground; destroy on
+   * unload); the game drives the rest with `game.stage('match')` etc. Each call sets
+   * the current stage, invokes `window.Gameplay[name](data)` if the game defines it,
+   * and dispatches a `framework:stage` CustomEvent. Unknown names are ignored.
+   */
+  stage(name, data) {
+    if (!FrameworkGameClass.STAGES.has(name)) { console.warn('[FrameworkGame] unknown stage:', name); return; }
+    this.stageName = name;
+    try { if (window.Gameplay && typeof window.Gameplay[name] === 'function') window.Gameplay[name](data); }
+    catch (e) { console.error('[FrameworkGame] stage handler error (' + name + '):', e); }
+    try { window.dispatchEvent(new CustomEvent('framework:stage', { detail: { name, data } })); } catch (_) {}
+  }
+
+  /** Wire the framework-owned stage transitions once. */
+  _wireLifecycle() {
+    if (this._lifecycleWired) return;
+    this._lifecycleWired = true;
+    // The RN shell dispatches these into the WebView on app background/foreground.
+    window.addEventListener('__appBackground', () => this.stage('paused'));
+    window.addEventListener('__appForeground', () => this.stage('resume'));
+    window.addEventListener('pagehide', () => this.stage('destroy'));
+  }
+
   _api() {
     return {
       send: (type, payload) => window.FrameworkEvents.send(type, payload),
@@ -176,6 +254,8 @@ class FrameworkGameClass {
       connect: (code, onPaired, ephemeral) => this.connect(code, onPaired, ephemeral),
       getCode: () => this.code,
       isPaired: () => this.paired,
+      stage: (name, data) => this.stage(name, data),
+      getStage: () => this.stageName,
       asset: (slot) => window.FrameworkAssets ? window.FrameworkAssets.resolve(slot) : '',
       text: (slot) => window.FrameworkAssets ? window.FrameworkAssets.text(slot) : '',
       // TV result screen (template added in framework/ui/templates.js).
@@ -189,8 +269,38 @@ class FrameworkGameClass {
   }
 }
 
+// Standard lifecycle stages (optional, opt-in per game). boot/paused/resume/destroy
+// are auto-fired by the framework; the rest the game calls via game.stage(name).
+FrameworkGameClass.STAGES = new Set([
+  'boot', 'loading', 'menu', 'calibration', 'match', 'paused', 'result', 'resume', 'destroy',
+]);
+
 if (typeof window !== 'undefined') {
   window.FrameworkGame = new FrameworkGameClass();
+
+  // Namespaced view of the framework globals — window.Framework.Game, .Arena, etc.
+  // Lazy getters so script load order doesn't matter; the flat globals
+  // (window.FrameworkGame, window.FrameworkArena, …) remain as aliases. New code can
+  // prefer Framework.*; existing code keeps working unchanged.
+  window.Framework = window.Framework || {};
+  Object.defineProperties(window.Framework, {
+    Game:      { configurable: true, get: () => window.FrameworkGame },
+    Flow:      { configurable: true, get: () => window.FrameworkFlow },
+    Events:    { configurable: true, get: () => window.FrameworkEvents },
+    Router:    { configurable: true, get: () => window.FrameworkRouter },
+    Storage:   { configurable: true, get: () => window.FrameworkStorage },
+    Theme:     { configurable: true, get: () => window.FrameworkTheme },
+    Assets:    { configurable: true, get: () => window.FrameworkAssets },
+    UI:        { configurable: true, get: () => window.FrameworkUI },
+    Templates: { configurable: true, get: () => window.FrameworkTemplates },
+    Renderer:  { configurable: true, get: () => window.FrameworkRenderer },
+    Layers:    { configurable: true, get: () => window.FrameworkLayers },
+    Perf:      { configurable: true, get: () => window.TvPerfManager },
+    Arena:     { configurable: true, get: () => window.FrameworkArena },
+    Fields:    { configurable: true, get: () => window.FrameworkFields },
+    Motion:    { configurable: true, get: () => window.FrameworkMotion },
+    Projectile:{ configurable: true, get: () => window.Projectile || window.ShotVisuals },
+  });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

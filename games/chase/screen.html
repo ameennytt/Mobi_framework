@@ -20,13 +20,14 @@
   <script src="/framework/renderer/tv-perf-manager.js"></script>
   <script src="/framework/renderer/layer-manager.js"></script>
   <script src="/framework/renderer/renderer.js"></script>
-  <script src="/framework/renderer/shot-visuals.js"></script>
+  <script src="/framework/renderer/projectile.js"></script>
   <script src="/framework/renderer/arena-scene.js"></script>
   <script src="/framework/ui/components.js"></script>
   <script src="/framework/ui/templates.js"></script>
   <script src="/framework/core/game.js"></script>
 
-  <!-- Your game (the only file with gameplay code) -->
+  <!-- Your game: chase-shot.js = cricket math (moved out of core), then gameplay -->
+  <script src="/games/chase/chase-shot.js"></script>
   <script src="/games/chase/gameplay.js"></script>
 
   <script>
@@ -42,8 +43,9 @@
         draw: window.Gameplay.draw,          // object layer = your ball/action
         onPaired: () => {
           window.Gameplay.setPaired(true);
-          // Free-play until the phone sends a real `start` with target/overs.
-          window.Gameplay.start({ overs: 2, target: 0, difficulty: 'medium' });
+          // Do NOT start here — onPaired fires on the lobby's ephemeral pairing too,
+          // which would kill the TV setup mirror. The controller drives the real
+          // start via its `start` message (see handlers).
         },
         onUnpaired: () => window.Gameplay.setPaired(false),
         handlers: window.Gameplay.handlers,
