@@ -18,7 +18,7 @@
 /* brand / welcome */
 .fw-brand { text-align: center; margin-top: 14px; }
 .fw-brand img { width: 88px; height: 88px; object-fit: contain; }
-.fw-brand h1 { font-size: 26px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
+.fw-brand h1 { font-size: 30px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
 .fw-brand p { font-size: 13px; color: var(--game-muted); margin: 0; }
 /* hero entrance on the pair screen (CricSwing logoHeroIn) */
 .fw-hero { animation: fwLogoHeroIn 0.55s var(--fw-ease-out, ease-out) both; }
@@ -60,8 +60,16 @@
   padding: 12px; text-transform: uppercase; outline: none;
 }
 .fw-full { width: 100%; }
-.btn.fw-full { margin-top: 16px; font-size: 17px; padding: 15px; }
-.btn.fw-big { font-size: 19px; padding: 18px; }
+/* connect button — CricSwing #start-btn: 15px / 800 / lime */
+.btn.fw-full { margin-top: 16px; font-size: 15px; padding: 15px; }
+/* launch button — CricSwing .big-btn: green gradient, white, 20px, radius 16, l-spacing 1 */
+.btn.fw-big {
+  font-size: 20px; padding: 20px; font-weight: 800; letter-spacing: 1px;
+  border-radius: 16px; color: #fff;
+  background: linear-gradient(135deg, #1a5a2a, #2a8a3a);
+  box-shadow: var(--fw-shadow-soft);
+}
+.btn.fw-big:hover { box-shadow: var(--fw-shadow-card); }
 .fw-status { text-align: center; font-size: 13px; color: var(--game-muted); margin-top: 14px; min-height: 16px; }
 
 /* flow header */
@@ -79,8 +87,8 @@
   position: relative;
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  border: 1.5px solid var(--fw-line, rgba(255, 255, 255, 0.1));
-  border-radius: var(--fw-r-4, 18px); padding: 16px 14px;
+  border: 1px solid var(--fw-line, rgba(255, 255, 255, 0.1));
+  border-radius: var(--fw-r-4, 18px); padding: 12px 14px;
   color: var(--game-text); text-align: left; cursor: pointer;
   font-family: inherit; box-shadow: var(--fw-shadow-soft, 0 4px 14px rgba(0,0,0,.45));
   transition: transform var(--fw-d-fast, .14s) var(--fw-ease-out, ease),
@@ -109,10 +117,65 @@
 }
 .fw-toss-msg { font-size: 16px; font-weight: 700; color: var(--game-text); text-align: center; }
 
+/* toss result reveal (optional, settles under the coin) */
+.fw-toss-result { font-size: 15px; font-weight: 800; color: var(--game-accent); text-align: center; min-height: 18px; }
+
 /* target */
 .fw-target { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 22px; text-align: center; }
 .fw-target-row { font-size: 14px; color: var(--game-muted); }
-.fw-target-row b { color: var(--game-text); font-size: 18px; }
+.fw-target-row b { color: var(--game-text); font-size: 18px; font-family: var(--game-mono, monospace); }
 .fw-target-big { font-size: 18px; color: var(--game-muted); margin: 14px 0 4px; }
 .fw-target-big b { display: block; font-size: 64px; font-weight: 900; color: var(--game-accent); line-height: 1; }
 .fw-target-sub { font-size: 14px; color: var(--game-muted); }
+
+/* series badge (optional, "Match 2 of 3") */
+.fw-series-badge {
+  font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--game-primary); background: var(--game-gold, #F3D86B);
+  border-radius: 99px; padding: 4px 12px; margin-bottom: 8px;
+}
+
+/* ── consent / intro onboarding (optional) ─────────────────────────────────── */
+.fw-intro { text-align: center; }
+.fw-intro-card {
+  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px; padding: 30px 22px; max-width: 480px; margin: 0 auto; width: 100%;
+  animation: fwBannerIn 0.4s var(--fw-ease-out, ease) both;
+}
+.fw-intro-icon { font-size: 52px; line-height: 1; margin-bottom: 12px; }
+.fw-intro-title { font-size: 22px; font-weight: 900; color: var(--game-text); margin-bottom: 8px; }
+.fw-intro-text { font-size: 14px; color: var(--game-muted); line-height: 1.55; }
+.fw-intro-dots { display: flex; justify-content: center; margin-top: 18px; }
+.fw-intro-actions { display: flex; gap: 12px; max-width: 480px; margin: 0 auto; width: 100%; }
+
+/* ── menu hub secondary entries (optional) ─────────────────────────────────── */
+.fw-menu-entries { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.fw-menu-entry {
+  display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+  background: rgba(255, 255, 255, 0.04); border: 1.5px solid var(--fw-line, rgba(255,255,255,0.1));
+  border-radius: var(--fw-r-3, 14px); padding: 14px 16px; color: var(--game-text); font-family: inherit;
+}
+.fw-menu-entry:hover { border-color: var(--game-accent); }
+.fw-menu-entry-icon { font-size: 22px; }
+.fw-menu-entry-label { flex: 1; font-size: 15px; font-weight: 800; }
+.fw-menu-entry-chevron { color: var(--game-muted); font-size: 20px; }
+
+/* ── editable roster / batting order (optional) ────────────────────────────── */
+.fw-roster { margin-top: 14px; }
+.fw-roster-card {
+  background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px; padding: 14px;
+}
+.fw-roster-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--game-muted); margin-bottom: 10px; }
+.fw-roster-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.fw-roster-num {
+  width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; font-size: 12px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(154, 223, 107, 0.15); color: var(--game-accent);
+}
+.fw-roster-input {
+  flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--fw-line, rgba(255,255,255,0.12));
+  border-radius: 8px; color: var(--game-text); font-family: inherit; font-size: 14px; font-weight: 700;
+  padding: 8px 10px; outline: none;
+}
+.fw-roster-input:focus { border-color: var(--game-accent); }

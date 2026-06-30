@@ -5,8 +5,12 @@
  * Scaffold a new game by copying a template.
  *
  * Usage:
- *   npm run new-game <id>                 # copy the minimal starter shell
- *   npm run new-game <id> --from chase    # copy the full CricSwing-style flow
+ *   npm run new-game <id>                 # minimal preset: buttons + pair→pick→play
+ *   npm run new-game <id> --from chase    # broadcast preset: full CricSwing-style screens
+ *
+ * Presets (templates) = how many optional screens are on (see DOC/SCREENS.md):
+ *   starter = minimal (buttons)   chase = broadcast (onboarding/series/toss/intro/over-summary)
+ *   versus  = head-to-head (football)
  *
  * Rewrites paths, storage keys, and gameId so the copy runs immediately.
  */
@@ -51,8 +55,9 @@ if (fromIdx !== -1) {
   bad(template);
 } else {
   template = 'starter';
-  console.warn('NOTE: no --from given → using the blank "starter" shell.');
-  console.warn('      For football use  --from versus   ·  for cricket use  --from chase');
+  console.warn('NOTE: no --from given → using the minimal "starter" preset (buttons).');
+  console.warn('      Broadcast/full screens: --from chase   ·   head-to-head: --from versus');
+  console.warn('      Optional screens + config flags: see DOC/SCREENS.md');
 }
 
 const root = path.join(__dirname, '..');

@@ -29,6 +29,7 @@
  */
 window.FrameworkFlow = (function () {
   let cfg = null, game = null, R = null, flow = null, onLaunch = null, onCeremony = null;
+  let introIdx = 0;
   const S = {};
   const ROOT_ID = 'fw-flow-root';
   const storeKey = () => `${(game && game._gid) || 'fw'}_lobby_partial`;
@@ -129,6 +130,29 @@ window.FrameworkFlow = (function () {
           </div>
           <div class="fw-spacer"></div></div>`;
       }
+      // consent — one-time data-consent gate. Screen is empty; renderStep shows a modal.
+      if (st.type === 'consent') {
+        return `<div class="fw-screen" id="${id}"></div>`;
+      }
+      // intro — N-slide onboarding carousel. Slides from st.slides or ui.onboarding.intro.
+      if (st.type === 'intro') {
+        return `<div class="fw-screen fw-intro" id="${id}">
+          <div class="fw-spacer"></div>
+          <div class="fw-intro-card" data-intro="${i}"></div>
+          <div class="fw-intro-dots" data-introdots="${i}"></div>
+          <div class="fw-spacer"></div>
+          <div class="fw-intro-actions">
+            <button class="btn btn-secondary fw-intro-skip" data-introskip="${i}">Skip</button>
+            <button class="btn btn-primary fw-intro-next" data-intronext="${i}">Next</button>
+          </div>
+          <div class="fw-spacer"></div></div>`;
+      }
+      // menu — mode hub: mode cards + optional About/Help/Settings entries.
+      if (st.type === 'menu') {
+        return `<div class="fw-screen" id="${id}">
+          <div class="fw-grid-host" data-step="${i}"></div>
+          <div class="fw-menu-entries" data-entries="${i}"></div></div>`;
+      }
       if (st.type === 'choice') {
         return `<div class="fw-screen" id="${id}"><div class="fw-grid-host" data-step="${i}"></div></div>`;
       }
@@ -137,12 +161,16 @@ window.FrameworkFlow = (function () {
         return `<div class="fw-screen" id="${id}">
           ${headHtml(st.kind === 'kickoff' ? 'Kick off' : 'Flip the coin')}
           <div class="fw-toss"><div class="fw-coin" data-step="${i}">${emoji}</div>
-          <div class="fw-toss-msg" data-msg="${i}">Tap to start</div></div></div>`;
+          <div class="fw-toss-msg" data-msg="${i}">Tap to start</div>
+          <div class="fw-toss-result" data-result="${i}"></div></div></div>`;
       }
       // target / briefing
       return `<div class="fw-screen" id="${id}">
-        <div class="fw-flowhead"><h1 class="fw-h1">${st.type === 'target' ? 'Your chase' : 'Match ready'}</h1></div>
+        <div class="fw-flowhead">
+          <span class="fw-series-badge" data-series="${i}" style="display:none;"></span>
+          <h1 class="fw-h1">${st.type === 'target' ? 'Your chase' : 'Match ready'}</h1></div>
         <div class="fw-target" data-sum="${i}"></div>
+        <div class="fw-roster" data-roster="${i}"></div>
         <div class="fw-spacer"></div>
         <button class="btn btn-primary fw-full fw-big" data-launch="${i}">PLAY NOW</button>
         <div class="fw-spacer"></div></div>`;
@@ -153,6 +181,12 @@ window.FrameworkFlow = (function () {
 
   // ── navigation ─────────────────────────────────────────────────────────
   function passes(st) { return !st.when || S[st.when.key] === st.when.equals; }
+  // One-time screens (consent/intro) skip once the user has seen them, unless once:false.
+  function skipSeen(st) {
+    if (st.type === 'consent' && st.once !== false) return consentSeen();
+    if (st.type === 'intro' && st.once !== false) return introSeen();
+    return false;
+  }
   function currentIdx() {
     const a = document.querySelector('.fw-screen.active');
     return a ? flow.findIndex(( _, i) => idFor(i) === a.id) : -1;
@@ -160,53 +194,193 @@ window.FrameworkFlow = (function () {
   function go(i) { renderStep(flow[i], i); R.show(idFor(i)); }
   function next() {
     let i = currentIdx() + 1;
-    while (i < flow.length && !passes(flow[i])) i++;
+    while (i < flow.length && (!passes(flow[i]) || skipSeen(flow[i]))) i++;
     if (i < flow.length) go(i);
   }
 
   // ── per-step render-on-enter (choice grids, ceremony reset, summaries) ─────
   function renderStep(st, i) {
-    if (st.type === 'choice') {
-      const opts = resolveSource(st.source);
-      const cls = st.source === 'modes' ? 'fw-mode' : '';
+    if (st.type === 'choice' || st.type === 'menu') {
+      const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
+      const opts = resolveSource(src);
+      const cls = src === 'modes' ? 'fw-mode' : '';
       const host = document.querySelector(`.fw-grid-host[data-step="${i}"]`);
-      if (!host) return;
-      // Tabbed picker: `tabs: '<field>'` groups options by that field (e.g. region) and
-      // shows pill tabs above the grid. Generic — works for any sport's groups/brackets.
-      const U = window.FrameworkUI;
-      if (st.tabs && U && U.tabs) {
-        const byG = {}, groups = [];
-        opts.forEach(o => { const g = (o._raw && o._raw[st.tabs]) || 'All'; if (!byG[g]) { byG[g] = []; groups.push(g); } byG[g].push(o); });
-        let active = 0;
-        const renderG = () => {
-          host.innerHTML = headHtml(st.title, i, flow.length) + U.tabs(groups, active) + gridHtml(byG[groups[active]], cls);
-          host.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => { active = +b.getAttribute('data-tab'); renderG(); }; });
-        };
-        renderG();
-      } else {
-        host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
+      if (host) {
+        // Tabbed picker: `tabs: '<field>'` groups options by that field (e.g. region)
+        // and shows pill tabs above the grid. Generic — works for any sport's brackets.
+        const U = window.FrameworkUI;
+        if (st.tabs && U && U.tabs) {
+          const byG = {}, groups = [];
+          opts.forEach(o => { const g = (o._raw && o._raw[st.tabs]) || 'All'; if (!byG[g]) { byG[g] = []; groups.push(g); } byG[g].push(o); });
+          let active = 0;
+          const renderG = () => {
+            host.innerHTML = headHtml(st.title, i, flow.length) + U.tabs(groups, active) + gridHtml(byG[groups[active]], cls);
+            host.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => { active = +b.getAttribute('data-tab'); renderG(); }; });
+          };
+          renderG();
+        } else {
+          host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
+        }
       }
+      if (st.type === 'menu') renderMenuEntries(st, i);
+    } else if (st.type === 'consent') {
+      renderConsent(st, i);
+    } else if (st.type === 'intro') {
+      introIdx = 0; renderIntro(st, i);
     } else if (st.type === 'ceremony') {
       const msg = document.querySelector(`[data-msg="${i}"]`);
       if (msg) msg.textContent = st.kind === 'kickoff' ? 'Tap the ball to kick off' : 'Tap the coin';
+      const res = document.querySelector(`[data-result="${i}"]`);
+      if (res) res.textContent = '';
     } else if (st.type === 'target' || st.type === 'briefing') {
       renderSummary(st, i);
     }
   }
 
+  // ── consent / intro / menu helpers (all optional) ──────────────────────────
+  function consentSeen() { try { return !!(window.FrameworkStorage && window.FrameworkStorage.load(`${game._gid}_consent`)); } catch (_) { return false; } }
+  function renderConsent(st, i) {
+    const ui = (cfg.ui && cfg.ui.onboarding) || {};
+    const c = (typeof st.consent === 'object' ? st.consent : ui.consent) || {};
+    if (!window.FrameworkUI || !window.FrameworkUI.showConfirmDialog) { next(); return; }
+    window.FrameworkUI.showConfirmDialog({
+      title: c.title || 'Help improve the game?',
+      body: c.body || 'Allow anonymous gameplay data to be collected (no name, no email).',
+      confirmText: c.acceptText || 'Allow',
+      cancelText: c.declineText || 'No thanks',
+      onConfirm: () => finishConsent(true),
+      onCancel: () => finishConsent(false),
+    });
+  }
+  function finishConsent(allowed) {
+    try { window.FrameworkStorage && window.FrameworkStorage.save(`${game._gid}_consent`, allowed ? '1' : '0'); } catch (_) {}
+    S._consent = allowed; next();
+  }
+
+  function introSeen() { try { return !!(window.FrameworkStorage && window.FrameworkStorage.load(`${game._gid}_intro_seen`)); } catch (_) { return false; } }
+  function introSlides(st) { return (st.slides && st.slides.length) ? st.slides : (((cfg.ui && cfg.ui.onboarding) || {}).intro || []); }
+  function renderIntro(st, i) {
+    const slides = introSlides(st);
+    if (!slides.length) { next(); return; }
+    const card = document.querySelector(`[data-intro="${i}"]`);
+    const dotsHost = document.querySelector(`[data-introdots="${i}"]`);
+    const nextBtn = document.querySelector(`[data-intronext="${i}"]`);
+    const sl = slides[Math.min(introIdx, slides.length - 1)];
+    if (card) card.innerHTML = `${sl.icon ? `<div class="fw-intro-icon">${sl.icon}</div>` : ''}
+      <h2 class="fw-intro-title">${esc(sl.title || '')}</h2>
+      <p class="fw-intro-text">${esc(sl.text || '')}</p>`;
+    if (dotsHost && window.FrameworkUI && window.FrameworkUI.dots) dotsHost.innerHTML = window.FrameworkUI.dots(slides.length, introIdx);
+    if (nextBtn) nextBtn.textContent = (introIdx >= slides.length - 1) ? 'Start' : 'Next';
+  }
+  function finishIntro() {
+    try { window.FrameworkStorage && window.FrameworkStorage.save(`${game._gid}_intro_seen`, '1'); } catch (_) {}
+    next();
+  }
+
+  function renderMenuEntries(st, i) {
+    const host = document.querySelector(`[data-entries="${i}"]`);
+    if (!host) return;
+    const entries = st.entries || [];
+    host.innerHTML = entries.map((e, j) =>
+      `<button class="fw-menu-entry" data-entry="${j}">
+        ${e.icon ? `<span class="fw-menu-entry-icon">${e.icon}</span>` : ''}
+        <span class="fw-menu-entry-label">${esc(e.label || '')}</span>
+        <span class="fw-menu-entry-chevron">›</span></button>`).join('');
+  }
+  function openInfoModal(which) {
+    const ui = cfg.ui || {};
+    const info = (which === 'help') ? ui.help : ui.about;
+    if (!info || !window.FrameworkUI) return;
+    window.FrameworkUI.showConfirmDialog({
+      title: info.title || (which === 'help' ? 'How to Play' : 'About'),
+      body: Array.isArray(info.body) ? info.body.map(p => `<p style="margin:0 0 10px;">${esc(p)}</p>`).join('') : esc(info.body || ''),
+      confirmText: info.closeText || 'Close',
+    });
+  }
+  function openSettings() {
+    const items = (cfg.ui && cfg.ui.settings) || [];
+    if (!window.FrameworkTemplates || !window.FrameworkTemplates.renderMobileSettings) return;
+    window.FrameworkTemplates.renderMobileSettings({ title: 'Settings', items });
+  }
+  // A menu entry is a string action ('about'|'help'|'settings') or { action, branch }.
+  // A `branch` entry behaves like picking that mode (jumps into the flow).
+  function handleMenuEntry(ent) {
+    const action = ent.action || ent;
+    if (action === 'about') return openInfoModal('about');
+    if (action === 'help') return openInfoModal('help');
+    if (action === 'settings') return openSettings();
+    if (ent.branch) { S.branch = ent.branch; if (ent.mode) S.mode = ent.mode; save(); sendTV('pick'); next(); }
+  }
+
+  // Optional series/tournament: start it when a series-type format is picked, else clear.
+  function applySeriesFromFormat(opt) {
+    if (!window.FrameworkSeries) return;
+    window.FrameworkSeries.init(game._gid);
+    const raw = opt._raw || opt;
+    const type = raw.seriesType || (cfg.series && cfg.series.type);
+    if (type) {
+      window.FrameworkSeries.start({
+        type,
+        bestOf: raw.bestOf || (cfg.series && cfg.series.bestOf) || 3,
+        total: raw.total || (cfg.series && cfg.series.total),
+      });
+    } else {
+      window.FrameworkSeries.clear();
+    }
+  }
+
   function renderSummary(st, i) {
     sendTV('ready');
+    // Optional series/tournament badge ("Match 2 of 3").
+    const badge = document.querySelector(`[data-series="${i}"]`);
+    if (badge && window.FrameworkSeries) {
+      const sd = window.FrameworkSeries.standings();
+      if (sd && !sd.done) { badge.textContent = sd.label; badge.style.display = 'inline-block'; }
+      else { badge.style.display = 'none'; }
+    }
     const host = document.querySelector(`[data-sum="${i}"]`);
+    if (host) {
+      if (S.target) {
+        host.innerHTML = `<div class="fw-target-row">${esc(S.opp || 'Opponent')} set <b id="fw-cpu-num">0</b></div>
+          <div class="fw-target-big">Target <b>${S.target}</b></div>
+          <div class="fw-target-sub">in ${S.overs || 0} over${(S.overs || 0) > 1 ? 's' : ''}</div>`;
+        countUp(document.getElementById('fw-cpu-num'), S.cpu || 0);   // animated reveal
+      } else {
+        const len = S.rounds ? `${S.rounds} rounds` : (S.overs ? `${S.overs} overs` : 'Match');
+        host.innerHTML = `<div class="fw-target-big"><b>${esc(S.team || 'You')}</b></div>
+          <div class="fw-target-row">vs ${esc(S.opp || 'Opponent')}</div>
+          <div class="fw-target-sub">${esc(len)}</div>`;
+      }
+    }
+    // Optional editable roster / batting order (cfg.roster or S.roster).
+    renderRoster(i);
+  }
+
+  // Animate a number from 0 → value (broadcast count-up). Pure setTimeout, no Date.
+  function countUp(el, value) {
+    if (!el) return;
+    const target = Number(value) || 0;
+    if (target <= 0) { el.textContent = '0'; return; }
+    let n = 0; const steps = 22; const inc = Math.max(1, Math.ceil(target / steps));
+    const tick = () => { n = Math.min(target, n + inc); el.textContent = n; if (n < target) setTimeout(tick, 32); };
+    tick();
+  }
+
+  function rosterNames() {
+    if (Array.isArray(S.roster) && S.roster.length) return S.roster.slice();
+    if (Array.isArray(cfg.roster) && cfg.roster.length) return cfg.roster.slice();
+    return null;
+  }
+  function renderRoster(i) {
+    const host = document.querySelector(`[data-roster="${i}"]`);
     if (!host) return;
-    if (S.target) {
-      host.innerHTML = `<div class="fw-target-row">${esc(S.opp || 'Opponent')} set <b>${S.cpu}</b></div>
-        <div class="fw-target-big">Target <b>${S.target}</b></div>
-        <div class="fw-target-sub">in ${S.overs || 0} over${(S.overs || 0) > 1 ? 's' : ''}</div>`;
-    } else {
-      const len = S.rounds ? `${S.rounds} rounds` : (S.overs ? `${S.overs} overs` : 'Match');
-      host.innerHTML = `<div class="fw-target-big"><b>${esc(S.team || 'You')}</b></div>
-        <div class="fw-target-row">vs ${esc(S.opp || 'Opponent')}</div>
-        <div class="fw-target-sub">${esc(len)}</div>`;
+    const names = rosterNames();
+    if (!names) { host.innerHTML = ''; return; }
+    if (window.FrameworkTemplates && window.FrameworkTemplates.renderMobileTeamEdit) {
+      window.FrameworkTemplates.renderMobileTeamEdit(host, {
+        title: cfg.rosterTitle || 'Your line-up', names,
+        onChange: (list) => { S.roster = list; save(); },
+      });
     }
   }
 
@@ -217,7 +391,7 @@ window.FrameworkFlow = (function () {
     if (key === 'mode') { S.mode = opt.id; }
     else if (key === 'team') { S.team = opt.title; S.teamShort = opt.short || String(opt.id).slice(0, 3).toUpperCase(); S.teamColor = opt.color; pickOpp(); }
     else if (key === 'league') { S.league = opt.title; S._leagueObj = opt._raw; }
-    else if (key === 'format') { S.format = opt.id; S.formatName = opt.sub || opt.title; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; }
+    else if (key === 'format') { S.format = opt.id; S.formatName = opt.sub || opt.title; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; applySeriesFromFormat(opt); }
     else { S[key] = opt.id; }
     save();
     sendTV('pick');
@@ -345,24 +519,57 @@ window.FrameworkFlow = (function () {
     autoPair();
     window.addEventListener('__roomCodeChanged', autoPair);
 
-    // delegated: card picks, coin taps, launch
+    // delegated: card picks, coin taps, intro nav, menu entries, launch
     host.addEventListener('click', (e) => {
       const card = e.target.closest('.fw-card');
       if (card) {
         const i = currentIdx(); const st = flow[i];
-        const opt = resolveSource(st.source).find(o => String(o.id) === card.getAttribute('data-id'));
+        const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
+        const opt = resolveSource(src).find(o => String(o.id) === card.getAttribute('data-id'));
         if (opt) { applyPick(st, opt); next(); }
+        return;
+      }
+      // intro carousel: Next advances the slide (or finishes on the last), Skip ends it.
+      const inext = e.target.closest('[data-intronext]');
+      if (inext) {
+        const i = currentIdx(); const slides = introSlides(flow[i]);
+        if (introIdx >= slides.length - 1) finishIntro();
+        else { introIdx++; renderIntro(flow[i], i); }
+        return;
+      }
+      const iskip = e.target.closest('[data-introskip]');
+      if (iskip) { finishIntro(); return; }
+      // menu secondary entries (About / Help / Settings / custom).
+      const entry = e.target.closest('[data-entry]');
+      if (entry) {
+        const i = currentIdx(); const st = flow[i];
+        const ent = (st.entries || [])[+entry.getAttribute('data-entry')];
+        if (ent) handleMenuEntry(ent);
         return;
       }
       const coin = e.target.closest('.fw-coin');
       if (coin) { runCeremony(flow[currentIdx()], currentIdx()); return; }
       const launch = e.target.closest('[data-launch]');
-      if (launch) { ensureTeam(); save(); onLaunch(Object.assign({}, S)); }
+      if (launch) {
+        ensureTeam(); save();
+        // New match → drop any stale resume snapshot so the TV starts fresh (not resume).
+        try { window.FrameworkStorage && window.FrameworkStorage.remove('framework_game_state'); } catch (_) {}
+        onLaunch(Object.assign({}, S));
+      }
     });
   }
 
   // ── persistence ───────────────────────────────────────────────────────
-  function save() { try { window.FrameworkStorage && window.FrameworkStorage.save(storeKey(), JSON.stringify(S)); } catch (_) {} }
+  // Mirror the lobby's partial picks to localStorage too, so an app-kill mid-setup
+  // doesn't lose them (monitor the per-game key).
+  function save() {
+    try {
+      if (window.FrameworkStorage) {
+        window.FrameworkStorage.monitor(storeKey());
+        window.FrameworkStorage.save(storeKey(), JSON.stringify(S));
+      }
+    } catch (_) {}
+  }
   function hydrate() {
     try { const raw = window.FrameworkStorage && window.FrameworkStorage.load(storeKey()); if (raw) Object.assign(S, JSON.parse(raw)); } catch (_) {}
   }

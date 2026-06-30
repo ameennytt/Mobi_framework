@@ -32,12 +32,15 @@ All examples are real (verified against source).
 | `framework/ui/templates.js` | `FrameworkTemplates` | TV scorebar/result/loading/banner, mobile shells |
 | `framework/ui/components.js` | `FrameworkUI` | Score card, dialog, toast, pairing overlay |
 | `framework/flow/lobby-flow.js` | `FrameworkFlow` | The whole config-driven lobby flow |
+| `framework/flow/series.js` | `FrameworkSeries` | Optional multi-match state machine (best-of / knockout) |
+| `framework/ui/charts.js` | `FrameworkCharts` | Optional broadcast HUD widgets (pills/manhattan/wagon/etc.) |
 | `framework/inputs/motion-input.js` | `FrameworkMotion` | Tilt/accel/gyro (opt-in) |
 
 **You almost always only need `FrameworkGame`.** It uses the rest for you.
 
 **Namespaced access:** every global above is also on `window.Framework` —
-`Framework.Game`, `Framework.Arena`, `Framework.UI`, `Framework.Projectile`, etc. The flat
+`Framework.Game`, `Framework.Arena`, `Framework.UI`, `Framework.Projectile`,
+`Framework.Series`, `Framework.Charts`, etc. The flat
 `Framework*` globals remain as aliases, so either style works.
 
 ---
@@ -107,12 +110,15 @@ Lifecycle events you can listen for: `sys:connected`, `sys:disconnected`,
 ## FrameworkRouter — `framework/services/router.js`
 
 ```js
-FrameworkRouter.registerRoute('s-menu', 's-menu', { onEnter(){}, onLeave(){} });
+FrameworkRouter.registerRoute('s-menu', 's-menu', { onEnter(){}, onLeave(){}, onBack(){} });
 FrameworkRouter.show('s-menu');     // push + activate (hides others)
 FrameworkRouter.back();             // pop; at root asks RN shell to exit
 FrameworkRouter.resetTo('s-welcome');
 window.handleBackPress();           // bound for the native hardware back button
 ```
+`registerRoute(id, elementId, { onEnter, onLeave, onBack })` — the `onBack` hook is **NEW**:
+return `true` to intercept the hardware/back action (e.g. show a discard-confirm or close a
+modal) and cancel the default pop/exit. Return falsy to let `back()` proceed as usual.
 
 ---
 
@@ -209,9 +215,21 @@ FrameworkTemplates.showTVBanner('SIX!', '#ffd700', 'optional sub');
 // TV broadcast screens (sport-neutral, theme-driven)
 FrameworkTemplates.renderTVIntro({ titleA, titleB, sub, colorA, colorB }); // hideTVIntro()
 FrameworkTemplates.startTVCountdown(3, onDone);                            // stopTVCountdown()
-FrameworkTemplates.showTVMilestone({ kicker, big, sub, color });          // 50! / NEW BEST!
+FrameworkTemplates.showTVMilestone({ kicker, big, sub, color });          // 50! / NEW BEST! (now actively used)
+// team-vs-team intro hold, then 3-2-1 countdown, then onDone — one call:
+FrameworkTemplates.runTVPreMatch({ titleA, titleB, sub, colorA, colorB, hold, countdownFrom }, onDone);
+// between-balls / between-overs broadcast cards:
+FrameworkTemplates.renderTVOverSummary({ title, score, stats:[{label,value,color}],
+  balls:[{label,color,fg}], seconds, nextLabel, onDone });  FrameworkTemplates.hideTVOverSummary();
+FrameworkTemplates.renderTVBreak({ kind:'innings'|'drinks'|'round', title, sub, stats, seconds, onDone });
+FrameworkTemplates.hideTVBreak();
+// connection-state TV screens:
+FrameworkTemplates.renderTVAway({ message });   FrameworkTemplates.hideTVAway();   // phone stepped out, passive
+FrameworkTemplates.renderTVRepair({ code, message, onRepair, onWait }); FrameworkTemplates.hideTVRepair(); // active re-pair prompt
 FrameworkTemplates.renderTVResult({ won, icon, bannerText, winner, sub, pom,
-  stats:[{label,value}], primaryText, onPrimary, secondaryText, onSecondary }); // hideTVResult()
+  stats:[{label,value}], primaryText, onPrimary, secondaryText, onSecondary,
+  scoreboard:{ user:{name,score,sub,color,winner}, opp:{ /* … */ } },        // OPTIONAL
+  quote:{ text, by }, series:{ label, userWins, cpuWins } }); // hideTVResult()
 FrameworkTemplates.renderTVLoading({ logoUrl, message });
 FrameworkTemplates.updateTVLoading(pct); FrameworkTemplates.hideTVLoading();
 FrameworkTemplates.renderTVDisconnected({ message }); // hideTVDisconnected()
@@ -221,6 +239,11 @@ FrameworkTemplates.renderMobileHome(container, { title, subtitle, logoUrl, items
 FrameworkTemplates.renderMobilePause({ title, onResume, onQuit });        // hideMobilePause()
 FrameworkTemplates.renderMobileSettings({ title, items, onClose });        // hideMobileSettings()
 FrameworkTemplates.renderMobileLobby / renderMobileControllerHUD / renderMobileCalibration(...);
+FrameworkTemplates.renderMobileTips({ slides:[{icon,title,text}], onDone, startText }); // swipeable how-to-play
+FrameworkTemplates.showMobileResult({ text, sub, color });                  // brief phone-side outcome flash
+FrameworkTemplates.renderMobileHandoff({ title, next, seconds, onReady });  // pass-the-phone / next-up
+FrameworkTemplates.renderMobileQuitConfirm({ title, body, onQuit, onStay }); // discard-confirm sheet
+FrameworkTemplates.renderMobileTeamEdit(container, { title, names:[], onChange(list) }); // editable roster
 ```
 
 ## FrameworkUI — `framework/ui/components.js`
@@ -276,6 +299,39 @@ The flow is declared in `config.flow` (a `[]` of steps). Step types:
 (`chaseData.cup`), or `$league.teams` (clubs of the league picked earlier). Options with a
 `short` render a painted crest; `tabs` groups them. No `flow` in config → a neutral
 pair→briefing default (real games declare their own).
+
+## FrameworkSeries — `framework/flow/series.js`
+
+Optional multi-match state machine (best-of / knockout). Load `series.js` in `lobby.html`
+**and** `controller.html`. State persists via `FrameworkStorage` (survives app kill).
+
+```js
+FrameworkSeries.init('chase');                       // bind to a game id
+FrameworkSeries.start({ type:'series', bestOf:3 });  // begin; returns state
+FrameworkSeries.start({ type:'tournament', total:4 });
+FrameworkSeries.current();                            // raw state or null
+FrameworkSeries.isOver();                             // bool
+FrameworkSeries.recordResult(won);                    // record one match, advance; returns updated state
+FrameworkSeries.standings();                          // {type,matchNum,total,userWins,cpuWins,
+                                                      //  done,won,knockedOut,label,cta} or null
+FrameworkSeries.clear();
+```
+`'series'` = best-of-N (first to a majority of `bestOf`). `'tournament'` = knockout (one loss
+ends the run; surviving `total` rounds = champion).
+
+## FrameworkCharts — `framework/ui/charts.js`
+
+Optional broadcast HUD widgets. Load `charts.js` in `screen.html`. Each renders into a
+`host` (an element id string or the element itself).
+
+```js
+FrameworkCharts.overPills(host, [{ label, color, fg }]);   // per-ball pills
+FrameworkCharts.manhattan(host, [{ runs, wkt }]);          // per-over bars
+FrameworkCharts.wagonWheel(host, [{ angle, power, color }]); // shot scatter
+FrameworkCharts.winProbBar(host, pct);                     // 0-100 = user win chance
+FrameworkCharts.runPie(host, { dots, ones, bnd });         // scoring breakdown
+FrameworkCharts.commentaryCard(host, { result, text, color });
+```
 
 ## FrameworkMotion — `framework/inputs/motion-input.js`
 

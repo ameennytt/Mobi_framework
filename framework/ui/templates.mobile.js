@@ -155,5 +155,105 @@
       const c = o.querySelector('#fw-set-close'); if (c) c.onclick = () => { this.hideMobileSettings(); if (onClose) onClose(); };
     },
     hideMobileSettings() { const o = document.getElementById('fw-mobile-settings'); if (o) o.classList.remove('show'); },
+
+    /**
+     * Mobile in-match tips carousel — coach cards before the first action. Optional.
+     * opts: { slides:[{icon,title,text}], onDone, startText? }
+     */
+    renderMobileTips({ slides = [], onDone, startText } = {}) {
+      if (!slides.length) { if (onDone) onDone(); return; }
+      let o = document.getElementById('fw-mobile-tips');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-tips'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
+      let idx = 0;
+      const dotsFn = (window.FrameworkUI && window.FrameworkUI.dots) ? window.FrameworkUI.dots : () => '';
+      const paint = () => {
+        const s = slides[idx];
+        o.innerHTML = `<div class="dialog-card" style="max-width:360px;">
+          ${s.icon ? `<div style="font-size:44px;margin-bottom:8px;">${s.icon}</div>` : ''}
+          <div class="dialog-title">${s.title || 'Tip'}</div>
+          <div class="dialog-body">${s.text || ''}</div>
+          <div style="display:flex;justify-content:center;margin-bottom:14px;">${dotsFn(slides.length, idx)}</div>
+          <div class="dialog-btns">
+            <button class="btn btn-secondary" id="fw-tips-skip">Skip</button>
+            <button class="btn btn-primary" id="fw-tips-next">${idx >= slides.length - 1 ? (startText || 'Play') : 'Next'}</button>
+          </div></div>`;
+        const done = () => { o.classList.remove('show'); if (onDone) onDone(); };
+        o.querySelector('#fw-tips-skip').onclick = done;
+        o.querySelector('#fw-tips-next').onclick = () => { if (idx >= slides.length - 1) done(); else { idx++; paint(); } };
+      };
+      paint();
+      o.classList.add('show');
+    },
+
+    /** Mobile center result flash (SIX!, GOAL!, OUT!). Auto-fades. opts:{text,sub,color}. */
+    showMobileResult({ text, sub, color } = {}) {
+      let o = document.getElementById('fw-mobile-flash');
+      if (!o) {
+        o = document.createElement('div');
+        o.id = 'fw-mobile-flash';
+        o.style.cssText = 'position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:9000;pointer-events:none;text-align:center;opacity:0;transition:opacity .2s,transform .2s;';
+        document.body.appendChild(o);
+      }
+      o.innerHTML = `<div style="font-size:64px;font-weight:900;color:${color || 'var(--game-gold)'};text-shadow:0 6px 24px rgba(0,0,0,.6);">${text || ''}</div>${sub ? `<div style="font-size:18px;font-weight:700;color:var(--game-text);margin-top:4px;">${sub}</div>` : ''}`;
+      o.style.opacity = '1'; o.style.transform = 'translate(-50%,-50%) scale(1.1)';
+      clearTimeout(this._flashTimer);
+      this._flashTimer = setTimeout(() => { o.style.opacity = '0'; o.style.transform = 'translate(-50%,-50%) scale(.9)'; }, 1100);
+    },
+
+    /**
+     * Mobile handoff overlay — "pass the phone" with a countdown. Optional (e.g. a
+     * new batter / next player takes the controller). opts:{ title, next, seconds, onReady }
+     */
+    renderMobileHandoff({ title, next, seconds = 3, onReady } = {}) {
+      let o = document.getElementById('fw-mobile-handoff');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-handoff'; o.className = 'dialog-overlay'; document.body.appendChild(o); }
+      let n = seconds;
+      const paint = () => {
+        o.innerHTML = `<div class="dialog-card"><div style="font-size:40px;">🤝</div>
+          <div class="dialog-title">${title || 'Pass the phone'}</div>
+          ${next ? `<div class="dialog-body">Next: <b style="color:var(--game-text);">${next}</b></div>` : ''}
+          <div style="font-family:var(--game-mono);font-size:56px;font-weight:900;color:var(--game-accent);">${n > 0 ? n : 'GO'}</div>
+          <button class="btn btn-primary" id="fw-handoff-ready" style="margin-top:8px;">I'm Ready</button></div>`;
+        o.querySelector('#fw-handoff-ready').onclick = finish;
+      };
+      const finish = () => { clearInterval(this._handoffTimer); o.classList.remove('show'); if (onReady) onReady(); };
+      paint(); o.classList.add('show');
+      this._handoffTimer = setInterval(() => { n--; if (n < 0) { finish(); return; } paint(); }, 1000);
+    },
+
+    /** Mobile quit-confirm — reuse the confirm dialog with match-exit wording. */
+    renderMobileQuitConfirm({ title, body, onQuit, onStay } = {}) {
+      if (!window.FrameworkUI || !window.FrameworkUI.showConfirmDialog) { if (onQuit) onQuit(); return; }
+      window.FrameworkUI.showConfirmDialog({
+        title: title || 'Exit this match?',
+        body: body || 'Your progress in this match will be lost.',
+        confirmText: 'Exit', cancelText: 'Keep Playing',
+        onConfirm: () => { if (onQuit) onQuit(); },
+        onCancel: () => { if (onStay) onStay(); },
+      });
+    },
+
+    /**
+     * Editable roster / batting order — inline list of name inputs. Optional;
+     * used by the lobby `target` step when a game supplies `roster`. Sport-neutral.
+     * opts: { title, names:[...], onChange(list) }
+     */
+    renderMobileTeamEdit(container, { title, names = [], onChange } = {}) {
+      const el = typeof container === 'string' ? document.getElementById(container) : container;
+      if (!el) return;
+      el.innerHTML = `<div class="fw-roster-card">
+        ${title ? `<div class="fw-roster-title">${title}</div>` : ''}
+        ${names.map((n, i) => `<div class="fw-roster-row">
+          <span class="fw-roster-num">${i + 1}</span>
+          <input class="fw-roster-input" data-i="${i}" maxlength="20" value="${String(n).replace(/"/g, '&quot;')}">
+        </div>`).join('')}
+      </div>`;
+      el.querySelectorAll('.fw-roster-input').forEach(inp => {
+        inp.oninput = () => {
+          const list = Array.from(el.querySelectorAll('.fw-roster-input')).map(x => x.value);
+          if (onChange) onChange(list);
+        };
+      });
+    },
   });
 })();

@@ -21,7 +21,10 @@ class FrameworkRouter {
     this.routes[id] = {
       elementId,
       onEnter: hooks.onEnter || null,
-      onLeave: hooks.onLeave || null
+      onLeave: hooks.onLeave || null,
+      // Optional back guard: return true to intercept (e.g. show a discard-confirm)
+      // and cancel the default pop/exit. Return falsy to allow normal back.
+      onBack: hooks.onBack || null
     };
   }
 
@@ -54,6 +57,12 @@ class FrameworkRouter {
    * Navigates back.
    */
   back() {
+    // Smart back: let the active route intercept (discard-confirm, close a modal…).
+    const activeId = this.stack[this.stack.length - 1];
+    const activeRoute = activeId ? this.routes[activeId] : null;
+    if (activeRoute && activeRoute.onBack) {
+      try { if (activeRoute.onBack() === true) return; } catch (e) { console.error(e); }
+    }
     if (this.stack.length <= 1) {
       // At the root screen. Ask the React Native app shell to exit the app.
       if (window.ReactNativeWebView) {

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, StatusBar, SafeAreaView, ActivityIndicator,
+  View, Text, StyleSheet, StatusBar, SafeAreaView,
   Animated, Easing, BackHandler, AppState,
 } from 'react-native';
 import WebView from 'react-native-webview';
@@ -10,7 +10,7 @@ import { useSensorBridge } from './useSensorBridge';
 
 // ── EDIT per game ────────────────────────────────────────────────────────────
 const GAME_ID = 'starter';                 // TEMPLATE default — `npm run publish <id>` overwrites this per game
-const BRAND = { name: 'Starter Game', accent: '#00d2ff', bg: '#060a14' };
+const BRAND = { name: 'Starter Game', accent: '#00d2ff', bg: '#060a14', tagline: 'TV GAME' };
 const USE_MOTION = false;                   // true for tilt/swing games
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,13 @@ export default function App() {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const screenGoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Animated splash (CricSwing-style): glow bloom, logo spring, text rise, progress bar.
+  const glow = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.65)).current;
+  const textY = useRef(new Animated.Value(18)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const barProgress = useRef(new Animated.Value(0)).current;
+  const [slowMsg, setSlowMsg] = useState(false);
 
   useEffect(() => {
     nodejs.start('server.js');
@@ -61,6 +68,19 @@ export default function App() {
 
     const fallback = setTimeout(() => setServerReady(true), 3500);
     return () => { listener.remove(); clearInterval(ipPoll); clearTimeout(fallback); if (screenGoneTimer.current) clearTimeout(screenGoneTimer.current); };
+  }, []);
+
+  // Splash entrance animation (runs once on mount).
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(glow, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.spring(logoScale, { toValue: 1, friction: 6, tension: 80, useNativeDriver: true }),
+      Animated.timing(textOpacity, { toValue: 1, duration: 450, delay: 250, useNativeDriver: true }),
+      Animated.timing(textY, { toValue: 0, duration: 450, delay: 250, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(barProgress, { toValue: 1, duration: 2800, easing: Easing.out(Easing.cubic), useNativeDriver: false }),
+    ]).start();
+    const slow = setTimeout(() => setSlowMsg(true), 3000);
+    return () => clearTimeout(slow);
   }, []);
 
   // Fade the splash once server + webview are ready (or after a short hold).
@@ -137,8 +157,28 @@ export default function App() {
       )}
       {splashVisible && (
         <Animated.View style={[StyleSheet.absoluteFillObject, styles.splash, { backgroundColor: BRAND.bg, opacity: splashOpacity }]}>
-          <Text style={[styles.brand, { color: BRAND.accent }]}>{BRAND.name}</Text>
-          <ActivityIndicator color={BRAND.accent} style={{ marginTop: 20 }} />
+          {/* radial glow bloom behind the mark */}
+          <Animated.View style={[styles.glow, {
+            backgroundColor: BRAND.accent,
+            opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0, 0.16] }),
+            transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+          }]} />
+          {/* logo disc (initial of brand) — swap for an <Image> per game if desired */}
+          <Animated.View style={[styles.logo, { borderColor: BRAND.accent, transform: [{ scale: logoScale }] }]}>
+            <Text style={[styles.logoChar, { color: BRAND.accent }]}>{(BRAND.name || '?').charAt(0)}</Text>
+          </Animated.View>
+          <Animated.View style={{ opacity: textOpacity, transform: [{ translateY: textY }], alignItems: 'center' }}>
+            <Text style={[styles.brand, { color: '#fff' }]}>{BRAND.name}</Text>
+            {!!BRAND.tagline && <Text style={[styles.tagline, { color: BRAND.accent }]}>{BRAND.tagline}</Text>}
+          </Animated.View>
+          {/* progress bar */}
+          <View style={styles.barTrack}>
+            <Animated.View style={[styles.barFill, {
+              backgroundColor: BRAND.accent,
+              width: barProgress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+            }]} />
+          </View>
+          {slowMsg && !webviewReady && <Text style={styles.slowText}>Warming up…</Text>}
         </Animated.View>
       )}
     </SafeAreaView>
@@ -149,5 +189,12 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   webview: { flex: 1 },
   splash: { alignItems: 'center', justifyContent: 'center' },
-  brand: { fontSize: 40, fontWeight: '900', letterSpacing: 1 },
+  glow: { position: 'absolute', width: 280, height: 280, borderRadius: 140 },
+  logo: { width: 96, height: 96, borderRadius: 24, borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
+  logoChar: { fontSize: 46, fontWeight: '900' },
+  brand: { fontSize: 36, fontWeight: '900', letterSpacing: 1 },
+  tagline: { fontSize: 11, fontWeight: '700', letterSpacing: 3, marginTop: 4, opacity: 0.8 },
+  barTrack: { width: 160, height: 2, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 2, marginTop: 28, overflow: 'hidden' },
+  barFill: { height: 2 },
+  slowText: { color: 'rgba(255,255,255,0.4)', fontSize: 12, marginTop: 16 },
 });

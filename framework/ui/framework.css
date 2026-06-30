@@ -14,19 +14,25 @@
 @font-face { font-family: 'Montserrat'; font-weight: 900; font-display: swap; src: url('fonts/montserrat-900.woff2') format('woff2'); }
 
 :root {
-  /* Brand (themeable per game) — premium dark + green/gold defaults */
-  --game-primary: #0b0f14;
-  --game-accent:  #9ADF6B;          /* primary CTA / accent */
-  --game-gold:    #F3D86B;          /* scores / highlights */
+  /* Brand (themeable per game) — EXACT CricSwing values (web/lobby.html :root) */
+  --game-primary: #000;             /* CricSwing --bg (pure black) */
+  --game-bg-2:    #111;             /* CricSwing --bg-2 */
+  --game-bg-3:    #161616;          /* CricSwing --bg-3 */
+  --game-accent:  #9ADF6B;          /* --green : primary CTA / accent */
+  --game-accent-2:#76B900;          /* --green-2 : deeper green */
+  --game-gold:    #F3D86B;          /* --gold : scores / highlights */
+  --game-gold-2:  #e0c050;          /* --gold-2 */
   --game-text:    #f5f5f5;
   --game-text-2:  rgba(245, 245, 245, 0.62);
-  --game-muted:   rgba(245, 245, 245, 0.38);
+  --game-muted:   rgba(245, 245, 245, 0.35);   /* CricSwing --muted (.35, not .38) */
   --game-success: #9ADF6B;
   --game-danger:  #ff4444;
   --game-warning: #F3D86B;
   --game-offwhite:#F5F7EF;          /* CricSwing --cs-offwhite */
   --game-blue:    #4af;
-  --game-font:    'Selawik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Phone UI uses the device's native font (CricSwing lobby/bat = system stack);
+     'Selawik' (Segoe-equiv, bundled) is the cross-platform fallback for TVs. */
+  --game-font:    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Selawik', Roboto, sans-serif;
   --game-mono:    'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
   /* Structural design tokens (shared) — exact CricSwing values */
@@ -57,6 +63,9 @@
 @keyframes fwBannerIn { from { transform: translateY(18px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes fwBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
 @keyframes fwCaret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+/* TV surface (role=screen) → Selawik, like CricSwing's TV. Phone keeps system font. */
+body.fw-tv-surface { --game-font: 'Selawik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -96,7 +105,7 @@ body, html {
 .btn:active { transform: scale(0.97); }
 .btn-primary {
   background: var(--game-accent);
-  color: #06140c;
+  color: #062208;                 /* CricSwing #start-btn text */
   box-shadow: var(--fw-shadow-glow), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .btn-primary:hover { box-shadow: 0 0 26px rgba(154, 223, 107, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.3); }

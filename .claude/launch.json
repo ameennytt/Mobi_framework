@@ -7,6 +7,13 @@
       "runtimeArgs": ["framework/core/server.js"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "cricswing",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/serve-cricswing.js", "4100"],
+      "port": 4100,
+      "autoPort": true
     }
   ]
 }

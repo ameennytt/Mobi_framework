@@ -70,7 +70,12 @@
       "Bash(echo \"code fences in PHILOSOPHY.md: $\\(grep -c '```' DOC/PHILOSOPHY.md\\)\")",
       "Bash(node scripts/lint.js)",
       "Bash(node scripts/test.js)",
-      "Bash(node framework/core/room-manager.test.js)"
+      "Bash(node framework/core/room-manager.test.js)",
+      "Bash(npm install *)",
+      "Bash(node -e \"try{const p=require\\('./package.json'\\);console.log\\('name:',p.name\\);console.log\\(JSON.stringify\\(p.scripts||{},null,1\\)\\)}catch\\(e\\){console.log\\('no root package.json'\\)}\")",
+      "Bash(node -e \"try{const p=require\\('./mobile/package.json'\\);console.log\\('rn:',p.dependencies&&p.dependencies['react-native']\\);console.log\\('deps:',Object.keys\\(p.dependencies||{}\\).join\\(', '\\)\\)}catch\\(e\\){console.log\\('?'\\)}\")",
+      "Bash(node -e \"try{const p=require\\('./package.json'\\);console.log\\('name',p.name\\);console.log\\('scripts',JSON.stringify\\(p.scripts||{}\\)\\);console.log\\('deps',Object.keys\\(p.dependencies||{}\\).join\\(', '\\)\\)}catch\\(e\\){console.log\\('no root pkg'\\)}\")",
+      "Bash(node -c games/chase/gameplay/index.js)"
     ]
   }
 }

@@ -6,7 +6,7 @@
   <title>Striker Duel — Controller</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
   <style>
-    body { background: radial-gradient(ellipse at bottom, #0a2417 0%, #04100a 100%); margin: 0;
+    body { background: #000; margin: 0;
       height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
     .top { display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
@@ -66,19 +66,25 @@
       const params = new URLSearchParams(location.search);
       const rounds = parseInt(params.get('rounds') || '5', 10);
       const difficulty = params.get('difficulty') || 'medium';
+      const MATCH_KEY = 'versus_inmatch';   // survives a phone reload mid-match
       let aim = 'center';
 
       const game = await window.FrameworkGame.init({
         role: 'bat',
         onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
         onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
-        onPaired: () => game.send('start', { rounds, difficulty }),
+        // First pair = new match; a reconnect (flag set) = resume, don't reset the TV.
+        onPaired: () => {
+          if (sessionStorage.getItem(MATCH_KEY)) { game.send('resume'); }
+          else { sessionStorage.setItem(MATCH_KEY, '1'); game.send('start', { rounds, difficulty }); }
+        },
         handlers: {
-          screen_rejoined: () => game.send('start', { rounds, difficulty }),
+          screen_rejoined: () => game.send('resume'),   // TV came back → restore, never reset
           game_state: (d) => {
             setNum('val-you', d.you); setNum('val-cpu', d.cpu); setNum('val-round', `${d.round}/${d.rounds}`);
           },
           game_over: (d) => {
+            sessionStorage.removeItem(MATCH_KEY);
             window.FrameworkUI.showConfirmDialog({
               title: d.won ? 'You Win!' : (d.you === d.cpu ? 'Draw' : 'You Lose'),
               body: `Full time: ${d.you} - ${d.cpu}.`,

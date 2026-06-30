@@ -36,6 +36,20 @@ The dividing line is one sentence:
 
 ---
 
+## Screens are optional and config-driven
+
+Every screen and flow the framework ships is **opt-in**. A new game **defaults to buttons + a
+minimal flow** and stays there until you ask for more — you turn on the richer CricSwing-style
+screens (onboarding, mode hub, toss, roster, series/tournament, match-intro + countdown,
+milestone flashes, over-summary, broadcast match-end, charts, native splash) with flags in
+`game-config.json` (see [SCREENS.md](SCREENS.md)). The same rule decides all of it:
+**frame = framework, content = game.**
+
+The **default input is buttons**; motion / swing / ML are **future opt-in extensions**, never
+required to ship.
+
+---
+
 ## Standard Developer Journey
 
 The normal path — almost everything happens inside `games/<game>/`:

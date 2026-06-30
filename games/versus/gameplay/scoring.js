@@ -13,6 +13,7 @@ window.GameScoring = {
     let you = 0, cpu = 0, round = 0, rounds = 5;
     return {
       reset(r) { you = 0; cpu = 0; round = 0; rounds = r || 5; },
+      restore(s) { if (!s) return; you = s.you || 0; cpu = s.cpu || 0; round = s.round || 0; rounds = s.rounds || rounds; },
       goal() { you++; },
       cpuGoal() { cpu++; },
       next() { round++; },

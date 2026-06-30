@@ -7,15 +7,19 @@
  * attach/draw/start/setPaired/handlers). The framework doesn't care that the logic
  * is split — load order is declared in game-config.json `code:[]` (index.js last).
  *
- * Demo = "attempt" archetype (score over N tries). Reshape for your sport by editing
- * gameplay/rules.js (outcome), gameplay/visuals.js (drawing), and the flow here.
+ * Flat template uses the GENERIC 'flat' HUD — 3 placeholder slots with developer
+ * names (SLOT 1/2/3) so a new game shows clearly-labelled boxes to rename. Swap HUD
+ * to 'chase' (cricket), 'versus' (football), or 'attempt', or relabel the slots.
+ * Reshape for your sport via gameplay/rules.js · visuals.js · the flow here.
  */
 window.Gameplay = (function () {
   const T = () => window.FrameworkTemplates;
   const A = () => window.FrameworkArena;
   const R = () => window.GameRules;
   const V = () => window.GameVisuals;
-  const HUD = 'attempt';                      // scorebar style (chase | versus | attempt)
+  const HUD = 'flat';                          // scorebar style (chase | versus | attempt | flat)
+  // Map this game's snapshot → the 3 generic slots. Rename labels + values per sport.
+  const slots = (s) => ({ labels: ['SLOT 1', 'SLOT 2', 'SLOT 3'], slots: [s.score, s.best, s.left] });
 
   let game = null, paired = false, shot = null;
   const score = window.GameScoring.create();
@@ -25,8 +29,9 @@ window.Gameplay = (function () {
     shot = null;
     A().reset();
     T().hideTVResult();
-    T().renderScorebar(HUD, { title: 'Score' });
-    T().updateScorebar(HUD, score.snapshot());
+    const sv = slots(score.snapshot());
+    T().renderScorebar(HUD, sv);
+    T().updateScorebar(HUD, sv);
   }
 
   function onAction(d) {
@@ -41,7 +46,7 @@ window.Gameplay = (function () {
     A().burst(W / 2, H * 0.55, 'var(--game-accent)', shot.pts >= 8 ? 36 : 16);
     T().showTVBanner('+' + shot.pts, '#6ee7ff');
     shot = null;
-    T().updateScorebar(HUD, score.snapshot());
+    T().updateScorebar(HUD, slots(score.snapshot()));
     game.send('game_state', score.snapshot());
     if (R().isOver(score.used, score.attempts)) setTimeout(end, 900);
   }
@@ -60,6 +65,19 @@ window.Gameplay = (function () {
     });
   }
 
+  // Restore an in-progress game from the saved snapshot (reconnect/reload), no reset.
+  function resume() {
+    const s = game.loadSavedState();
+    if (!s) { start({}); return; }
+    score.restore(s);
+    shot = null;
+    A().reset();
+    T().hideTVResult();
+    const sv = slots(score.snapshot());
+    T().renderScorebar(HUD, sv);
+    T().updateScorebar(HUD, sv);
+  }
+
   function draw(ctx, W, H) {
     if (!shot) return;
     if (V().drawShot(ctx, shot, W, H)) resolve();
@@ -73,6 +91,7 @@ window.Gameplay = (function () {
     handlers: {
       action: onAction,
       start: (d) => { paired = true; start(d || {}); },
+      resume: () => { paired = true; resume(); },
     },
   };
 })();

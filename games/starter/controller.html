@@ -26,10 +26,11 @@
     <div class="pill" id="conn">CONNECTING…</div>
   </div>
 
+  <!-- Generic placeholder HUD — rename SLOT 1/2/3 (and ids) to your game's stats. -->
   <div class="hud">
-    <div class="score-card"><div class="lbl">Score</div><div class="num" id="val-score">0</div></div>
-    <div class="score-card"><div class="lbl">Left</div><div class="num" id="val-left">0</div></div>
-    <div class="score-card"><div class="lbl">Best</div><div class="num" id="val-best">0</div></div>
+    <div class="score-card"><div class="lbl">SLOT 1</div><div class="num" id="val-score">0</div></div>
+    <div class="score-card"><div class="lbl">SLOT 2</div><div class="num" id="val-left">0</div></div>
+    <div class="score-card"><div class="lbl">SLOT 3</div><div class="num" id="val-best">0</div></div>
   </div>
 
   <div class="mid">
@@ -49,16 +50,21 @@
     window.onload = async () => {
       const params = new URLSearchParams(location.search);
       const attempts = parseInt(params.get('attempts') || '5', 10);
+      const MATCH_KEY = 'starter_inmatch';   // survives a phone reload mid-game
 
       const game = await window.FrameworkGame.init({
         role: 'bat',
         onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
         onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
-        onPaired: () => game.send('start', { attempts }),
+        onPaired: () => {
+          if (sessionStorage.getItem(MATCH_KEY)) { game.send('resume'); }
+          else { sessionStorage.setItem(MATCH_KEY, '1'); game.send('start', { attempts }); }
+        },
         handlers: {
-          screen_rejoined: () => game.send('start', { attempts }),
+          screen_rejoined: () => game.send('resume'),
           game_state: (d) => { setNum('val-score', d.score); setNum('val-left', d.left); setNum('val-best', d.best); },
           game_over: (d) => {
+            sessionStorage.removeItem(MATCH_KEY);
             window.FrameworkUI.showConfirmDialog({
               title: 'Game Over', body: `Score: ${d.score} · Best: ${d.best}`,
               confirmText: 'Play Again',

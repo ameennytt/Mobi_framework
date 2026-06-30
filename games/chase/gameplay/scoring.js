@@ -9,6 +9,7 @@ window.GameScoring = {
     let runs = 0, balls = 0, wickets = 0, target = 0, overs = 0;
     return {
       reset(o = {}) { runs = 0; balls = 0; wickets = 0; target = o.target || 0; overs = o.overs || 0; },
+      restore(s) { if (!s) return; runs = s.runs || 0; balls = s.balls || 0; wickets = s.wickets || 0; target = s.target || 0; overs = s.overs || 0; },
       apply(out) { balls++; if (out.dismissed) wickets++; else runs += out.runs; },
       get runs() { return runs; },
       get balls() { return balls; },

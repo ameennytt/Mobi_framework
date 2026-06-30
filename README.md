@@ -64,6 +64,28 @@ modular shape** — they differ only in sport shaping.
 
 ---
 
+## The full screen set (all opt-in)
+
+The framework now ships the **complete CricSwing-style optional screen set**. Every screen is
+opt-in — the **default is buttons + a minimal flow**, and you turn richer screens on with flags
+in `game-config.json` (see **[DOC/SCREENS.md](DOC/SCREENS.md)**):
+
+- **Onboarding** — consent + intro carousel
+- **Mode hub** — with About / Help
+- **Coin toss**
+- **Editable roster**
+- **Series + tournament progression**
+- **TV match-intro + 3-2-1 countdown**
+- **Milestone flashes** + **over-summary**
+- **Full broadcast match-end** — dual scoreboard + player-of-match + quote + series
+- **Broadcast chart widgets**
+- **Animated native splash**
+
+Principle: **easy by default, flexible when needed, unlimited if desired.** Presets show both
+ends: **`games/starter` = minimal**, **`games/chase` = broadcast demo** with the rich screens on.
+
+---
+
 ## Documentation
 
 | Doc | Read it for |
@@ -72,6 +94,7 @@ modular shape** — they differ only in sport shaping.
 | **[DOC/MAKING_A_GAME.md](DOC/MAKING_A_GAME.md)** | step-by-step: build a game (the main guide) |
 | **[DOC/FRAMEWORK_API.md](DOC/FRAMEWORK_API.md)** | every `window.Framework*` global + method (reference) |
 | **[DOC/UI_COMPONENTS.md](DOC/UI_COMPONENTS.md)** | copy-paste UI recipes (screens + components) |
+| **[DOC/SCREENS.md](DOC/SCREENS.md)** | every optional screen + the config flag that turns it on |
 | **[DOC/INPUT_SYSTEM.md](DOC/INPUT_SYSTEM.md)** | controller input + motion/swing |
 | **[DOC/BEST_PRACTICES.md](DOC/BEST_PRACTICES.md)** | performance + messaging tips |
 | **[framework/EXTENSIONS.md](framework/EXTENSIONS.md)** | opt-in subsystems (ml/training/tournament/analytics) |

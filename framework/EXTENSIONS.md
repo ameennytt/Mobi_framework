@@ -5,6 +5,14 @@ attach a `window.Game<Name>` namespace. They keep large (CricSwing-scale) games 
 the core stays `gameplay/` (rules · scoring · visuals · index), and heavy subsystems —
 motion ML, training, tournaments, analytics, replay — plug in without bloating it.
 
+> **Framework-level input extensions (vs per-game `extensions/`).** There are now two
+> **optional** input extensions shipped with the framework itself:
+> `framework/extensions/motion-input.js` (`window.FrameworkMotionInput`) and
+> `framework/extensions/ml-profile.js` (`window.FrameworkMLProfile`). They are **opt-in
+> scaffolds, OFF by default**, loaded only when a game sets `input: "motion"` in
+> `game-config.json` (the default input is buttons). They implement the existing **ML/Motion**
+> and **Training** contracts described below — see `framework/extensions/README.md` for setup.
+
 ## How extensions load + activate
 
 1. Drop the file in `games/<id>/extensions/` (e.g. `extensions/analytics.js`).

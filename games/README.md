@@ -5,6 +5,11 @@ Each subfolder is one game. Copy a template with `npm run new-game <id> --from <
 All templates share the **same premium look** (CricSwing-grade) and the **same modular
 shape**. They differ only in sport shaping.
 
+The three games are **presets** for the optional screen set: **`starter` = minimal** (buttons),
+**`chase` = broadcast** (full optional screens on — onboarding / series / toss / intro /
+over-summary / match-end), **`versus` = head-to-head** (football). Pick one with
+`npm run new-game <id> --from chase|versus|starter`.
+
 | Folder | What it is | Start from it when… |
 |--------|-----------|---------------------|
 | `starter` | Neutral premium template (`attempt` demo: score over N tries). | a new sport — the default base. |

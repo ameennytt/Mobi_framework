@@ -125,6 +125,13 @@ class FrameworkGameClass {
       }
       if (cfg.onDisconnect) cfg.onDisconnect();
     });
+    // Permanent disconnect (reconnect tries exhausted) → full-screen re-pair prompt on TV.
+    window.FrameworkEvents.on('sys:re-pair-required', () => {
+      if (autoOverlay && this.role === 'screen' && window.FrameworkTemplates && window.FrameworkTemplates.renderTVDisconnected) {
+        window.FrameworkTemplates.renderTVDisconnected({ message: 'Connection lost — re-pair on your phone' });
+      }
+      if (cfg.onRePair) cfg.onRePair();
+    });
 
     if (this.role === 'screen') {
       this._initScreen(cfg, autoOverlay);
@@ -140,6 +147,10 @@ class FrameworkGameClass {
   }
 
   _initScreen(cfg, autoOverlay) {
+    // TV surface uses Selawik (Segoe-consistent across devices, like CricSwing's TV);
+    // the phone keeps the device's native font. Scoped via this body class in CSS.
+    try { document.body.classList.add('fw-tv-surface'); } catch (_) {}
+
     // Canvas renderer (optional — a DOM-only TV can skip it).
     if (cfg.canvas && window.FrameworkRenderer) {
       window.FrameworkRenderer.init(cfg.canvas, cfg.draw);
@@ -246,14 +257,40 @@ class FrameworkGameClass {
     window.addEventListener('pagehide', () => this.stage('destroy'));
   }
 
+  /**
+   * Persist the TV's latest game_state as the resume snapshot, and clear it on
+   * game_over. Keyed to the room so a different room never resumes a stale match.
+   * framework_game_state is a monitored key → mirrored to localStorage (survives kill).
+   */
+  _persistFromSend(type, payload) {
+    if (this.role !== 'screen' || !window.FrameworkStorage) return;
+    try {
+      if (type === 'game_state') {
+        window.FrameworkStorage.save('framework_game_state', { room: this.code, snap: payload || {} });
+      } else if (type === 'game_over') {
+        window.FrameworkStorage.remove('framework_game_state');
+      }
+    } catch (_) {}
+  }
+
+  /** Return the saved resume snapshot for THIS room, or null. */
+  loadSavedState() {
+    if (!window.FrameworkStorage) return null;
+    try {
+      const s = window.FrameworkStorage.load('framework_game_state');
+      return (s && s.room === this.code) ? s.snap : null;
+    } catch (_) { return null; }
+  }
+
   _api() {
     return {
-      send: (type, payload) => window.FrameworkEvents.send(type, payload),
+      send: (type, payload) => { this._persistFromSend(type, payload); return window.FrameworkEvents.send(type, payload); },
       on: (type, fn) => window.FrameworkEvents.on(type, fn),
       off: (type, fn) => window.FrameworkEvents.off(type, fn),
       connect: (code, onPaired, ephemeral) => this.connect(code, onPaired, ephemeral),
       getCode: () => this.code,
       isPaired: () => this.paired,
+      loadSavedState: () => this.loadSavedState(),
       stage: (name, data) => this.stage(name, data),
       getStage: () => this.stageName,
       asset: (slot) => window.FrameworkAssets ? window.FrameworkAssets.resolve(slot) : '',

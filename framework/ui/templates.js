@@ -70,8 +70,8 @@ class GameTemplates {
       <div style="position:absolute;top:28px;left:28px;${HB}padding:8px 16px;">
         <div style="font-size:12px;font-weight:800;letter-spacing:1px;color:var(--game-muted);text-transform:uppercase;">${title || ''}</div>
         <div style="display:flex;align-items:baseline;gap:10px;margin-top:2px;">
-          <div id="fw-sb-score" style="${SCORE}font-size:44px;">0</div>
-          <div id="fw-sb-over" style="font-family:var(--game-mono);font-size:16px;font-weight:700;color:var(--game-text);">0.0</div>
+          <div id="fw-sb-score" style="${SCORE}font-size:34px;">0</div>
+          <div id="fw-sb-over" style="font-family:var(--game-mono);font-size:19px;font-weight:800;color:var(--game-accent);">0.0</div>
         </div>
       </div>
       <div style="position:absolute;left:50%;bottom:30px;transform:translateX(-50%);display:flex;gap:0;${HB}overflow:hidden;">
@@ -81,7 +81,7 @@ class GameTemplates {
         </div>
         <div style="padding:12px 22px;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">Need</div>
-          <div id="fw-sb-need" style="font-family:var(--game-mono);font-size:22px;font-weight:900;color:var(--game-accent);">—</div>
+          <div id="fw-sb-need" style="font-family:var(--game-mono);font-size:18px;font-weight:900;color:var(--game-gold);">—</div>
         </div>
         <div style="padding:12px 22px;border-left:1px solid var(--fw-line);">
           <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">Run Rate</div>
@@ -177,6 +177,36 @@ class GameTemplates {
     set('fw-at-best', state.best != null ? state.best : 0);
   }
 
+  /**
+   * FLAT / generic HUD — placeholder info slots with DEVELOPER-IDENTIFIABLE names so a
+   * new game (from the starter template) shows clearly-labelled boxes to rename. Not
+   * sport-specific on purpose. opts: { title, labels:['SLOT 1','SLOT 2','SLOT 3'] }
+   * Update with updateScorebar('flat', { slots:[v1,v2,v3] }).
+   */
+  renderFlatScorebar({ title, labels } = {}) {
+    this.hideTVSetup();
+    const L = (labels && labels.length) ? labels : ['SLOT 1', 'SLOT 2', 'SLOT 3'];
+    let o = this._sbHost();
+    const cells = L.map((lbl, i) => `
+      <div style="padding:12px 22px;${i ? 'border-left:1px solid var(--fw-line);' : ''}text-align:center;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${lbl}</div>
+        <div id="fw-flat-${i}" style="font-family:var(--game-mono);font-size:30px;font-weight:900;color:var(--game-gold);line-height:1;">—</div>
+      </div>`).join('');
+    o.innerHTML = `
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(7,16,12,.78);border:1.5px dashed rgba(118,185,0,.40);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
+        ${cells}
+      </div>
+      <div style="position:absolute;top:96px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--game-muted);">▢ generic HUD — rename slots &amp; pick a kind in renderScorebar()</div>`;
+    o.style.display = 'block';
+  }
+  updateFlatScorebar(state = {}) {
+    const vals = state.slots || [state.a, state.b, state.c];
+    for (let i = 0; i < 3; i++) {
+      const e = document.getElementById('fw-flat-' + i);
+      if (e) e.textContent = (vals[i] == null ? '—' : vals[i]);
+    }
+  }
+
   /** Shared scorebar host element (one overlay reused by all HUD kinds). */
   _sbHost() {
     let o = document.getElementById('fw-tv-scorebar');
@@ -189,15 +219,17 @@ class GameTemplates {
     return o;
   }
 
-  /** Dispatcher — pick HUD by kind ('chase'|'versus'|'attempt'). */
+  /** Dispatcher — pick HUD by kind ('chase'|'versus'|'attempt'|'flat'). */
   renderScorebar(kind, opts = {}) {
     if (kind === 'versus') return this.renderVersusScorebar(opts);
     if (kind === 'attempt') return this.renderAttemptScorebar(opts);
+    if (kind === 'flat' || kind === 'generic') return this.renderFlatScorebar(opts);
     return this.renderTVScorebar(opts);
   }
   updateScorebar(kind, state = {}) {
     if (kind === 'versus') return this.updateVersusScorebar(state);
     if (kind === 'attempt') return this.updateAttemptScorebar(state);
+    if (kind === 'flat' || kind === 'generic') return this.updateFlatScorebar(state);
     return this.updateTVScorebar(state);
   }
 
@@ -210,7 +242,7 @@ class GameTemplates {
       o.style.cssText = 'position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(1);z-index:40;pointer-events:none;text-align:center;opacity:0;transition:opacity .25s,transform .25s;';
       document.body.appendChild(o);
     }
-    o.innerHTML = `<div style="font-size:84px;font-weight:900;letter-spacing:2px;color:${color || '#ffd700'};text-shadow:0 6px 30px rgba(0,0,0,.6);">${text}</div>${sub ? `<div style="font-size:22px;font-weight:700;color:var(--game-text);margin-top:6px;">${sub}</div>` : ''}`;
+    o.innerHTML = `<div style="font-size:82px;font-weight:900;letter-spacing:2px;color:${color || '#ffd700'};text-shadow:0 6px 30px rgba(0,0,0,.6);">${text}</div>${sub ? `<div style="font-size:22px;font-weight:600;color:var(--game-text);margin-top:6px;">${sub}</div>` : ''}`;
     o.style.opacity = '1';
     o.style.transform = 'translate(-50%,-50%) scale(1.12)';
     clearTimeout(this._bannerTimer);
@@ -293,8 +325,8 @@ class GameTemplates {
     }
     const c = color || 'var(--game-accent)';
     o.innerHTML = `
-      <div style="font-size:18px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:${c};">${kicker || ''}</div>
-      <div style="font-family:var(--game-mono);font-size:160px;font-weight:900;line-height:1;color:${c};text-shadow:0 10px 50px rgba(0,0,0,.6);animation:fwMiPop .6s var(--fw-ease-pop, ease-out);">${big != null ? big : ''}</div>
+      <div style="font-size:36px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:${c};">${kicker || ''}</div>
+      <div style="font-family:var(--game-mono);font-size:240px;font-weight:900;line-height:1;color:${c};text-shadow:0 10px 50px rgba(0,0,0,.6);animation:fwMiPop .6s var(--fw-ease-pop, ease-out);">${big != null ? big : ''}</div>
       ${sub ? `<div style="font-size:22px;font-weight:700;color:var(--game-text);margin-top:8px;">${sub}</div>` : ''}
       <style>@keyframes fwMiPop{0%{transform:scale(.3);opacity:0}45%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}</style>`;
     o.style.opacity = '1';
@@ -362,16 +394,39 @@ class GameTemplates {
         <div style="font-size:10px;color:var(--game-muted);text-transform:uppercase;letter-spacing:.14em;margin-top:.45em;font-weight:700;">${s.label}</div>
       </div>`).join('');
 
+    // Optional dual scoreboard (two team cards). opts.scoreboard = { user, opp }
+    const teamCard = (t, won) => t ? `
+      <div style="flex:1;min-width:140px;background:rgba(7,16,12,.6);border:2px solid ${won ? 'var(--game-gold)' : 'var(--fw-line)'};border-radius:14px;padding:14px;text-align:center;${won ? 'box-shadow:0 0 24px rgba(243,216,107,.18);' : ''}">
+        ${t.color ? `<div style="width:40px;height:40px;border-radius:50%;margin:0 auto 8px;background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.35),rgba(0,0,0,.15)),${t.color};"></div>` : ''}
+        <div style="font-size:15px;font-weight:800;color:var(--game-text);">${t.name || ''}</div>
+        <div style="font-family:var(--game-mono);font-size:34px;font-weight:900;color:${won ? 'var(--game-gold)' : 'var(--game-text)'};line-height:1.1;margin-top:4px;">${t.score != null ? t.score : ''}</div>
+        ${t.sub ? `<div style="font-size:11px;color:var(--game-muted);margin-top:4px;">${t.sub}</div>` : ''}
+      </div>` : '';
+    const sb = opts.scoreboard
+      ? `<div style="display:flex;gap:12px;align-items:stretch;">${teamCard(opts.scoreboard.user, opts.scoreboard.user && opts.scoreboard.user.winner)}${teamCard(opts.scoreboard.opp, opts.scoreboard.opp && opts.scoreboard.opp.winner)}</div>`
+      : '';
+
+    // Optional quote + series progress strip.
+    const quote = opts.quote
+      ? `<div style="text-align:center;padding:10px 18px;color:var(--game-muted);"><span style="font-style:italic;font-size:15px;">“${opts.quote.text}”</span>${opts.quote.by ? `<div style="font-size:12px;color:var(--game-gold);margin-top:4px;font-weight:700;">— ${opts.quote.by}</div>` : ''}</div>`
+      : '';
+    const series = opts.series
+      ? `<div style="text-align:center;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--game-accent);">${opts.series.label || ''}${opts.series.userWins != null ? ` · ${opts.series.userWins}–${opts.series.cpuWins}` : ''}</div>`
+      : '';
+
     o.innerHTML = `
       <div style="width:min(92vw,820px);display:flex;flex-direction:column;gap:16px;padding:24px;">
         <div style="padding:18px 24px;border-radius:18px;text-align:center;background:${bannerBg};border:2px solid ${bannerBorder};box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 90px ${bannerGlow} inset;animation:fwBannerIn .6s var(--fw-ease-out) both;">
           ${icon ? `<div style="font-size:54px;line-height:1;filter:drop-shadow(0 6px 20px rgba(255,215,0,.45));animation:fwPop .7s var(--fw-ease-pop) backwards;">${icon}</div>` : ''}
-          <div style="font-size:20px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:${loss ? '#ff8866' : 'var(--game-accent)'};margin-top:6px;">${opts.bannerText || 'Match Over'}</div>
+          <div style="font-size:22px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:${loss ? '#ff6b6b' : 'var(--game-gold)'};margin-top:6px;">${opts.bannerText || 'Match Over'}</div>
           ${opts.winner ? `<div style="font-family:var(--game-mono);font-size:52px;font-weight:900;color:var(--game-text);line-height:1.05;margin-top:6px;">${opts.winner}</div>` : ''}
           ${opts.sub ? `<div style="font-size:14px;color:var(--game-accent);font-weight:700;margin-top:6px;">${opts.sub}</div>` : ''}
         </div>
+        ${sb}
         ${opts.pom ? `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;text-align:left;background:rgba(7,16,12,.62);border:1.5px solid rgba(118,185,0,.28);">${opts.pom}</div>` : ''}
         ${stats ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;">${stats}</div>` : ''}
+        ${quote}
+        ${series}
         <div style="display:flex;gap:16px;justify-content:center;margin-top:6px;">
           ${opts.primaryText ? `<button class="btn btn-primary" id="fw-result-primary" style="flex:0 0 auto;font-size:18px;padding:14px 36px;">${opts.primaryText}</button>` : ''}
           ${opts.secondaryText ? `<button class="btn btn-secondary" id="fw-result-secondary" style="flex:0 0 auto;font-size:18px;padding:14px 36px;">${opts.secondaryText}</button>` : ''}
@@ -497,6 +552,130 @@ class GameTemplates {
   hideTVDisconnected() {
     const o = document.getElementById('fw-tv-disconnected');
     if (o) o.style.display = 'none';
+  }
+
+  // ── Optional pre-match / match-flow screens (all gated by the game's config) ──
+
+  /**
+   * Pre-match sequence: team-vs-team intro hold, then a 3-2-1 countdown, then onDone.
+   * Combines renderTVIntro + startTVCountdown so games get the broadcast open in one
+   * call. opts: { titleA, titleB, sub, colorA, colorB, hold?:2200, countdownFrom?:3 }
+   */
+  runTVPreMatch(opts = {}, onDone) {
+    this.renderTVIntro(opts);
+    const hold = opts.hold != null ? opts.hold : 2200;
+    setTimeout(() => {
+      this.hideTVIntro();
+      if (opts.countdownFrom === 0) { if (onDone) onDone(); return; }
+      this.startTVCountdown(opts.countdownFrom != null ? opts.countdownFrom : 3, onDone);
+    }, hold);
+  }
+
+  /**
+   * Over / round summary overlay — stat tiles + ball-by-ball pills + auto-advance.
+   * opts: { title, score, stats:[{label,value,color}], balls:[{label,color}],
+   *   seconds?:5, nextLabel?, onDone }
+   */
+  renderTVOverSummary(opts = {}) {
+    let o = this._overlay('fw-tv-oversum', 9420, 'radial-gradient(ellipse at 50% 30%, rgba(255,255,255,.05), rgba(5,10,22,.97) 70%)');
+    const tiles = (opts.stats || []).map((s, i) => `
+      <div style="background:rgba(0,0,0,.3);border-radius:12px;padding:14px 8px;text-align:center;animation:fwBannerIn .4s var(--fw-ease-out) ${i * 0.05}s both;">
+        <div style="font-family:var(--game-mono);font-size:30px;font-weight:900;color:${s.color || 'var(--game-gold)'};line-height:1;">${s.value}</div>
+        <div style="font-size:10px;color:var(--game-muted);text-transform:uppercase;letter-spacing:.12em;margin-top:6px;font-weight:700;">${s.label}</div>
+      </div>`).join('');
+    const pills = (opts.balls || []).map(b => `<span style="min-width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-family:var(--game-mono);font-weight:900;font-size:13px;background:${b.color || 'rgba(255,255,255,.08)'};color:${b.fg || 'var(--game-text)'};">${b.label}</span>`).join('');
+    o.innerHTML = `
+      <div style="width:min(92vw,720px);text-align:center;padding:28px;">
+        <div style="font-size:14px;font-weight:800;letter-spacing:.25em;text-transform:uppercase;color:var(--game-accent);">${opts.title || 'End of Over'}</div>
+        ${opts.score ? `<div style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-text);margin-top:6px;">${opts.score}</div>` : ''}
+        ${pills ? `<div style="display:flex;gap:8px;justify-content:center;margin:18px 0;flex-wrap:wrap;">${pills}</div>` : ''}
+        ${tiles ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:10px;margin-top:8px;">${tiles}</div>` : ''}
+        <div style="font-size:13px;color:var(--game-muted);margin-top:22px;">${opts.nextLabel || 'Next over starting…'}</div>
+      </div>`;
+    o.style.display = 'flex';
+    const secs = opts.seconds != null ? opts.seconds : 5;
+    clearTimeout(this._oversumTimer);
+    this._oversumTimer = setTimeout(() => { this.hideTVOverSummary(); if (opts.onDone) opts.onDone(); }, secs * 1000);
+  }
+  hideTVOverSummary() { const o = document.getElementById('fw-tv-oversum'); if (o) o.style.display = 'none'; }
+
+  /**
+   * Interval / break screen (innings change, drinks, round break).
+   * opts: { kind, title, sub, stats:[{label,value}], seconds?, onDone }
+   */
+  renderTVBreak(opts = {}) {
+    let o = this._overlay('fw-tv-break', 9410, 'radial-gradient(ellipse at 50% 50%, rgba(74,170,255,.06), rgba(5,10,22,.96) 70%)');
+    const icon = opts.kind === 'drinks' ? '🥤' : opts.kind === 'innings' ? '🔁' : '⏸';
+    const stats = (opts.stats || []).map(s => `
+      <div style="text-align:center;"><div style="font-family:var(--game-mono);font-size:34px;font-weight:900;color:var(--game-gold);line-height:1;">${s.value}</div>
+      <div style="font-size:11px;color:var(--game-muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px;">${s.label}</div></div>`).join('');
+    o.innerHTML = `
+      <div style="text-align:center;padding:30px;">
+        <div style="font-size:56px;">${icon}</div>
+        <div style="font-size:24px;font-weight:900;color:var(--game-text);margin-top:10px;">${opts.title || 'Break'}</div>
+        ${opts.sub ? `<div style="font-size:14px;color:var(--game-muted);margin-top:6px;">${opts.sub}</div>` : ''}
+        ${stats ? `<div style="display:flex;gap:34px;justify-content:center;margin-top:24px;">${stats}</div>` : ''}
+      </div>`;
+    o.style.display = 'flex';
+    if (opts.seconds != null) {
+      clearTimeout(this._breakTimer);
+      this._breakTimer = setTimeout(() => { this.hideTVBreak(); if (opts.onDone) opts.onDone(); }, opts.seconds * 1000);
+    }
+  }
+  hideTVBreak() { const o = document.getElementById('fw-tv-break'); if (o) o.style.display = 'none'; }
+
+  /**
+   * Phone-away overlay — controller stepped out mid-match; passive, auto-resumes.
+   * opts: { message }
+   */
+  renderTVAway({ message } = {}) {
+    let o = this._overlay('fw-tv-away', 9580, 'radial-gradient(ellipse at 50% 50%, rgba(243,216,107,.06), rgba(5,10,22,.95) 70%)');
+    o.innerHTML = `
+      <div style="text-align:center;padding:30px;">
+        <div style="font-size:64px;">😴</div>
+        <div style="font-size:24px;font-weight:800;color:var(--game-gold);margin-top:10px;">${message || 'Player stepped out'}</div>
+        <div style="font-size:15px;color:var(--game-muted);margin-top:8px;">Waiting for the phone to reconnect — the match resumes automatically.</div>
+        <div style="margin-top:20px;font-size:30px;letter-spacing:6px;color:var(--game-muted);animation:fwBlink 1.2s infinite;">• • •</div>
+        <style>@keyframes fwBlink{0%,100%{opacity:.3}50%{opacity:1}}</style>
+      </div>`;
+    o.style.display = 'flex';
+  }
+  hideTVAway() { const o = document.getElementById('fw-tv-away'); if (o) o.style.display = 'none'; }
+
+  /**
+   * Active re-pair prompt — connection truly lost; show a fresh code + retry.
+   * opts: { code, message, onRepair, onWait }
+   */
+  renderTVRepair({ code, message, onRepair, onWait } = {}) {
+    let o = this._overlay('fw-tv-repair', 9620, '#07100C');
+    o.innerHTML = `
+      <div style="text-align:center;padding:30px;max-width:560px;">
+        <div style="font-size:54px;">⚡</div>
+        <div style="font-size:26px;font-weight:900;color:var(--game-accent);margin-top:8px;">Phone Disconnected</div>
+        <div style="font-size:15px;color:var(--game-muted);margin-top:8px;">${message || 'Lost the link to your phone. It may have changed Wi-Fi address.'}</div>
+        ${code ? `<div class="pairing-code" style="font-size:56px;margin:18px 0;">${code}</div>` : ''}
+        <div style="display:flex;gap:14px;justify-content:center;margin-top:18px;">
+          <button class="btn btn-primary" id="fw-repair-go" style="flex:0 0 auto;padding:13px 28px;">Get a New Code</button>
+          <button class="btn btn-secondary" id="fw-repair-wait" style="flex:0 0 auto;padding:13px 28px;">Keep Waiting</button>
+        </div>
+      </div>`;
+    o.style.display = 'flex';
+    const g = document.getElementById('fw-repair-go'), w = document.getElementById('fw-repair-wait');
+    if (g) g.onclick = () => { if (onRepair) onRepair(); };
+    if (w) w.onclick = () => { this.hideTVRepair(); if (onWait) onWait(); };
+  }
+  hideTVRepair() { const o = document.getElementById('fw-tv-repair'); if (o) o.style.display = 'none'; }
+
+  /** Shared full-screen overlay host factory (id + z-index + background). */
+  _overlay(id, z, bg) {
+    let o = document.getElementById(id);
+    if (!o) {
+      o = document.createElement('div');
+      o.id = id;
+      o.style.cssText = `position:fixed;inset:0;z-index:${z};display:none;align-items:center;justify-content:center;background:${bg};`;
+      document.body.appendChild(o);
+    }
+    return o;
   }
 }
 

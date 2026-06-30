@@ -9,6 +9,7 @@ window.GameScoring = {
     let score = 0, attempts = 5, used = 0, best = 0;
     return {
       reset(a) { score = 0; attempts = a || 5; used = 0; },
+      restore(s) { if (!s) return; score = s.score || 0; attempts = s.attempts || attempts; used = s.attempt || 0; best = s.best || 0; },
       add(pts) { score += pts; used++; },
       finalize() { best = Math.max(best, score); return best; },
       get score() { return score; },

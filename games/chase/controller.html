@@ -6,7 +6,7 @@
   <title>Chase — Controller</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
   <style>
-    body { background: radial-gradient(ellipse at bottom, #0d1830 0%, #060a14 100%); margin: 0;
+    body { background: #000; margin: 0;
       height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
     .top { display: flex; justify-content: space-between; align-items: center;
       border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
@@ -57,28 +57,40 @@
   <script src="/framework/services/theme-loader.js"></script>
   <script src="/framework/services/asset-loader.js"></script>
   <script src="/framework/ui/components.js"></script>
+  <script src="/framework/flow/series.js"></script>
   <script src="/framework/core/game.js"></script>
 
   <script>
     'use strict';
     window.onload = async () => {
       const params = new URLSearchParams(location.search);
-      const target = parseInt(params.get('target') || '0', 10);
+      let target = parseInt(params.get('target') || '0', 10);   // re-computed each series match
       const overs = parseInt(params.get('overs') || '2', 10);
       const difficulty = params.get('difficulty') || 'medium';
+      const MATCH_KEY = 'chase_inmatch';   // survives a phone reload mid-chase
       let aim = 'center';
+      if (window.FrameworkSeries) window.FrameworkSeries.init('chase');  // share lobby's series state
+
+      // Same cricket toss maths the lobby uses — so a series can deal a fresh target per match.
+      function computeTarget() {
+        const rate = difficulty === 'hard' ? 11 : difficulty === 'easy' ? 6 : 8.5;
+        const variance = (Math.random() * 2 - 1) * 1.5;
+        const cpu = Math.max(8, Math.round(overs * (rate + variance)));
+        return cpu + 1;
+      }
+      const seriesNow = () => (window.FrameworkSeries ? window.FrameworkSeries.standings() : null);
 
       const game = await window.FrameworkGame.init({
         role: 'bat',
         onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
         onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
         onPaired: () => {
-          // Tell the TV which chase to run (target/overs/difficulty chosen in lobby).
-          game.send('start', { target, overs, difficulty });
+          // First pair = new chase (target/overs/difficulty from lobby). Reconnect = resume.
+          if (sessionStorage.getItem(MATCH_KEY)) { game.send('resume'); }
+          else { sessionStorage.setItem(MATCH_KEY, '1'); game.send('start', { target, overs, difficulty, series: seriesNow() }); }
         },
         handlers: {
-          // TV refreshed and rejoined — re-send the chase so it repaints.
-          screen_rejoined: () => game.send('start', { target, overs, difficulty }),
+          screen_rejoined: () => game.send('resume'),   // TV came back → restore, never reset
           game_state: (d) => {
             setNum('val-primary', d.runs);
             const need = d.target ? Math.max(0, d.target - d.runs) : 0;
@@ -86,12 +98,31 @@
             document.getElementById('val-need').textContent = d.target ? `${need}/${ballsLeft}` : '—';
           },
           game_over: (d) => {
-            window.FrameworkUI.showConfirmDialog({
-              title: d.won ? 'You Won!' : 'Chase Over',
-              body: `Final: ${d.runs}/${d.wickets || 0}.`,
-              confirmText: 'Play Again',
-              onConfirm: () => { window.location.href = '/games/chase/lobby.html'; },
-            });
+            sessionStorage.removeItem(MATCH_KEY);
+            // Record the match into the series (no-op for a single friendly), then branch.
+            const st = window.FrameworkSeries ? window.FrameworkSeries.recordResult(d.won) : null;
+            const stand = seriesNow();
+            if (stand && !stand.done) {
+              // Mid-series → deal the next match without a full re-setup.
+              window.FrameworkUI.showConfirmDialog({
+                title: d.won ? 'Match Won!' : 'Match Lost',
+                body: `Series ${stand.userWins}–${stand.cpuWins}. ${stand.label}.`,
+                confirmText: 'Next Match',
+                onConfirm: () => {
+                  target = computeTarget();
+                  sessionStorage.setItem(MATCH_KEY, '1');
+                  game.send('start', { target, overs, difficulty, series: seriesNow() });
+                },
+              });
+            } else {
+              const title = stand ? (stand.won ? 'Series Won!' : 'Series Lost') : (d.won ? 'You Won!' : 'Chase Over');
+              window.FrameworkUI.showConfirmDialog({
+                title,
+                body: `Final: ${d.runs}/${d.wickets || 0}.`,
+                confirmText: 'Play Again',
+                onConfirm: () => { if (window.FrameworkSeries) window.FrameworkSeries.clear(); window.location.href = '/games/chase/lobby.html'; },
+              });
+            }
           },
         },
       });

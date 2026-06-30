@@ -19,7 +19,7 @@
     "START_ACTION": "PLAY",
     "EXIT_ACTION": "QUIT"
   },
-  "hud": "attempt",
+  "hud": "flat",
   "field": "",
   "_comment_code": "Your game code, loaded in order (entry index.js last). This is the ONLY code you write. Split further or merge into one gameplay.js — your call.",
   "code": [
@@ -62,5 +62,6 @@
     {
       "type": "briefing"
     }
-  ]
+  ],
+  "input": "buttons"
 }

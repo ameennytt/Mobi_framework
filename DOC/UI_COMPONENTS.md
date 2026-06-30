@@ -108,7 +108,46 @@ FrameworkTemplates.showTVBanner('SIX!', '#ffd700');   // auto-fades
 ```js
 FrameworkTemplates.renderTVIntro({ titleA: 'India', titleB: 'Australia', sub: '5 overs' });
 FrameworkTemplates.startTVCountdown(3, () => { FrameworkTemplates.hideTVIntro(); /* start */ });
-FrameworkTemplates.showTVMilestone({ kicker: 'MILESTONE', big: '50', sub: 'Half century!' });
+FrameworkTemplates.showTVMilestone({ kicker: 'Milestone', big: 50, sub: 'runs', color: '#ffd700' });
+```
+
+### Over / round summary + interval break (auto-advance overlays)
+```js
+// end-of-over recap: stat tiles + ball-by-ball pills, auto-closes after `seconds`
+FrameworkTemplates.renderTVOverSummary({
+  title: 'End of Over 3',
+  score: '42/1',
+  stats: [{ label: 'This over', value: 8 }],
+  balls: [{ label: '4', color: '#2faa55' }],   // ball pills
+  seconds: 3,                                   // onDone?: () => {}
+});
+
+// innings / strategic-timeout break with countdown
+FrameworkTemplates.renderTVBreak({
+  kind: 'innings',                 // labels the break
+  title: 'Innings break',
+  stats: [{ label: 'Runs', value: 88 }],
+  seconds: 30,                     // onDone?: () => {}
+});
+```
+
+### Phone-away + re-pair overlays (disconnect handling)
+```js
+FrameworkTemplates.renderTVAway({ message: 'Player stepped out' });   // soft, mid-match
+FrameworkTemplates.renderTVRepair({                                   // permanent drop
+  code: 'AB12',
+  onRepair: () => {/* show pairing again */},
+  onWait:   () => {/* keep waiting */},
+});
+```
+
+### Pre-match intro + 3-2-1 (one call)
+```js
+// team-vs-team intro, holds ~2.2s, then 3-2-1 countdown, then onDone
+FrameworkTemplates.runTVPreMatch(
+  { titleA: 'You', titleB: 'CPU', sub: 'Chasing 142', countdownFrom: 3 },
+  () => { /* start play */ }
+);
 ```
 
 ### Result / game-over (banner gradient + POM slot + stats grid)
@@ -118,7 +157,14 @@ FrameworkTemplates.renderTVResult({
   icon: '🏆',                      // optional
   bannerText: 'Victory',
   winner: '18/2',
+  // optional full-broadcast dual scoreboard (winner card glows gold)
+  scoreboard: {
+    user: { name: 'You', score: '142/4', color: '#1f7ae0', winner: true },
+    opp:  { name: 'CPU', score: '138/8', color: '#e03a3a' },
+  },
   pom: '<b>Player of the match</b> …', // optional HTML slot (game-supplied)
+  quote: { text: 'Held the nerve under pressure.', by: 'Commentary' }, // optional
+  series: { label: 'Best of 3', userWins: 2, cpuWins: 1 },             // optional progress strip
   stats: [{ label: 'Runs', value: 18 }, { label: 'Target', value: 18 }],
   primaryText: 'PLAY AGAIN',
   onPrimary: () => FrameworkTemplates.hideTVResult(),
@@ -152,6 +198,52 @@ FrameworkTemplates.renderMobileCalibration(container, { title, instructions, onC
 
 > For a full polished lobby, prefer **`FrameworkFlow.mount()`** (see
 > [FRAMEWORK_API.md](FRAMEWORK_API.md)) — it builds the entire flow from config.
+
+### In-match phone widgets (all opt-in — default controller is just buttons)
+```js
+// coach cards swiped before/during a match
+FrameworkTemplates.renderMobileTips({
+  slides: [{ icon: '🏏', title: 'Time it', text: 'Tap as the ball arrives.' }],
+  onDone: () => {},
+});
+
+FrameworkTemplates.showMobileResult({ text: 'SIX!', color: '#F3D86B' });   // center flash
+
+// pass-the-phone handoff countdown
+FrameworkTemplates.renderMobileHandoff({
+  title: 'Pass the phone', next: 'Player 2', seconds: 3, onReady: () => {},
+});
+
+FrameworkTemplates.renderMobileQuitConfirm({ onQuit: () => {}, onStay: () => {} });  // exit-match
+
+// editable roster (mutates a name list, fires onChange with the new list)
+FrameworkTemplates.renderMobileTeamEdit(container, {
+  title: 'Line-up', names: ['You', 'Player 2'], onChange: (list) => {},
+});
+```
+
+---
+
+## 5. FrameworkCharts — broadcast HUD widgets
+
+Optional broadcast graphics. Load the script, then render into a DOM host (element or
+id). Each is a no-op if unused — gate on `tv.*` config flags. Cross-ref
+[SCREENS.md](SCREENS.md) ("Broadcast widgets").
+
+```html
+<script src="/framework/ui/charts.js"></script>
+```
+
+```js
+FrameworkCharts.manhattan(hostEl, [{ runs: 6 }, { runs: 12, wkt: true }]);  // per-over bars
+FrameworkCharts.wagonWheel(hostEl, [{ angle: 30, power: 0.9, color: '#F3D86B' }]); // shot map
+FrameworkCharts.winProbBar(hostEl, 64);                                     // % win bar
+FrameworkCharts.runPie(hostEl, { dots: 10, ones: 8, bnd: 5 });              // scoring breakdown
+FrameworkCharts.overPills(hostEl, [{ label: '4', color: '#2faa55' }]);      // ball-by-ball pills
+FrameworkCharts.commentaryCard(hostEl, { result: 'FOUR', text: 'Driven through covers.' });
+```
+
+> `hostEl` may be a DOM element or an element id string.
 
 ---
 

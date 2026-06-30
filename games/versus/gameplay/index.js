@@ -24,10 +24,11 @@ window.Gameplay = (function () {
 
   let game = null, paired = false, difficulty = 'medium';
   let ball = null, title = 'Striker Duel';
+  let live = false, streak = 0, halfShown = false;   // broadcast extras (intro gate / milestone / half-time)
   const score = window.GameScoring.create();
 
   function onAction(d) {
-    if (!paired || ball || R().isFinished(score.round, score.rounds)) return;
+    if (!paired || !live || ball || R().isFinished(score.round, score.rounds)) return;   // ignore taps during intro
     const aim = (d && d.choice) || 'center';
     const W = window.FrameworkRenderer.W, H = window.FrameworkRenderer.H;
     const { p, gy, gw } = V().geometry(W, H);
@@ -49,14 +50,29 @@ window.Gameplay = (function () {
   function resolveRound() {
     const scored = !ball.saved;
     A().burst(ball.x1, ball.y1, scored ? '#39ff14' : '#ff5566', scored ? 36 : 12);
-    if (scored) { score.goal(); A().cheer(140); }
+    if (scored) { score.goal(); A().cheer(140); streak++; } else { streak = 0; }
     T().showTVBanner(scored ? 'GOAL!' : 'SAVED!', scored ? '#39ff14' : '#ff5566');
+    // GOAL milestone takeover (CricSwing's 50/100 twin) — brace / hat-trick.
+    if (T().showTVMilestone && scored && streak >= 2) {
+      T().showTVMilestone({ kicker: streak >= 3 ? 'HAT-TRICK!' : 'BRACE!', big: streak, sub: 'in a row', color: '#39ff14' });
+    }
     if (R().cpuScores(difficulty)) score.cpuGoal();   // CPU reply shot (instant)
     score.next();
     ball = null;
-    T().updateScorebar(HUD, score.snapshot());
-    game.send('game_state', Object.assign({ scored }, score.snapshot()));
-    if (R().isFinished(score.round, score.rounds)) setTimeout(endGame, 1200);
+    const snap = score.snapshot();
+    T().updateScorebar(HUD, snap);
+    game.send('game_state', Object.assign({ scored }, snap));
+    const finished = R().isFinished(score.round, score.rounds);
+    // Half-time summary (CricSwing's over-summary twin).
+    if (!finished && !halfShown && T().renderTVOverSummary && score.round >= Math.ceil(score.rounds / 2)) {
+      halfShown = true;
+      T().renderTVOverSummary({
+        title: 'Half Time', score: `${score.you} - ${score.cpu}`,
+        stats: [{ label: 'You', value: score.you }, { label: 'CPU', value: score.cpu }, { label: 'Round', value: `${score.round}/${score.rounds}` }],
+        nextLabel: 'Second half starting…', seconds: 3,
+      });
+    }
+    if (finished) setTimeout(endGame, 1200);
   }
 
   function endGame() {
@@ -70,6 +86,12 @@ window.Gameplay = (function () {
         won,
         bannerText: won ? 'Full Time — Win' : r === 'draw' ? 'Full Time — Draw' : 'Full Time — Loss',
         winner: `${score.you} - ${score.cpu}`,
+        // Optional dual scoreboard + quote (football twin of chase's match-end).
+        scoreboard: {
+          user: { name: 'You', score: score.you, winner: won },
+          opp: { name: 'CPU', score: score.cpu, winner: r === 'loss' },
+        },
+        quote: { text: won ? 'Clinical from the spot.' : r === 'draw' ? 'Honours even.' : 'Unlucky — go again.', by: 'Commentary' },
         stats: [
           { label: 'You', value: score.you },
           { label: 'CPU', value: score.cpu },
@@ -81,14 +103,34 @@ window.Gameplay = (function () {
     }, won ? 1700 : 1100);
   }
 
-  function start(opts = {}) {
-    difficulty = opts.difficulty || 'medium';
-    score.reset(opts.rounds || 5);
+  // Set up the live scorebar (shared by fresh start + post-intro + resume).
+  function setupBoard() {
     ball = null;
+    live = true;
     A().reset();
     T().hideTVResult();
     T().renderScorebar(HUD, { titleA: 'You', titleB: 'CPU' });
     T().updateScorebar(HUD, score.snapshot());
+  }
+
+  function start(opts = {}) {
+    difficulty = opts.difficulty || 'medium';
+    score.reset(opts.rounds || 5);
+    ball = null; live = false; streak = 0; halfShown = false;
+    // Optional broadcast open: Home vs Away intro + 3-2-1 kick-off countdown.
+    if (T().runTVPreMatch) {
+      T().runTVPreMatch({ titleA: 'Home', titleB: 'Away', sub: 'Kick-off', countdownFrom: 3 }, setupBoard);
+    } else { setupBoard(); }
+  }
+
+  // Restore an in-progress match from the framework's saved snapshot (reconnect /
+  // reload) instead of starting fresh. No intro on resume.
+  function resume() {
+    const s = game.loadSavedState();
+    if (!s) { start({}); return; }
+    score.restore(s);
+    streak = 0; halfShown = score.round >= Math.ceil(score.rounds / 2);
+    setupBoard();
   }
 
   function draw(ctx, W, H) {
@@ -108,6 +150,7 @@ window.Gameplay = (function () {
     handlers: {
       action: onAction,
       start: (d) => { paired = true; start(d || {}); },
+      resume: () => { paired = true; resume(); },
     },
   };
 })();

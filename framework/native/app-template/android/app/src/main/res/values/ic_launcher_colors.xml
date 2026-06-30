@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Default launcher-icon background. `npm run publish` overwrites this with the
+       game's --game-accent so each game's icon is its own colour (not CricSwing). -->
+  <color name="ic_launcher_background">#0b0f14</color>
+</resources>

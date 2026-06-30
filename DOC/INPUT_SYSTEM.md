@@ -4,6 +4,16 @@ This guide explains how to capture user input on the mobile controller and relay
 
 Because we focus on **normal inputs** (button taps, direction keys, and basic tilts), developers can build stable, responsive gamepads without writing complex physical sensor algorithms.
 
+> **Default = buttons.** The framework's default input is **buttons** — tap/choice controls
+> relayed via `game.send('action', {...})` (covered below). **Motion/swing input is opt-in
+> and OFF by default.** A game enables it in `game-config.json` with `"input": "motion"` and
+> `"supportsMotion": true`, then loads `/framework/extensions/motion-input.js` (and optionally
+> `/framework/extensions/ml-profile.js`) in its `controller.html`. These are **scaffolds
+> (stubbed)** today: the wiring/screens are in place — sensor permission + stance/calibration
+> via `FrameworkTemplates.renderMobileCalibration` — but **swing detection and ML
+> classification are TODO for the game developer**. See `framework/extensions/README.md`.
+> Principle: **easy by default (buttons), flexible when needed (motion), unlimited if desired.**
+
 > **Naming rule:** message types are **lowercase** (e.g. `action`, `input_direction`,
 > `game_state`). Payload fields arrive **top-level** on the peer — `game.send('action',
 > {choice})` is read as `d.choice` in the handler. Mismatched/UPPERCASE names silently
