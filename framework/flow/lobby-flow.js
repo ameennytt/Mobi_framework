@@ -113,21 +113,36 @@ window.FrameworkFlow = (function () {
         const boxes = (window.FrameworkUI && window.FrameworkUI.codeInput)
           ? window.FrameworkUI.codeInput({ n: 4 })
           : '<div class="fw-codebox-row"></div>';
+        const siteUrl = (st.siteUrl) || ((cfg.pair && cfg.pair.siteUrl)) || '';
+        const siteLabel = siteUrl || (title + '.com');
+        const iconUrl = (cfg.assets && cfg.assets.APP_ICON) || (cfg.assets && cfg.assets.APP_LOGO) || logo;
         return `<div class="fw-screen" id="${id}">
-          <div class="fw-spacer"></div>
-          <div class="fw-brand fw-hero">${logo ? `<img src="${esc(logo)}" alt="">` : ''}
-            <h1>${esc(title)}</h1><p>Pair with your TV to play</p></div>
-          <div class="fw-pair-chip" id="fw-pair-chip"><span class="fw-pair-dot"></span><span id="fw-pair-status">Looking for TV…</span></div>
-          <div class="fw-spacer"></div>
+          <div class="fw-chip fw-pair-chip" id="fw-pair-chip"><span class="fw-chip-dot pulse"></span><span id="fw-pair-status">LOOKING FOR TV</span></div>
+          <div class="fw-brand fw-hero">
+            ${iconUrl ? `<img src="${esc(iconUrl)}" alt="" style="width:108px;height:108px;border-radius:24px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,0.5);">` : ''}
+            <h1>${esc(title)}</h1>
+          </div>
+          <div class="fw-pair-steps">
+            <div class="fw-pair-step">
+              <span class="fw-pair-stepnum">1</span>
+              <span class="fw-pair-stepicon">🖥️</span>
+              <span class="fw-pair-steptext">Open <span class="fw-pair-site">${esc(siteLabel)}</span> on your TV</span>
+            </div>
+            <div class="fw-pair-step">
+              <span class="fw-pair-stepnum">2</span>
+              <span class="fw-pair-stepicon">🔢</span>
+              <span class="fw-pair-steptext">A 4-digit code appears on screen<br><span style="font-size:12px;color:var(--game-muted);">Enter it in the field below to connect ↓</span></span>
+            </div>
+          </div>
           <div class="fw-cardbox">
-            <label>Enter TV Code</label>
+            <label>ENTER TV CODE</label>
             <div id="fw-code-visual" tabindex="0">${boxes}</div>
             <input type="text" id="fw-code" maxlength="4" inputmode="latin" autocomplete="off"
               autocapitalize="characters" style="position:absolute;opacity:0;pointer-events:none;height:0;width:0;">
-            <button class="btn btn-primary fw-full" id="fw-connect">CONNECT</button>
-            <div class="fw-status" id="fw-welcome-status"></div>
-            <div class="fw-wifi-hint">📶 Phone &amp; TV must be on the <b>same Wi-Fi</b>.</div>
           </div>
+          <button class="btn btn-primary fw-full" id="fw-connect">Connect to TV</button>
+          <button class="btn btn-secondary fw-full" id="fw-clear">Clear</button>
+          <div class="fw-status" id="fw-welcome-status"></div>
           <div class="fw-spacer"></div></div>`;
       }
       // consent — one-time data-consent gate. Screen is empty; renderStep shows a modal.
@@ -136,16 +151,18 @@ window.FrameworkFlow = (function () {
       }
       // intro — N-slide onboarding carousel. Slides from st.slides or ui.onboarding.intro.
       if (st.type === 'intro') {
+        const eyebrow = st.eyebrow || (((cfg.ui && cfg.ui.onboarding) || {}).introEyebrow) || 'Quick Intro';
         return `<div class="fw-screen fw-intro" id="${id}">
+          <div class="fw-chip fw-intro-chip"><span class="fw-chip-dot"></span>${esc(eyebrow)}</div>
+          <h2 class="fw-intro-title" data-introtitle="${i}"></h2>
           <div class="fw-spacer"></div>
-          <div class="fw-intro-card" data-intro="${i}"></div>
+          <div class="fw-intro-figure" data-intro="${i}"></div>
+          <div class="fw-spacer"></div>
           <div class="fw-intro-dots" data-introdots="${i}"></div>
-          <div class="fw-spacer"></div>
           <div class="fw-intro-actions">
-            <button class="btn btn-secondary fw-intro-skip" data-introskip="${i}">Skip</button>
             <button class="btn btn-primary fw-intro-next" data-intronext="${i}">Next</button>
-          </div>
-          <div class="fw-spacer"></div></div>`;
+            <button class="fw-intro-skip" data-introskip="${i}">Skip</button>
+          </div></div>`;
       }
       // menu — mode hub: mode cards + optional About/Help/Settings entries.
       if (st.type === 'menu') {
@@ -154,15 +171,26 @@ window.FrameworkFlow = (function () {
           <div class="fw-menu-entries" data-entries="${i}"></div></div>`;
       }
       if (st.type === 'choice') {
-        return `<div class="fw-screen" id="${id}"><div class="fw-grid-host" data-step="${i}"></div></div>`;
+        // Optional CricSwing-style extras: a VS match-preview card + a "Start" confirm
+        // button (so the pick doesn't auto-advance). Both gated by step flags.
+        return `<div class="fw-screen" id="${id}">
+          <div class="fw-grid-host" data-step="${i}"></div>
+          ${st.preview ? `<div class="fw-preview" data-preview="${i}"></div>` : ''}
+          ${st.confirm ? `<div class="fw-spacer"></div><button class="btn btn-primary fw-full fw-big fw-confirm" data-confirm="${i}" disabled>${esc(st.confirmText || 'Start Match')}</button>` : ''}
+        </div>`;
       }
       if (st.type === 'ceremony') {
-        const emoji = st.kind === 'kickoff' ? '⚽' : '🪙';
+        const isToss = st.kind !== 'kickoff';
+        const emoji = isToss ? '🪙' : '⚽';
+        const sub = isToss ? 'Time for the toss' : 'Time to kick off';
+        const coinCls = isToss ? 'fw-coin fw-coin-disc' : 'fw-coin';   // toss = styled gold disc
         return `<div class="fw-screen" id="${id}">
-          ${headHtml(st.kind === 'kickoff' ? 'Kick off' : 'Flip the coin')}
-          <div class="fw-toss"><div class="fw-coin" data-step="${i}">${emoji}</div>
-          <div class="fw-toss-msg" data-msg="${i}">Tap to start</div>
-          <div class="fw-toss-result" data-result="${i}"></div></div></div>`;
+          ${headHtml(isToss ? 'Flip the coin' : 'Kick off')}
+          <div class="fw-toss">
+            <div class="fw-toss-sub">${sub}</div>
+            <div class="${coinCls}" data-step="${i}">${emoji}</div>
+            <div class="fw-toss-msg" data-msg="${i}">Tap to start</div>
+            <div class="fw-toss-result" data-result="${i}"></div></div></div>`;
       }
       // target / briefing
       return `<div class="fw-screen" id="${id}">
@@ -204,6 +232,14 @@ window.FrameworkFlow = (function () {
       const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
       const opts = resolveSource(src);
       const cls = src === 'modes' ? 'fw-mode' : '';
+      // Mirror this pick screen to the TV (CricSwing-style: pill, title, options, wait chip).
+      const noun = st.key || (st.type === 'menu' ? 'mode' : 'option');
+      sendTV('choosing', {
+        kicker: st.kicker || ('Pick your ' + noun).toUpperCase(),
+        stepTitle: st.title || 'Choose',
+        keyName: noun,
+        options: opts.map(o => o.title).filter(Boolean),
+      });
       const host = document.querySelector(`.fw-grid-host[data-step="${i}"]`);
       if (host) {
         // Tabbed picker: `tabs: '<field>'` groups options by that field (e.g. region)
@@ -221,8 +257,11 @@ window.FrameworkFlow = (function () {
         } else {
           host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
         }
+        // Optional N-column layout (e.g. 3-across difficulty cards).
+        if (st.cols) { const g = host.querySelector('.fw-grid'); if (g) g.classList.add(`cols-${st.cols}`); }
       }
       if (st.type === 'menu') renderMenuEntries(st, i);
+      if (st.type === 'choice' && st.preview) renderPreview(i);
     } else if (st.type === 'consent') {
       renderConsent(st, i);
     } else if (st.type === 'intro') {
@@ -232,6 +271,10 @@ window.FrameworkFlow = (function () {
       if (msg) msg.textContent = st.kind === 'kickoff' ? 'Tap the ball to kick off' : 'Tap the coin';
       const res = document.querySelector(`[data-result="${i}"]`);
       if (res) res.textContent = '';
+      // Block the coin for 400ms so ghost/bleed taps from the previous step don't auto-fire the ceremony.
+      const coinEl = document.querySelector(`.fw-coin[data-step="${i}"]`);
+      if (coinEl) { coinEl.dataset.ready = '0'; setTimeout(() => { coinEl.dataset.ready = '1'; }, 400); }
+      sendTV('ceremony', { kind: st.kind });   // mirror the coin/ball screen to the TV on enter
     } else if (st.type === 'target' || st.type === 'briefing') {
       renderSummary(st, i);
     }
@@ -262,15 +305,16 @@ window.FrameworkFlow = (function () {
   function renderIntro(st, i) {
     const slides = introSlides(st);
     if (!slides.length) { next(); return; }
-    const card = document.querySelector(`[data-intro="${i}"]`);
+    const figure = document.querySelector(`[data-intro="${i}"]`);
+    const titleHost = document.querySelector(`[data-introtitle="${i}"]`);
     const dotsHost = document.querySelector(`[data-introdots="${i}"]`);
     const nextBtn = document.querySelector(`[data-intronext="${i}"]`);
     const sl = slides[Math.min(introIdx, slides.length - 1)];
-    if (card) card.innerHTML = `${sl.icon ? `<div class="fw-intro-icon">${sl.icon}</div>` : ''}
-      <h2 class="fw-intro-title">${esc(sl.title || '')}</h2>
+    if (titleHost) titleHost.textContent = sl.title || '';
+    if (figure) figure.innerHTML = `${sl.icon ? `<div class="fw-intro-icon">${sl.icon}</div>` : ''}
       <p class="fw-intro-text">${esc(sl.text || '')}</p>`;
     if (dotsHost && window.FrameworkUI && window.FrameworkUI.dots) dotsHost.innerHTML = window.FrameworkUI.dots(slides.length, introIdx);
-    if (nextBtn) nextBtn.textContent = (introIdx >= slides.length - 1) ? 'Start' : 'Next';
+    if (nextBtn) nextBtn.textContent = (introIdx >= slides.length - 1) ? 'Start' : 'Next →';
   }
   function finishIntro() {
     try { window.FrameworkStorage && window.FrameworkStorage.save(`${game._gid}_intro_seen`, '1'); } catch (_) {}
@@ -366,22 +410,47 @@ window.FrameworkFlow = (function () {
     tick();
   }
 
-  function rosterNames() {
-    if (Array.isArray(S.roster) && S.roster.length) return S.roster.slice();
-    if (Array.isArray(cfg.roster) && cfg.roster.length) return cfg.roster.slice();
-    return null;
+  // Normalize roster config → { names, roles }. Config roster entries may be plain
+  // strings or { name, role } objects; edited names live in S.roster (strings).
+  function rosterModel() {
+    const cfgRoster = (Array.isArray(cfg.roster) && cfg.roster.length) ? cfg.roster : null;
+    const edited = (Array.isArray(S.roster) && S.roster.length) ? S.roster : null;
+    if (!cfgRoster && !edited) return null;
+    const base = cfgRoster || edited;
+    const names = edited ? edited.slice() : base.map(x => (x && typeof x === 'object') ? (x.name || '') : x);
+    const roles = (cfgRoster || []).map(x => (x && typeof x === 'object') ? (x.role || '') : '');
+    return { names, roles };
   }
   function renderRoster(i) {
     const host = document.querySelector(`[data-roster="${i}"]`);
     if (!host) return;
-    const names = rosterNames();
-    if (!names) { host.innerHTML = ''; return; }
+    const m = rosterModel();
+    if (!m) { host.innerHTML = ''; return; }
     if (window.FrameworkTemplates && window.FrameworkTemplates.renderMobileTeamEdit) {
       window.FrameworkTemplates.renderMobileTeamEdit(host, {
-        title: cfg.rosterTitle || 'Your line-up', names,
+        title: cfg.rosterTitle || 'Your line-up', names: m.names, roles: m.roles,
         onChange: (list) => { S.roster = list; save(); },
       });
     }
+  }
+
+  // Optional match-preview card (CricSwing difficulty step): your team VS the opponent.
+  function renderPreview(i) {
+    const host = document.querySelector(`[data-preview="${i}"]`);
+    if (!host) return;
+    const U = window.FrameworkUI;
+    const crest = (short, color, fallback) => (U && U.crest)
+      ? U.crest({ short: short || String(fallback || '').slice(0, 3).toUpperCase(), color, size: 56 })
+      : `<span class="fw-dot" style="background:${color || 'var(--game-accent)'}"></span>`;
+    host.innerHTML = `<div class="fw-preview-label">Match Preview</div>
+      <div class="fw-preview-row">
+        <div class="fw-preview-team">${crest(S.teamShort, S.teamColor, S.team || 'You')}
+          <div class="fw-preview-name">${esc(S.team || 'You')}</div>
+          <span class="fw-preview-tag">Your Team</span></div>
+        <div class="fw-preview-vs">VS</div>
+        <div class="fw-preview-team">${crest(S.oppShort, S.oppColor, S.opp || 'CPU')}
+          <div class="fw-preview-name">${esc(S.opp || 'Opponent')}</div></div>
+      </div>`;
   }
 
   // ── picking ────────────────────────────────────────────────────────────
@@ -424,7 +493,8 @@ window.FrameworkFlow = (function () {
   function runCeremony(st, i) {
     const coin = document.querySelector(`.fw-coin[data-step="${i}"]`);
     const msg = document.querySelector(`[data-msg="${i}"]`);
-    if (!coin || coin.classList.contains('spin')) return;
+    // Bail if coin not ready (ghost-tap guard) or already spinning.
+    if (!coin || coin.classList.contains('spin') || coin.dataset.ready === '0') return;
     coin.classList.add('spin');
     ensureTeam();
     sendTV('ceremony', { kind: st.kind });
@@ -432,7 +502,9 @@ window.FrameworkFlow = (function () {
       if (msg) msg.textContent = 'Tossing…';
       setTimeout(() => settleCeremony(st, coin, msg), 1500);
     } else {
-      settleCeremony(st, coin, msg);
+      // Brief animation window before settling (mirrors toss UX; prevents instant-skip feel).
+      if (msg) msg.textContent = 'Kicking off…';
+      setTimeout(() => settleCeremony(st, coin, msg), 900);
     }
   }
 
@@ -489,6 +561,12 @@ window.FrameworkFlow = (function () {
     } catch (_) {}
     const cbtn = document.getElementById('fw-connect');
     if (cbtn) cbtn.onclick = connect;
+    const clrbtn = document.getElementById('fw-clear');
+    if (clrbtn) clrbtn.onclick = () => {
+      if (codeInput) { codeInput.value = ''; }
+      if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode('');
+      if (status) status.textContent = '';
+    };
     if (codeInput) codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
 
     // Mirror the hidden input into the visual 4 code-boxes; tapping the boxes focuses
@@ -496,18 +574,27 @@ window.FrameworkFlow = (function () {
     const visual = document.getElementById('fw-code-visual');
     if (codeInput) {
       codeInput.addEventListener('input', () => {
-        codeInput.value = (codeInput.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
-        if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode(codeInput.value);
-        if (codeInput.value.length === 4) connect();
+        // Sanitize to up-to-4 upper A-Z0-9. Only rewrite value when it actually changed,
+        // and always push the caret to the END afterwards — on Android WebView, reassigning
+        // input.value resets the caret to index 0, so the next keystroke inserts at the
+        // FRONT and the code comes out reordered. Keeping the caret at the end fixes that.
+        const clean = (codeInput.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+        if (clean !== codeInput.value) codeInput.value = clean;
+        try { codeInput.setSelectionRange(clean.length, clean.length); } catch (_) {}
+        if (window.FrameworkUI && window.FrameworkUI.setCode) window.FrameworkUI.setCode(clean);
+        if (clean.length === 4) connect();
       });
     }
     if (visual && codeInput) visual.addEventListener('click', () => codeInput.focus());
 
-    // Native auto-pair: the RN shell injects window.__roomCode once the TV creates a
-    // room. It can arrive before OR after this lobby loads, so handle both: read it
-    // now, and listen for the __roomCodeChanged event the shell fires on update.
+    // Native auto-pair (OPT-IN, default OFF). The RN shell injects window.__roomCode
+    // once the TV creates a room; with `autoPair:true` in game-config.json the phone
+    // skips typing and connects itself. DEFAULT is the manual experience: the player
+    // looks at the TV, reads the code, and types it on the pair screen. Set
+    // `"autoPair": true` in config only if you want the phone to pair automatically.
     let autoPaired = false;
     function autoPair() {
+      if (!(cfg && cfg.autoPair)) return;                 // manual by default
       if (autoPaired || !window.__roomCode || !codeInput) return;
       // Only auto-pair while still on the pair step (don't yank a user mid-setup).
       if (currentIdx() > 0) return;
@@ -526,9 +613,23 @@ window.FrameworkFlow = (function () {
         const i = currentIdx(); const st = flow[i];
         const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
         const opt = resolveSource(src).find(o => String(o.id) === card.getAttribute('data-id'));
-        if (opt) { applyPick(st, opt); next(); }
+        if (!opt) return;
+        applyPick(st, opt);
+        if (st.confirm) {
+          // CricSwing-style: tapping a card selects it; a Start button advances.
+          const hostEl = document.getElementById(idFor(i));
+          if (hostEl) hostEl.querySelectorAll('.fw-card').forEach(c => c.classList.toggle('selected', c === card));
+          const start = document.querySelector(`[data-confirm="${i}"]`);
+          if (start) start.disabled = false;
+          if (st.preview) renderPreview(i);
+        } else {
+          next();
+        }
         return;
       }
+      // Start/confirm button on a choice step (only enabled once a card is picked).
+      const conf = e.target.closest('[data-confirm]');
+      if (conf) { if (!conf.disabled) next(); return; }
       // intro carousel: Next advances the slide (or finishes on the last), Skip ends it.
       const inext = e.target.closest('[data-intronext]');
       if (inext) {
@@ -587,6 +688,26 @@ window.FrameworkFlow = (function () {
     wire();
     hydrate();
     R.resetTo(idFor(0));
+    maybeOfferResume();
+  }
+
+  // If a match is mid-flight (the controller left the in-match flag), offer to resume it
+  // instead of walking the whole lobby again. Generic across games (key = `${gid}_inmatch`).
+  function maybeOfferResume() {
+    let inMatch = false, room = '';
+    try {
+      inMatch = !!sessionStorage.getItem(`${game._gid}_inmatch`);
+      room = sessionStorage.getItem(`${game._gid}_room`) || '';
+    } catch (_) {}
+    if (!inMatch || !window.FrameworkUI || !window.FrameworkUI.showConfirmDialog) return;
+    window.FrameworkUI.showConfirmDialog({
+      title: 'Resume your match?',
+      body: 'You have a match in progress.',
+      confirmText: 'Resume',
+      cancelText: 'New Game',
+      onConfirm: () => { window.location.href = `/games/${game._gid}/controller.html${room ? `?room=${encodeURIComponent(room)}` : ''}`; },
+      onCancel: () => { try { sessionStorage.removeItem(`${game._gid}_inmatch`); } catch (_) {} },
+    });
   }
 
   return { mount, selection: () => Object.assign({}, S), go: (i) => go(i) };

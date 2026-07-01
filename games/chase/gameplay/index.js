@@ -80,14 +80,14 @@ window.Gameplay = (function () {
           opp: { name: 'Opponent', score: score.target ? score.target - 1 : '—', winner: !won },
         },
         quote: { text: won ? 'Chased it down with class.' : 'So close — go again.', by: 'Commentary' },
-        series: seriesInfo ? { label: seriesInfo.label, userWins: seriesInfo.userWins, cpuWins: seriesInfo.cpuWins } : undefined,
+        series: seriesInfo || undefined,   // full standings → renders series dots on the TV result
         stats: [
           { label: 'Runs', value: score.runs },
           { label: 'Target', value: score.target || '—' },
           { label: 'Overs', value: `${Math.floor(score.balls / 6)}.${score.balls % 6}` },
         ],
-        primaryText: 'PLAY AGAIN',
-        onPrimary: () => { game.hideResult(); start({ target: score.target, overs: score.overs, difficulty }); },
+        // TV result is display-only — the phone drives Next Match / Play Again (no dead TV button).
+        sub: 'Continue on your phone',
       });
     }, won ? 1800 : 1100);
   }

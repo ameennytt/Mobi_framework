@@ -34,15 +34,35 @@ One call boots any page: **`FrameworkGame.init({ ... })`**.
 npm install
 npm start                         # dev server on http://localhost:3000
 
-npm run new-game mygame           # premium starter (any sport)
+npm run new-game -- mygame           # premium starter (any sport)
 #   --from chase    cricket-style chase
 #   --from versus   football-style head-to-head
 
 npm test                          # run all tests        npm run lint   # syntax sweep
 ```
 
+**Browser (dev):**
 - TV: `http://localhost:3000/games/mygame/screen.html` → shows a code
 - Phone: `http://localhost:3000/games/mygame/lobby.html` → type the code
+
+**APK (device testing):**
+```bash
+npm run publish mygame            # generate games/mygame/app/
+cd games/mygame/app
+npm install
+npx react-native run-android      # builds + installs APK on connected device
+```
+Then get the TV URL (phone must be plugged via USB + USB debugging on):
+```bash
+# from project root
+node scripts/tv-link.js mygame
+```
+Opens a USB tunnel → prints `http://localhost:3001/games/mygame/screen.html` → open that on the TV browser → shows pairing code → type it in the app → connected.
+
+After code changes (skip full rebuild):
+```bash
+npm run sync mygame               # re-embeds framework + game into existing app/
+```
 
 That's a working, premium-looking game. Now make it yours.
 
@@ -52,12 +72,17 @@ That's a working, premium-looking game. Now make it yours.
 
 ```
 games/mygame/
-├── game-config.json   # name, colors, teams, lobby steps, hud, field   (no logic)
+├── game-config.json   # name, colors, home, flow, controller, hud, arena, field (no logic)
 └── gameplay/          # YOUR code — rules.js · scoring.js · visuals.js · index.js
+                       #   (+ optional controller.js for sport-specific match-end logic)
 ```
 
-Everything else — pairing, lobby, premium screens, scoreboard, reconnect — is the framework's
-job. Recolour in `theme`; add/remove lobby screens in `flow:[]`; ship with `npm run publish`.
+The four HTML files (`home` / `lobby` / `controller` / `screen`) are **framework-built
+stubs** — you normally never open them. Home, the lobby flow, and the in-match controller are
+all generated from `game-config.json` (`home`, `flow`, `controller`). Everything else —
+pairing, premium screens, scoreboard, reconnect — is the framework's job. Recolour the **whole
+app** (TV + phone) in `theme`; add/remove lobby screens in `flow:[]`; change controller buttons
+in `controller.controls`; ship with `npm run publish`.
 
 The 3 templates (`starter`, `chase`, `versus`) share **one premium look** and the **same
 modular shape** — they differ only in sport shaping.
@@ -95,6 +120,7 @@ ends: **`games/starter` = minimal**, **`games/chase` = broadcast demo** with the
 | **[DOC/FRAMEWORK_API.md](DOC/FRAMEWORK_API.md)** | every `window.Framework*` global + method (reference) |
 | **[DOC/UI_COMPONENTS.md](DOC/UI_COMPONENTS.md)** | copy-paste UI recipes (screens + components) |
 | **[DOC/SCREENS.md](DOC/SCREENS.md)** | every optional screen + the config flag that turns it on |
+| **[DOC/OVERRIDES.md](DOC/OVERRIDES.md)** | customize or replace any surface (home/controller/arena/templates/input) |
 | **[DOC/INPUT_SYSTEM.md](DOC/INPUT_SYSTEM.md)** | controller input + motion/swing |
 | **[DOC/BEST_PRACTICES.md](DOC/BEST_PRACTICES.md)** | performance + messaging tips |
 | **[framework/EXTENSIONS.md](framework/EXTENSIONS.md)** | opt-in subsystems (ml/training/tournament/analytics) |

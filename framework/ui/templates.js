@@ -64,7 +64,7 @@ class GameTemplates {
       o.style.cssText = 'position:fixed;inset:0;z-index:20;pointer-events:none;display:none;';
       document.body.appendChild(o);
     }
-    const HB = 'background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);box-shadow:var(--fw-shadow-card);border-radius:12px;';
+    const HB = 'background:var(--game-surface);border:1.5px solid var(--game-secondary-30);backdrop-filter:blur(8px);box-shadow:var(--fw-shadow-card);border-radius:12px;';
     const SCORE = 'font-family:var(--game-mono);font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);';
     o.innerHTML = `
       <div style="position:absolute;top:28px;left:28px;${HB}padding:8px 16px;">
@@ -124,7 +124,7 @@ class GameTemplates {
     this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
-      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;background:var(--game-surface);border:1.5px solid var(--game-secondary-30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
         <div style="padding:12px 24px;text-align:center;">
           <div style="font-size:12px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${titleA || 'You'}</div>
           <div id="fw-vs-a" style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);">0</div>
@@ -153,7 +153,7 @@ class GameTemplates {
     this.hideTVSetup();   // gameplay started → dismiss the lobby mirror
     let o = this._sbHost();
     o.innerHTML = `
-      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(7,16,12,.78);border:1.5px solid rgba(118,185,0,.30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:var(--game-surface);border:1.5px solid var(--game-secondary-30);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
         <div style="padding:12px 24px;text-align:center;">
           <div style="font-size:12px;text-transform:uppercase;color:var(--game-muted);letter-spacing:1px;">${title || 'Score'}</div>
           <div id="fw-at-score" style="font-family:var(--game-mono);font-size:42px;font-weight:900;color:var(--game-gold);line-height:1;text-shadow:0 0 .35em rgba(243,216,107,.45);">0</div>
@@ -193,7 +193,7 @@ class GameTemplates {
         <div id="fw-flat-${i}" style="font-family:var(--game-mono);font-size:30px;font-weight:900;color:var(--game-gold);line-height:1;">—</div>
       </div>`).join('');
     o.innerHTML = `
-      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:rgba(7,16,12,.78);border:1.5px dashed rgba(118,185,0,.40);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
+      <div style="position:absolute;top:26px;left:50%;transform:translateX(-50%);display:flex;background:var(--game-surface);border:1.5px dashed var(--game-secondary-40);backdrop-filter:blur(8px);border-radius:12px;overflow:hidden;box-shadow:var(--fw-shadow-card);">
         ${cells}
       </div>
       <div style="position:absolute;top:96px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--game-muted);">▢ generic HUD — rename slots &amp; pick a kind in renderScorebar()</div>`;
@@ -371,6 +371,31 @@ class GameTemplates {
    * @param {object} opts { bannerText, winner, stats:[{label,value}], primaryText,
    *   onPrimary, secondaryText, onSecondary }
    */
+  /**
+   * Series progress dots (M1✗ / M2● / M3◌). Shared by TV + phone match-end.
+   * `series` = a FrameworkSeries.standings() view-model: { total, matchNum, done, results }.
+   * Returns '' when there's no multi-match series.
+   */
+  _seriesDots(series) {
+    if (!series || !series.total || series.total < 2) return '';
+    const total = series.total;
+    const results = Array.isArray(series.results) ? series.results : [];
+    const cur = series.done ? -1 : ((series.matchNum || results.length + 1) - 1);   // 0-based current match
+    let out = '';
+    for (let i = 0; i < total; i++) {
+      let bd = 'var(--game-muted)', bg = 'transparent', col = 'var(--game-muted)', dash = 'dashed', glyph = `M${i + 1}`;
+      if (i < results.length) {
+        const w = results[i] === 'win';
+        bd = w ? 'var(--game-accent)' : 'var(--game-danger)'; col = bd; dash = 'solid';
+        bg = w ? 'var(--game-accent-12)' : 'rgba(255,68,68,.12)'; glyph = `${w ? '✓' : '✗'} M${i + 1}`;
+      } else if (i === cur) {
+        bd = 'var(--game-gold)'; col = 'var(--game-gold)'; bg = 'rgba(243,216,107,.12)'; dash = 'solid';
+      }
+      out += `<div style="min-width:46px;padding:6px 9px;border:1.5px ${dash} ${bd};border-radius:10px;background:${bg};color:${col};font-size:12px;font-weight:800;text-align:center;">${glyph}</div>`;
+    }
+    return `<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">${out}</div>`;
+  }
+
   renderTVResult(opts = {}) {
     let o = document.getElementById('fw-tv-result');
     if (!o) {
@@ -383,7 +408,7 @@ class GameTemplates {
     const bannerBg = loss
       ? 'linear-gradient(135deg,rgba(42,24,24,.95) 0%,rgba(26,13,18,.95) 100%)'
       : 'linear-gradient(135deg,rgba(26,40,16,.95) 0%,rgba(13,36,16,.95) 100%)';
-    const bannerBorder = loss ? 'rgba(122,32,32,.65)' : 'rgba(118,185,0,.45)';
+    const bannerBorder = loss ? 'rgba(122,32,32,.65)' : 'var(--game-secondary-45)';
     const bannerGlow = loss ? 'rgba(255,80,80,.14)' : 'rgba(126,219,126,.14)';
     const icon = opts.icon != null ? opts.icon : (loss ? '' : '🏆');
 
@@ -410,8 +435,11 @@ class GameTemplates {
     const quote = opts.quote
       ? `<div style="text-align:center;padding:10px 18px;color:var(--game-muted);"><span style="font-style:italic;font-size:15px;">“${opts.quote.text}”</span>${opts.quote.by ? `<div style="font-size:12px;color:var(--game-gold);margin-top:4px;font-weight:700;">— ${opts.quote.by}</div>` : ''}</div>`
       : '';
+    const seriesDots = opts.series ? this._seriesDots(opts.series) : '';
     const series = opts.series
-      ? `<div style="text-align:center;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--game-accent);">${opts.series.label || ''}${opts.series.userWins != null ? ` · ${opts.series.userWins}–${opts.series.cpuWins}` : ''}</div>`
+      ? `<div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+          <div style="font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--game-accent);">${opts.series.label || ''}${opts.series.userWins != null ? ` · ${opts.series.userWins}–${opts.series.cpuWins}` : ''}</div>
+          ${seriesDots}</div>`
       : '';
 
     o.innerHTML = `
@@ -423,7 +451,7 @@ class GameTemplates {
           ${opts.sub ? `<div style="font-size:14px;color:var(--game-accent);font-weight:700;margin-top:6px;">${opts.sub}</div>` : ''}
         </div>
         ${sb}
-        ${opts.pom ? `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;text-align:left;background:rgba(7,16,12,.62);border:1.5px solid rgba(118,185,0,.28);">${opts.pom}</div>` : ''}
+        ${opts.pom ? `<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:14px;text-align:left;background:var(--game-surface-soft);border:1.5px solid var(--game-secondary-28);">${opts.pom}</div>` : ''}
         ${stats ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:10px;">${stats}</div>` : ''}
         ${quote}
         ${series}
@@ -459,64 +487,87 @@ class GameTemplates {
   showTVSetup(state = {}) {
     const s = state.selection || {};
     const phase = state.phase || 'connected';
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+    this.hideTVResult();   // returning to the lobby clears any stale match-end overlay (it sits above this)
+
     let o = document.getElementById('fw-tv-setup');
     if (!o) {
       o = document.createElement('div');
       o.id = 'fw-tv-setup';
-      o.style.cssText = 'position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 120%, rgba(255,255,255,.06), rgba(5,10,22,.94) 70%);';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 120%, var(--game-secondary-12), #060a14 70%), #060a14;';
       document.body.appendChild(o);
     }
 
-    const dot = (c) => `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${c || 'var(--game-accent)'};box-shadow:0 0 0 3px rgba(255,255,255,.12);vertical-align:middle;"></span>`;
-    const lengthLine = s.formatName
-      ? s.formatName
-      : (s.rounds ? `${s.rounds} rounds` : (s.overs ? `${s.overs} overs` : ''));
+    // Brand mark (CricSwing-style header): logo + title, pulled from the game's config.
+    let logoSrc = '', appTitle = s.title || '';
+    try { if (window.FrameworkAssets) { logoSrc = window.FrameworkAssets.resolve('APP_LOGO') || ''; appTitle = window.FrameworkAssets.text('APP_TITLE') || appTitle; } } catch (_) {}
+    const brand = `<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:22px;">
+      ${logoSrc ? `<img src="${esc(logoSrc)}" alt="" style="height:30px;width:auto;">` : ''}
+      <span style="font-size:22px;font-weight:900;letter-spacing:.3px;color:var(--game-text);">${esc(appTitle)}</span></div>`;
 
-    // Centre piece changes by phase.
-    let centre = '';
-    if (phase === 'ceremony') {
+    // Title with the last word painted in the accent (CricSwing "Choose your <mode>").
+    const titleAccent = (t) => {
+      const w = String(t || '').trim().split(/\s+/);
+      if (w.length < 2) return `<span style="color:var(--game-accent);">${esc(t || '')}</span>`;
+      const last = w.pop();
+      return `${esc(w.join(' '))} <span style="color:var(--game-accent);">${esc(last)}</span>`;
+    };
+
+    // Spinner waiting chip (CricSwing "Waiting for your pick…").
+    const waitChip = (line, sub) => `<div style="display:inline-flex;align-items:center;gap:12px;margin-top:34px;padding:12px 22px;border-radius:999px;background:var(--game-surface-soft);border:1.5px solid var(--game-secondary-30);box-shadow:var(--fw-shadow-card);">
+      <span style="width:18px;height:18px;border-radius:50%;border:2.5px solid var(--game-secondary-35);border-top-color:var(--game-accent);display:inline-block;animation:fwSpin .8s linear infinite;"></span>
+      <span style="text-align:left;line-height:1.25;"><span style="display:block;font-size:15px;font-weight:800;color:var(--game-accent);">${esc(line)}</span>
+      <span style="display:block;font-size:13px;color:var(--game-muted);">${esc(sub)}</span></span></div>`;
+
+    const dot = (c) => `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:${c || 'var(--game-accent)'};box-shadow:0 0 0 3px rgba(255,255,255,.12);vertical-align:middle;"></span>`;
+
+    let body = '';
+    if (phase === 'choosing') {
+      // A lobby pick screen mirrored to the TV: pill kicker, big title, options row, wait chip.
+      const opts = Array.isArray(state.options) ? state.options.filter(Boolean) : [];
+      const optionsRow = opts.length
+        ? `<div style="font-size:clamp(15px,1.5vw,22px);font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7fb8c8;margin-top:18px;">${opts.map(esc).join('  ·  ')}</div>`
+        : '';
+      const noun = esc(state.keyName || 'option');
+      body = `
+        <div style="display:inline-block;font-size:13px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--game-accent);padding:7px 18px;border:1.5px solid var(--game-secondary-40);border-radius:999px;">${esc(state.kicker || ('Pick your ' + noun).toUpperCase())}</div>
+        <h1 style="font-size:clamp(40px,7vw,76px);font-weight:900;line-height:1.05;margin:22px 0 0;color:var(--game-text);">${titleAccent(state.stepTitle)}</h1>
+        ${optionsRow}
+        ${waitChip('Waiting for your pick…', `Choose a ${noun} on your phone.`)}`;
+    } else if (phase === 'ceremony') {
       const emoji = state.kind === 'toss' ? '🪙' : '⚽';
       const anim = state.kind === 'toss' ? 'fwCoinFlip 1.4s ease-in-out infinite' : 'fwBallKick 1.1s ease-in-out infinite';
       const label = state.kind === 'toss' ? 'Tossing…' : 'Kicking off…';
-      centre = `<div style="font-size:120px;line-height:1;animation:${anim};filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));">${emoji}</div>
-        <div style="font-size:20px;font-weight:800;color:var(--game-text);margin-top:18px;">${label}</div>`;
+      body = `<div style="font-size:clamp(80px,11vw,120px);line-height:1;animation:${anim};filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));">${emoji}</div>
+        <div style="font-size:clamp(18px,2vw,22px);font-weight:800;color:var(--game-text);margin-top:18px;">${label}</div>`;
     } else if (phase === 'ready') {
+      const vs = s.team ? `<div style="display:flex;align-items:center;justify-content:center;gap:clamp(18px,3vw,40px);margin:6px 0 22px;">
+        <div style="text-align:center;min-width:140px;"><div style="margin-bottom:8px;">${dot(s.teamColor)}</div>
+          <div style="font-size:clamp(22px,2.6vw,32px);font-weight:900;color:var(--game-text);">${esc(s.team)}</div>
+          <div style="font-size:12px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">You</div></div>
+        <div style="font-size:clamp(20px,2.2vw,28px);font-weight:900;color:var(--game-muted);">VS</div>
+        <div style="text-align:center;min-width:140px;"><div style="margin-bottom:8px;">${dot(s.oppColor)}</div>
+          <div style="font-size:clamp(22px,2.6vw,32px);font-weight:900;color:var(--game-text);">${esc(s.opp || 'Opponent')}</div>
+          <div style="font-size:12px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">CPU</div></div></div>` : '';
       const target = s.target
-        ? `<div style="font-size:18px;color:var(--game-muted);margin-top:14px;">Target <b style="color:var(--game-accent);font-size:30px;">${s.target}</b>${s.overs ? ` in ${s.overs} over${s.overs > 1 ? 's' : ''}` : ''}</div>`
+        ? `<div style="font-size:clamp(16px,1.8vw,20px);color:var(--game-muted);margin-top:8px;">Target <b style="color:var(--game-accent);font-size:clamp(24px,3vw,32px);">${esc(s.target)}</b>${s.overs ? ` in ${esc(s.overs)} over${s.overs > 1 ? 's' : ''}` : ''}</div>`
         : '';
-      centre = `<div style="font-size:46px;font-weight:900;letter-spacing:2px;color:var(--game-accent);animation:fwPulse 1.1s ease-in-out infinite;">MATCH READY</div>${target}`;
+      body = `${vs}<div style="font-size:clamp(34px,5vw,52px);font-weight:900;letter-spacing:2px;color:var(--game-accent);animation:fwPulse 1.1s ease-in-out infinite;">MATCH READY</div>${target}`;
     } else {
-      centre = `<div style="font-size:22px;font-weight:700;color:var(--game-muted);">Choosing on the phone…</div>`;
+      body = `<h1 style="font-size:clamp(34px,5vw,56px);font-weight:900;color:var(--game-text);margin:0;">Paired<span style="color:var(--game-accent);">!</span></h1>
+        ${waitChip('Setting up…', 'Continue on your phone.')}`;
     }
-
-    // VS strip — shown once a team is picked.
-    const vs = s.team ? `
-      <div style="display:flex;align-items:center;justify-content:center;gap:26px;margin:6px 0 22px;">
-        <div style="text-align:center;min-width:160px;">
-          <div style="margin-bottom:8px;">${dot(s.teamColor)}</div>
-          <div style="font-size:30px;font-weight:900;color:var(--game-text);">${s.team}</div>
-          <div style="font-size:13px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">You</div>
-        </div>
-        <div style="font-size:26px;font-weight:900;color:var(--game-muted);">VS</div>
-        <div style="text-align:center;min-width:160px;">
-          <div style="margin-bottom:8px;">${dot(s.oppColor)}</div>
-          <div style="font-size:30px;font-weight:900;color:var(--game-text);">${s.opp || 'Opponent'}</div>
-          <div style="font-size:13px;color:var(--game-muted);text-transform:uppercase;letter-spacing:1px;">CPU</div>
-        </div>
-      </div>` : '';
 
     o.innerHTML = `
       <style>
         @keyframes fwBallKick { 0%,100%{ transform:translateY(0) rotate(0);} 50%{ transform:translateY(-26px) rotate(180deg);} }
         @keyframes fwCoinFlip { 0%,100%{ transform:rotateY(0) scale(1);} 50%{ transform:rotateY(900deg) scale(1.15);} }
         @keyframes fwPulse { 0%,100%{ transform:scale(1); opacity:1;} 50%{ transform:scale(1.06); opacity:.82;} }
+        @keyframes fwSpin { to { transform:rotate(360deg); } }
       </style>
-      <div style="text-align:center;max-width:820px;padding:40px;">
-        <div style="font-size:16px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--game-accent);margin-bottom:18px;">${s.title || ''}</div>
-        ${vs}
-        ${lengthLine ? `<div style="font-size:17px;font-weight:700;color:var(--game-text);margin-bottom:26px;">${lengthLine}</div>` : '<div style="height:18px;"></div>'}
-        <div style="min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;">${centre}</div>
-        <div style="font-size:14px;color:var(--game-muted);margin-top:24px;">Setting up on your phone…</div>
+      <div style="text-align:center;max-width:980px;padding:5vh 40px;">
+        ${brand}
+        ${body}
       </div>`;
     o.style.display = 'flex';
   }
@@ -665,6 +716,94 @@ class GameTemplates {
     if (w) w.onclick = () => { this.hideTVRepair(); if (onWait) onWait(); };
   }
   hideTVRepair() { const o = document.getElementById('fw-tv-repair'); if (o) o.style.display = 'none'; }
+
+  // ══ OPTIONAL motion/swing TV screens (gated; rendered only when a game calls them) ══
+  // Sport-neutral so Baseball (pitch/timing) and a future cricket swing mode reuse them.
+
+  /** TV stance mirror — shows the player's stance art + a "locking…" hold bar. */
+  renderTVStance({ art, holdPct = 0, label } = {}) {
+    const o = this._overlay('fw-tv-stance', 9360, 'radial-gradient(ellipse at 50% 60%, var(--game-secondary-06), #060a14 70%)');
+    o.innerHTML = `
+      <div style="text-align:center;padding:30px;">
+        <div style="font-size:96px;line-height:1;">${art || '🧍'}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--game-text);margin-top:14px;">${label || 'Get into your stance'}</div>
+        <div style="width:min(60vw,320px);height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;margin:18px auto 0;">
+          <div id="fw-tv-stance-bar" style="height:100%;width:${Math.max(0, Math.min(100, holdPct))}%;background:var(--game-accent);transition:width .15s;"></div>
+        </div>
+        <div style="font-size:13px;color:var(--game-muted);margin-top:10px;">Hold steady to lock your stance</div>
+      </div>`;
+    o.style.display = 'flex';
+  }
+  updateTVStance(holdPct) { const b = document.getElementById('fw-tv-stance-bar'); if (b) b.style.width = Math.max(0, Math.min(100, holdPct)) + '%'; }
+  hideTVStance() { const o = document.getElementById('fw-tv-stance'); if (o) o.style.display = 'none'; }
+
+  /**
+   * TV timing ring — a circular swing/pitch timing meter with a "sweet" arc.
+   * renderTVTimingRing({ sweet:[start,end] (0..1) }) then updateTVTimingRing(progress 0..1).
+   */
+  renderTVTimingRing({ sweet = [0.6, 0.85] } = {}) {
+    let o = document.getElementById('fw-tv-ring');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-ring';
+      o.style.cssText = 'position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:25;display:none;pointer-events:none;';
+      document.body.appendChild(o);
+    }
+    const deg = (f) => Math.round(f * 360);
+    o.innerHTML = `
+      <div style="position:relative;width:200px;height:200px;border-radius:50%;
+        background:conic-gradient(var(--game-accent) ${deg(sweet[0])}deg ${deg(sweet[1])}deg, rgba(255,255,255,.10) 0);
+        -webkit-mask:radial-gradient(circle at 50% 50%, transparent 78px, #000 80px);mask:radial-gradient(circle at 50% 50%, transparent 78px, #000 80px);"></div>
+      <div id="fw-tv-ring-needle" style="position:absolute;top:0;left:50%;width:3px;height:100px;background:var(--game-gold);transform-origin:bottom center;transform:translateX(-50%) rotate(0deg);"></div>`;
+    o._sweet = sweet;
+    o.style.display = 'block';
+  }
+  updateTVTimingRing(progress) {
+    const n = document.getElementById('fw-tv-ring-needle');
+    if (n) n.style.transform = `translateX(-50%) rotate(${Math.max(0, Math.min(1, progress)) * 360}deg)`;
+  }
+  hideTVTimingRing() { const o = document.getElementById('fw-tv-ring'); if (o) o.style.display = 'none'; }
+
+  /** TV ball/pitch brief — name + hint + intel chips (pace). chips:[{label,kind}]. */
+  renderTVBallBrief({ name, hint, chips = [] } = {}) {
+    let o = document.getElementById('fw-tv-ballbrief');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-ballbrief';
+      o.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:26;display:none;text-align:center;background:rgba(7,16,12,.82);border:1.5px solid rgba(243,216,107,.35);border-radius:14px;padding:8px 18px;backdrop-filter:blur(8px);';
+      document.body.appendChild(o);
+    }
+    const chipBg = { fast: 'rgba(255,90,50,.14)', medium: 'rgba(243,216,107,.14)', slow: 'rgba(74,170,255,.14)' };
+    const chipCol = { fast: '#ff8c5a', medium: 'var(--game-gold)', slow: '#a4d8ec' };
+    o.innerHTML = `
+      <div style="font-size:20px;font-weight:900;color:var(--game-offwhite,#F5F7EF);">${name || ''}</div>
+      ${hint ? `<div style="font-size:11px;font-weight:700;color:var(--game-muted);margin-top:2px;">${hint}</div>` : ''}
+      ${chips.length ? `<div style="display:flex;gap:6px;justify-content:center;margin-top:6px;">${chips.map(c => `<span style="font-size:9px;padding:3px 9px;border-radius:99px;background:${chipBg[c.kind] || 'rgba(255,255,255,.06)'};color:${chipCol[c.kind] || 'var(--game-muted)'};border:1px solid currentColor;">${c.label}</span>`).join('')}</div>` : ''}`;
+    o.style.display = 'block';
+    clearTimeout(this._briefTimer);
+    this._briefTimer = setTimeout(() => this.hideTVBallBrief(), 1700);
+  }
+  hideTVBallBrief() { const o = document.getElementById('fw-tv-ballbrief'); if (o) o.style.display = 'none'; }
+
+  /** TV training guide — "Where To Shoot" eyebrow + shot name + direction. */
+  renderTVTrainGuide({ shot, dir } = {}) {
+    const o = this._overlay('fw-tv-trainguide', 9360, 'radial-gradient(ellipse at 50% 50%, var(--game-secondary-06), #060a14 70%)');
+    o.innerHTML = `
+      <div style="text-align:center;padding:30px;">
+        <div style="display:inline-block;font-size:12px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--game-accent);padding:6px 16px;border:1.5px solid var(--game-accent-40);border-radius:99px;">Where To Shoot</div>
+        <div style="font-size:clamp(32px,5vw,52px);font-weight:900;color:var(--game-gold);margin-top:18px;">${shot || ''}</div>
+        ${dir ? `<div style="font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--game-muted);margin-top:8px;">${dir}</div>` : ''}
+      </div>`;
+    o.style.display = 'flex';
+  }
+  renderTVTrainComplete({ message } = {}) {
+    const o = this._overlay('fw-tv-trainguide', 9360, 'radial-gradient(ellipse at 50% 50%, var(--game-secondary-10), #060a14 70%)');
+    o.innerHTML = `<div style="text-align:center;padding:30px;">
+      <div style="font-size:72px;">✅</div>
+      <div style="font-size:26px;font-weight:900;color:var(--game-accent);margin-top:10px;">${message || 'Training complete!'}</div></div>`;
+    o.style.display = 'flex';
+  }
+  hideTVTrainGuide() { const o = document.getElementById('fw-tv-trainguide'); if (o) o.style.display = 'none'; }
 
   /** Shared full-screen overlay host factory (id + z-index + background). */
   _overlay(id, z, bg) {

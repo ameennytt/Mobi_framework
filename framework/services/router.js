@@ -134,7 +134,7 @@ class FrameworkRouter {
     if (!t) {
       t = document.createElement('div');
       t.id = 'cs-back-hint';
-      t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9999;white-space:nowrap;background:rgba(7,16,12,.94);color:#9ADF6B;border:1px solid rgba(154,223,107,.4);border-radius:99px;padding:10px 18px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;transition:opacity .25s';
+      t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:9999;white-space:nowrap;background:rgba(7,16,12,.94);color:var(--game-accent);border:1px solid var(--game-accent-40);border-radius:99px;padding:10px 18px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;transition:opacity .25s';
       document.body.appendChild(t);
     }
     t.textContent = 'Press back again to exit';

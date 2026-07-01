@@ -120,7 +120,7 @@ class UIComponents {
       <div style="max-width: 640px; width: 92%; text-align:center;">
         <div style="font-size: clamp(40px,7vw,64px); font-weight: 900; letter-spacing: 2px; color: var(--game-accent); animation: fwLogoHeroIn .55s var(--fw-ease-out) both;">${title}</div>
         <div style="font-size: 14px; color: var(--game-muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px;">TV + Phone</div>
-        <div style="margin: 28px auto 0; max-width: 560px; background: rgba(255,255,255,.04); border: 2px solid rgba(154,223,107,.35); border-radius: 24px; padding: 30px 24px;">
+        <div style="margin: 28px auto 0; max-width: 560px; background: var(--game-surface-2); border: 2px solid var(--game-accent-35); border-radius: 24px; padding: 30px 24px;">
           <div style="font-size: 11px; color: var(--game-accent); letter-spacing: 5px; text-transform: uppercase; font-weight: 700;">Enter on Phone</div>
           <div class="pairing-code">${roomCode || '————'}</div>
           ${qrCodeUrl ? `<img src="${qrCodeUrl}" style="width: 180px; height: 180px; margin: 12px auto 0; border-radius: 12px; border: 4px solid var(--game-accent); display:block;" alt="Pairing QR"/>` : ''}
@@ -129,7 +129,7 @@ class UIComponents {
             <span>${statusText}</span>
           </div>
         </div>
-        <div style="max-width:560px;margin:18px auto 0;padding:12px 16px;border-radius:14px;background:rgba(154,223,107,.08);border:1.5px solid rgba(154,223,107,.30);font-size:14px;color:#aee9c0;line-height:1.5;">📶 Phone &amp; TV must be on the <b>same Wi-Fi</b>.</div>
+        <div style="max-width:560px;margin:18px auto 0;padding:12px 16px;border-radius:14px;background:var(--game-accent-08);border:1.5px solid var(--game-accent-30);font-size:14px;color:var(--game-accent);line-height:1.5;">📶 Phone &amp; TV must be on the <b>same Wi-Fi</b>.</div>
       </div>
     `;
     overlay.style.display = 'flex';

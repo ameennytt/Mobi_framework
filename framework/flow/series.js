@@ -52,6 +52,7 @@ window.FrameworkSeries = (function () {
         bestOf: bestOf,
         total: type === 'tournament' ? (total || 3) : bestOf,
         matchNum: 1, userWins: 0, cpuWins: 0, knockedOut: false, done: false,
+        results: [],                                            // per-match 'win'|'loss' history (for dots)
       };
       save(s);
       return s;
@@ -70,6 +71,8 @@ window.FrameworkSeries = (function () {
     recordResult(won) {
       const s = load();
       if (!s) return null;
+      if (!Array.isArray(s.results)) s.results = [];           // back-compat for state saved before results[]
+      s.results.push(won ? 'win' : 'loss');
       if (won) s.userWins++; else { s.cpuWins++; if (s.type === 'tournament') s.knockedOut = true; }
 
       if (s.type === 'series') {
@@ -102,6 +105,7 @@ window.FrameworkSeries = (function () {
         type: s.type, matchNum: s.matchNum, total: s.total,
         userWins: s.userWins, cpuWins: s.cpuWins,
         done: s.done, won, knockedOut: s.knockedOut, label, cta,
+        results: Array.isArray(s.results) ? s.results.slice() : [],   // ['win','loss',...] for dots
       };
     },
 

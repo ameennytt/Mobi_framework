@@ -221,6 +221,87 @@
       this._handoffTimer = setInterval(() => { n--; if (n < 0) { finish(); return; } paint(); }, 1000);
     },
 
+    /**
+     * Mobile "TV away" overlay — the big screen dropped mid-match; passive, auto-resumes.
+     * Phone-side twin of renderTVAway. opts: { message }
+     */
+    renderMobileAway({ message } = {}) {
+      let o = document.getElementById('fw-mobile-away');
+      if (!o) {
+        o = document.createElement('div');
+        o.id = 'fw-mobile-away';
+        o.style.cssText = 'position:fixed;inset:0;z-index:9550;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:30px;background:rgba(5,10,22,.96);';
+        document.body.appendChild(o);
+      }
+      o.innerHTML = `<div style="font-size:60px;">📺</div>
+        <div style="font-size:20px;font-weight:800;color:var(--game-gold);">${message || 'TV disconnected'}</div>
+        <div style="font-size:14px;color:var(--game-muted);max-width:300px;">Reconnecting to the big screen — your match resumes automatically.</div>
+        <div style="font-size:28px;letter-spacing:6px;color:var(--game-muted);animation:fwBlink 1.2s infinite;">• • •</div>
+        <style>@keyframes fwBlink{0%,100%{opacity:.3}50%{opacity:1}}</style>`;
+      o.style.display = 'flex';
+    },
+    hideMobileAway() { const o = document.getElementById('fw-mobile-away'); if (o) o.style.display = 'none'; },
+
+    /**
+     * Rich phone match-end card (CricSwing-style) — icon, result, stat tiles, series
+     * dots, quote, and up to two buttons. Phone twin of renderTVResult. opts:
+     *   { won, icon, title, sub, winner, stats:[{label,value}], scoreboard:{user,opp},
+     *     quote:{text,by}, series (FrameworkSeries.standings()), primaryText, onPrimary,
+     *     secondaryText, onSecondary }
+     */
+    renderMobileMatchEnd(opts = {}) {
+      const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+      let o = document.getElementById('fw-mobile-matchend');
+      if (!o) {
+        o = document.createElement('div');
+        o.id = 'fw-mobile-matchend';
+        o.style.cssText = 'position:fixed;inset:0;z-index:9600;overflow-y:auto;background:radial-gradient(ellipse at 50% 0%, var(--game-secondary-06), #060a14 70%), #060a14;';
+        document.body.appendChild(o);
+      }
+      const loss = opts.won === false;
+      const icon = opts.icon != null ? opts.icon : (loss ? '🥀' : '🏆');
+      const stats = (opts.stats || []).map(s => `
+        <div style="background:rgba(255,255,255,.04);border:1px solid var(--fw-line);border-radius:11px;padding:12px 6px;text-align:center;">
+          <div style="font-family:var(--game-mono);font-size:24px;font-weight:900;color:var(--game-gold);line-height:1;">${esc(s.value)}</div>
+          <div style="font-size:10px;color:var(--game-muted);text-transform:uppercase;letter-spacing:.12em;margin-top:6px;font-weight:700;">${esc(s.label)}</div>
+        </div>`).join('');
+      const card = (t) => t ? `
+        <div style="flex:1;background:rgba(255,255,255,.04);border:2px solid ${t.winner ? 'var(--game-gold)' : 'var(--fw-line)'};border-radius:14px;padding:12px;text-align:center;">
+          <div style="font-size:14px;font-weight:800;color:var(--game-text);">${esc(t.name || '')}</div>
+          <div style="font-family:var(--game-mono);font-size:28px;font-weight:900;color:${t.winner ? 'var(--game-gold)' : 'var(--game-text)'};margin-top:4px;">${esc(t.score != null ? t.score : '')}</div>
+        </div>` : '';
+      const sb = opts.scoreboard
+        ? `<div style="display:flex;gap:10px;">${card(opts.scoreboard.user)}${card(opts.scoreboard.opp)}</div>` : '';
+      const dots = (opts.series && this._seriesDots) ? this._seriesDots(opts.series) : '';
+      const seriesLabel = opts.series
+        ? `<div style="text-align:center;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--game-accent);">${esc(opts.series.label || '')}</div>` : '';
+      const quote = opts.quote
+        ? `<div style="text-align:center;padding:10px 16px;background:rgba(255,255,255,.03);border-radius:12px;"><span style="font-style:italic;font-size:14px;color:var(--game-offwhite,#F5F7EF);">“${esc(opts.quote.text)}”</span>${opts.quote.by ? `<div style="font-size:12px;color:var(--game-gold);margin-top:6px;font-weight:700;">— ${esc(opts.quote.by)}</div>` : ''}</div>` : '';
+      o.innerHTML = `
+        <div style="min-height:100dvh;display:flex;flex-direction:column;gap:14px;padding:28px 18px;box-sizing:border-box;justify-content:center;">
+          <div style="text-align:center;">
+            <div style="font-size:56px;line-height:1;">${icon}</div>
+            <div style="font-size:30px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:${loss ? 'var(--game-danger)' : 'var(--game-gold)'};margin-top:6px;">${esc(opts.title || (loss ? 'Defeat' : 'Victory'))}</div>
+            ${opts.sub ? `<div style="font-size:14px;color:var(--game-muted);margin-top:6px;">${esc(opts.sub)}</div>` : ''}
+            ${opts.winner ? `<div style="font-family:var(--game-mono);font-size:34px;font-weight:900;color:var(--game-text);margin-top:8px;">${esc(opts.winner)}</div>` : ''}
+          </div>
+          ${stats ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">${stats}</div>` : ''}
+          ${sb}
+          ${seriesLabel}
+          ${dots}
+          ${quote}
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px;">
+            ${opts.primaryText ? `<button class="btn btn-primary fw-full" id="fw-me-primary" style="font-size:17px;padding:15px;">${esc(opts.primaryText)}</button>` : ''}
+            ${opts.secondaryText ? `<button class="btn btn-secondary fw-full" id="fw-me-secondary" style="font-size:16px;padding:14px;">${esc(opts.secondaryText)}</button>` : ''}
+          </div>
+        </div>`;
+      o.style.display = 'block';
+      const p = o.querySelector('#fw-me-primary'), s = o.querySelector('#fw-me-secondary');
+      if (p) p.onclick = () => { this.hideMobileMatchEnd(); if (opts.onPrimary) opts.onPrimary(); };
+      if (s) s.onclick = () => { this.hideMobileMatchEnd(); if (opts.onSecondary) opts.onSecondary(); };
+    },
+    hideMobileMatchEnd() { const o = document.getElementById('fw-mobile-matchend'); if (o) o.style.display = 'none'; },
+
     /** Mobile quit-confirm — reuse the confirm dialog with match-exit wording. */
     renderMobileQuitConfirm({ title, body, onQuit, onStay } = {}) {
       if (!window.FrameworkUI || !window.FrameworkUI.showConfirmDialog) { if (onQuit) onQuit(); return; }
@@ -238,14 +319,16 @@
      * used by the lobby `target` step when a game supplies `roster`. Sport-neutral.
      * opts: { title, names:[...], onChange(list) }
      */
-    renderMobileTeamEdit(container, { title, names = [], onChange } = {}) {
+    renderMobileTeamEdit(container, { title, names = [], roles = [], onChange } = {}) {
       const el = typeof container === 'string' ? document.getElementById(container) : container;
       if (!el) return;
+      const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
       el.innerHTML = `<div class="fw-roster-card">
-        ${title ? `<div class="fw-roster-title">${title}</div>` : ''}
-        ${names.map((n, i) => `<div class="fw-roster-row">
-          <span class="fw-roster-num">${i + 1}</span>
-          <input class="fw-roster-input" data-i="${i}" maxlength="20" value="${String(n).replace(/"/g, '&quot;')}">
+        ${title ? `<div class="fw-roster-title">${esc(title)}</div>` : ''}
+        ${names.map((n, i) => `<div class="fw-roster-row${i === 0 ? ' next' : ''}">
+          <span class="fw-roster-num">${i === 0 ? '🏏' : (i + 1)}</span>
+          <input class="fw-roster-input" data-i="${i}" maxlength="20" value="${esc(n)}">
+          ${roles[i] ? `<span class="fw-roster-role">${esc(roles[i])}</span>` : ''}
         </div>`).join('')}
       </div>`;
       el.querySelectorAll('.fw-roster-input').forEach(inp => {
@@ -255,5 +338,96 @@
         };
       });
     },
+
+    // ══ OPTIONAL motion/swing phone screens (gated; only when input:'motion') ══════
+    // Sport-neutral. Reused by Baseball (pitch/timing) + a future cricket swing mode.
+
+    /** Camera-orientation hint before a motion match. opts:{ title, body, onAck } */
+    renderMobileCameraHint({ title, body, onAck } = {}) {
+      let o = document.getElementById('fw-mobile-camhint');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-camhint'; o.style.cssText = 'position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:30px;background:#060d1a;'; document.body.appendChild(o); }
+      o.innerHTML = `<div style="font-size:64px;">📷</div>
+        <div style="font-size:22px;font-weight:900;color:var(--game-accent);">${title || 'Point the camera at the TV'}</div>
+        <div style="font-size:14px;color:var(--game-muted);max-width:300px;line-height:1.5;">${body || 'Keep the rear camera facing the screen so your motion lines up with the action.'}</div>
+        <button class="btn btn-primary fw-full" id="fw-camhint-ok" style="max-width:300px;margin-top:8px;">Got it</button>`;
+      o.style.display = 'flex';
+      const b = o.querySelector('#fw-camhint-ok'); if (b) b.onclick = () => { this.hideMobileCameraHint(); if (onAck) onAck(); };
+    },
+    hideMobileCameraHint() { const o = document.getElementById('fw-mobile-camhint'); if (o) o.style.display = 'none'; },
+
+    /**
+     * Stance lock — bat/stance art + a hold bar + LOCK button. Richer than
+     * renderMobileCalibration. opts:{ title, art, holdPct, onLock }. Drive the bar
+     * with updateMobileStance(pct); enable LOCK when ready.
+     */
+    renderMobileStance({ title, art, holdPct = 0, onLock } = {}) {
+      let o = document.getElementById('fw-mobile-stance');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-stance'; o.style.cssText = 'position:fixed;inset:0;z-index:9500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:30px;background:#060d1a;'; document.body.appendChild(o); }
+      o.innerHTML = `<div style="font-size:84px;line-height:1;">${art || '🏏'}</div>
+        <div style="font-size:20px;font-weight:900;color:var(--game-text);">${title || 'Hold your stance'}</div>
+        <div style="width:100%;max-width:300px;height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;">
+          <div id="fw-stance-bar" style="height:100%;width:${Math.max(0, Math.min(100, holdPct))}%;background:var(--game-accent);transition:width .15s;"></div>
+        </div>
+        <div id="fw-stance-msg" style="font-size:13px;color:var(--game-muted);">Hold steady…</div>
+        <button class="btn btn-primary fw-full" id="fw-stance-lock" style="max-width:300px;margin-top:6px;" disabled>LOCK STANCE</button>`;
+      o.style.display = 'flex';
+      const b = o.querySelector('#fw-stance-lock'); if (b) b.onclick = () => { this.hideMobileStance(); if (onLock) onLock(); };
+    },
+    updateMobileStance(pct, ready) {
+      const bar = document.getElementById('fw-stance-bar'); if (bar) bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+      const lock = document.getElementById('fw-stance-lock'); if (lock) lock.disabled = !ready;
+      const msg = document.getElementById('fw-stance-msg'); if (msg && ready) { msg.textContent = '✓ Stance good — tap LOCK'; msg.style.color = 'var(--game-accent)'; }
+    },
+    hideMobileStance() { const o = document.getElementById('fw-mobile-stance'); if (o) o.style.display = 'none'; },
+
+    /**
+     * Bowl / pitch control — big seam button + timing bar + status line. Sport-neutral
+     * (cricket "BOWL" / baseball "PITCH"). opts:{ label, hint, onFire }. Drive the bar
+     * with updateMobilePitchTiming(pct); set status with setMobilePitchStatus(text).
+     */
+    renderMobilePitchControl({ label, hint, onFire } = {}) {
+      let o = document.getElementById('fw-mobile-pitch');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-pitch'; o.style.cssText = 'position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;padding:30px;box-sizing:border-box;background:#000;'; document.body.appendChild(o); }
+      o.innerHTML = `
+        <div id="fw-pitch-status" style="font-size:15px;font-weight:800;color:var(--game-gold);background:rgba(255,255,255,.05);border:1px solid var(--fw-line);border-radius:99px;padding:8px 18px;">Awaiting delivery</div>
+        <div style="width:100%;max-width:320px;height:7px;border-radius:7px;background:rgba(255,255,255,.08);overflow:hidden;">
+          <div id="fw-pitch-bar" style="height:100%;width:0%;background:var(--game-danger);transition:width .05s linear;"></div>
+        </div>
+        <button id="fw-pitch-fire" style="width:120px;height:120px;border-radius:50%;border:3px solid #ff5050;cursor:pointer;
+          background:radial-gradient(circle at 40% 35%, #f05050, #7a0000);color:#fff;font-size:24px;font-weight:900;letter-spacing:1px;
+          box-shadow:0 0 28px rgba(255,40,40,.4), inset 0 4px 10px rgba(255,255,255,.25);">${label || 'BOWL'}</button>
+        ${hint ? `<div style="font-size:11px;color:var(--game-muted);">${hint}</div>` : ''}`;
+      o.style.display = 'flex';
+      const f = o.querySelector('#fw-pitch-fire');
+      if (f) f.onclick = () => { if (navigator.vibrate) navigator.vibrate(30); if (onFire) onFire(); };
+    },
+    updateMobilePitchTiming(pct) { const b = document.getElementById('fw-pitch-bar'); if (b) b.style.width = Math.max(0, Math.min(100, pct)) + '%'; },
+    setMobilePitchStatus(text) { const s = document.getElementById('fw-pitch-status'); if (s) s.textContent = text; },
+    hideMobilePitchControl() { const o = document.getElementById('fw-mobile-pitch'); if (o) o.style.display = 'none'; },
+
+    /**
+     * Training hub — list of shots with ★/☆ trained state + "Train all". Optional
+     * (per-player ML). opts:{ title, subtitle, shots:[{name,trained}], onPick, onAll }
+     */
+    renderMobileTrainingHub({ title, subtitle, shots = [], onPick, onAll } = {}) {
+      const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+      let o = document.getElementById('fw-mobile-train');
+      if (!o) { o = document.createElement('div'); o.id = 'fw-mobile-train'; o.style.cssText = 'position:fixed;inset:0;z-index:9500;overflow-y:auto;background:#060d1a;'; document.body.appendChild(o); }
+      o.innerHTML = `<div style="padding:28px 18px;display:flex;flex-direction:column;gap:12px;min-height:100dvh;box-sizing:border-box;">
+        <div style="text-align:center;margin-bottom:8px;">
+          <h1 style="font-size:26px;font-weight:900;color:var(--game-accent);margin:0;">${esc(title || 'Train Your Shots')}</h1>
+          ${subtitle ? `<p style="font-size:12px;color:var(--game-muted);margin-top:4px;">${esc(subtitle)}</p>` : ''}</div>
+        ${shots.map((s, i) => `<button class="card" data-i="${i}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;color:var(--game-text);font-family:inherit;">
+          <span style="font-size:20px;color:${s.trained ? 'var(--game-accent)' : 'var(--game-gold)'};">${s.trained ? '★' : '☆'}</span>
+          <span style="flex:1;font-size:15px;font-weight:800;">${esc(s.name)}</span>
+          <span style="font-size:12px;color:var(--game-muted);">${s.trained ? 'Trained' : 'Train ›'}</span></button>`).join('')}
+        <div style="flex:1;"></div>
+        <button class="btn btn-primary fw-full" id="fw-train-all" style="font-size:16px;padding:14px;">Train All</button>
+      </div>`;
+      o.style.display = 'block';
+      o.querySelectorAll('button[data-i]').forEach(b => { b.onclick = () => { const s = shots[+b.getAttribute('data-i')]; if (onPick) onPick(s, +b.getAttribute('data-i')); }; });
+      const all = o.querySelector('#fw-train-all'); if (all) all.onclick = () => { if (onAll) onAll(); };
+    },
+    hideMobileTrainingHub() { const o = document.getElementById('fw-mobile-train'); if (o) o.style.display = 'none'; },
   });
 })();

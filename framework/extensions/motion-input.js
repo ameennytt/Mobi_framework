@@ -38,12 +38,31 @@ window.FrameworkMotionInput = (function () {
     } catch (_) { return false; }
   }
 
-  // Stance/calibration screen. Reuses the existing mobile calibration shell.
+  // Camera-orientation hint before a motion match (rear camera → TV).
+  function cameraHintUI(opts = {}) {
+    return new Promise((resolve) => {
+      const T = window.FrameworkTemplates;
+      if (T && T.renderMobileCameraHint) { T.renderMobileCameraHint({ title: opts.title, body: opts.body, onAck: () => resolve(true) }); }
+      else resolve(true);
+    });
+  }
+
+  // Stance/calibration screen. Prefers the richer renderMobileStance (hold bar + LOCK),
+  // falls back to renderMobileCalibration. The scaffold auto-fills the hold bar; the
+  // real motion build drives updateMobileStance(pct, ready) from sensor steadiness.
   function stanceLockUI(opts = {}) {
     return new Promise((resolve) => {
-      const host = opts.container || document.body;
-      if (window.FrameworkTemplates && window.FrameworkTemplates.renderMobileCalibration) {
-        window.FrameworkTemplates.renderMobileCalibration(host, {
+      const T = window.FrameworkTemplates;
+      if (T && T.renderMobileStance) {
+        T.renderMobileStance({
+          title: opts.title || 'Hold your stance', art: opts.art,
+          onLock: () => { if (onStanceLocked) onStanceLocked(); resolve(true); },
+        });
+        // Scaffold: ramp the hold bar to "ready" so the LOCK button enables (the real
+        // build replaces this with sensor-steadiness updates).
+        let p = 0; const t = setInterval(() => { p += 20; T.updateMobileStance(p, p >= 100); if (p >= 100) clearInterval(t); }, 250);
+      } else if (T && T.renderMobileCalibration) {
+        T.renderMobileCalibration(opts.container || document.body, {
           title: opts.title || 'Get into your stance',
           instructions: opts.instructions || 'Hold the phone like a bat and tap to lock.',
           onCalibrate: () => { if (onStanceLocked) onStanceLocked(); resolve(true); },
@@ -66,7 +85,7 @@ window.FrameworkMotionInput = (function () {
     try { window.FrameworkMotion && window.FrameworkMotion.stop && window.FrameworkMotion.stop(); } catch (_) {}
   }
 
-  const api = { mount, requestPermissionUI, stanceLockUI, start, stop, isStreaming: () => streaming };
+  const api = { mount, requestPermissionUI, cameraHintUI, stanceLockUI, start, stop, isStreaming: () => streaming };
   return api;
 })();
 

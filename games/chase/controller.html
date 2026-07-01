@@ -5,150 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Chase — Controller</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
-  <style>
-    body { background: #000; margin: 0;
-      height: 100dvh; display: flex; flex-direction: column; padding: 16px; box-sizing: border-box; touch-action: manipulation; }
-    .top { display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1.5px solid rgba(255,255,255,0.1); padding-bottom: 12px; }
-    .top .name { font-size: 16px; font-weight: 800; color: var(--game-accent); }
-    .chip { font-size: 11px; background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 20px; color: var(--game-muted); }
-    .hud { display: flex; gap: 12px; margin: 16px 0; }
-    .hud .score-card { flex: 1; padding: 10px; text-align: center; }
-    .hud .lbl { font-size: 11px; text-transform: uppercase; color: var(--game-muted); }
-    .hud .num { font-size: 26px; font-weight: 900; color: var(--game-text); }
-    .mid { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-    .aim-text { font-size: 14px; color: var(--game-muted); }
-    .aim-row { display: flex; gap: 10px; width: 100%; }
-    .aim { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: var(--game-text);
-      padding: 16px; border-radius: 10px; font-weight: bold; font-size: 14px; }
-    .aim.active { background: rgba(255,210,63,0.18); border-color: var(--game-accent); color: var(--game-accent); }
-    .go { width: 100%; height: 66px; font-size: 20px; font-weight: 900; border: none; border-radius: 14px;
-      background: var(--game-accent); color: var(--game-primary); box-shadow: 0 8px 22px rgba(255,210,63,0.3); }
-    .tip { text-align: center; font-size: 11px; color: var(--game-muted); margin-top: 8px; }
-  </style>
 </head>
 <body>
-  <div class="top">
-    <div class="name" id="title">Chase</div>
-    <div class="chip" id="conn">CONNECTING…</div>
-  </div>
-
-  <div class="hud">
-    <div class="score-card"><div class="lbl" id="lbl-primary">Runs</div><div class="num" id="val-primary">0</div></div>
-    <div class="score-card"><div class="lbl">Need</div><div class="num" id="val-need">—</div></div>
-  </div>
-
-  <div class="mid">
-    <div class="aim-text" id="aim-text">Aim: Center</div>
-    <div class="aim-row">
-      <button class="aim" id="aim-left">LEG</button>
-      <button class="aim active" id="aim-center">STRAIGHT</button>
-      <button class="aim" id="aim-right">OFF</button>
-    </div>
-  </div>
-
-  <div>
-    <button class="go" id="go-btn">PLAY SHOT</button>
-    <div class="tip">Pick a direction, then tap PLAY SHOT</div>
-  </div>
-
+  <!-- Framework-owned controller (FrameworkController). Controls + HUD come from
+       game-config.json `controller`; chase-specific match logic (Need calc, series
+       target re-deal, match-end branching) from gameplay/controller.js. series.js is
+       loaded because this preset ships a Best-of-3 series. You normally don't edit this. -->
   <script src="/framework/services/storage.js"></script>
   <script src="/framework/services/event-hub.js"></script>
   <script src="/framework/services/theme-loader.js"></script>
   <script src="/framework/services/asset-loader.js"></script>
   <script src="/framework/ui/components.js"></script>
+  <script src="/framework/ui/templates.js"></script>
+  <script src="/framework/ui/templates.mobile.js"></script>
   <script src="/framework/flow/series.js"></script>
+  <script src="/framework/ui/controller.js"></script>
   <script src="/framework/core/game.js"></script>
 
   <script>
     'use strict';
-    window.onload = async () => {
-      const params = new URLSearchParams(location.search);
-      let target = parseInt(params.get('target') || '0', 10);   // re-computed each series match
-      const overs = parseInt(params.get('overs') || '2', 10);
-      const difficulty = params.get('difficulty') || 'medium';
-      const MATCH_KEY = 'chase_inmatch';   // survives a phone reload mid-chase
-      let aim = 'center';
-      if (window.FrameworkSeries) window.FrameworkSeries.init('chase');  // share lobby's series state
-
-      // Same cricket toss maths the lobby uses — so a series can deal a fresh target per match.
-      function computeTarget() {
-        const rate = difficulty === 'hard' ? 11 : difficulty === 'easy' ? 6 : 8.5;
-        const variance = (Math.random() * 2 - 1) * 1.5;
-        const cpu = Math.max(8, Math.round(overs * (rate + variance)));
-        return cpu + 1;
-      }
-      const seriesNow = () => (window.FrameworkSeries ? window.FrameworkSeries.standings() : null);
-
-      const game = await window.FrameworkGame.init({
-        role: 'bat',
-        onConnect: () => setChip('CONNECTED', 'var(--game-success)'),
-        onDisconnect: () => setChip('RECONNECTING…', 'var(--game-muted)'),
-        onPaired: () => {
-          // First pair = new chase (target/overs/difficulty from lobby). Reconnect = resume.
-          if (sessionStorage.getItem(MATCH_KEY)) { game.send('resume'); }
-          else { sessionStorage.setItem(MATCH_KEY, '1'); game.send('start', { target, overs, difficulty, series: seriesNow() }); }
-        },
-        handlers: {
-          screen_rejoined: () => game.send('resume'),   // TV came back → restore, never reset
-          game_state: (d) => {
-            setNum('val-primary', d.runs);
-            const need = d.target ? Math.max(0, d.target - d.runs) : 0;
-            const ballsLeft = Math.max(0, (d.overs || overs) * 6 - (d.balls || 0));
-            document.getElementById('val-need').textContent = d.target ? `${need}/${ballsLeft}` : '—';
-          },
-          game_over: (d) => {
-            sessionStorage.removeItem(MATCH_KEY);
-            // Record the match into the series (no-op for a single friendly), then branch.
-            const st = window.FrameworkSeries ? window.FrameworkSeries.recordResult(d.won) : null;
-            const stand = seriesNow();
-            if (stand && !stand.done) {
-              // Mid-series → deal the next match without a full re-setup.
-              window.FrameworkUI.showConfirmDialog({
-                title: d.won ? 'Match Won!' : 'Match Lost',
-                body: `Series ${stand.userWins}–${stand.cpuWins}. ${stand.label}.`,
-                confirmText: 'Next Match',
-                onConfirm: () => {
-                  target = computeTarget();
-                  sessionStorage.setItem(MATCH_KEY, '1');
-                  game.send('start', { target, overs, difficulty, series: seriesNow() });
-                },
-              });
-            } else {
-              const title = stand ? (stand.won ? 'Series Won!' : 'Series Lost') : (d.won ? 'You Won!' : 'Chase Over');
-              window.FrameworkUI.showConfirmDialog({
-                title,
-                body: `Final: ${d.runs}/${d.wickets || 0}.`,
-                confirmText: 'Play Again',
-                onConfirm: () => { if (window.FrameworkSeries) window.FrameworkSeries.clear(); window.location.href = '/games/chase/lobby.html'; },
-              });
-            }
-          },
-        },
-      });
-
-      document.getElementById('title').textContent = game.text('APP_TITLE');
-      document.getElementById('lbl-primary').textContent = game.text('PRIMARY_SCORE');
-
-      function setAim(a, labelKey) {
-        aim = a;
-        for (const id of ['left', 'center', 'right']) {
-          document.getElementById('aim-' + id).classList.toggle('active', id === a);
-        }
-        document.getElementById('aim-text').textContent = 'Aim: ' + labelKey;
-      }
-      document.getElementById('aim-left').onclick = () => setAim('left', 'Leg');
-      document.getElementById('aim-center').onclick = () => setAim('center', 'Straight');
-      document.getElementById('aim-right').onclick = () => setAim('right', 'Off');
-
-      document.getElementById('go-btn').onclick = () => {
-        if (navigator.vibrate) navigator.vibrate(30);
-        game.send('action', { choice: aim });
-      };
-
-      function setChip(t, c) { const e = document.getElementById('conn'); e.textContent = t; e.style.color = c; }
-      function setNum(id, v) { document.getElementById(id).textContent = (v == null ? 0 : v); }
-    };
+    window.onload = () => window.FrameworkController.mount();
   </script>
 </body>
 </html>

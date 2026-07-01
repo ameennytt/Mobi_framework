@@ -35,7 +35,7 @@
       await window.FrameworkGame.loadGameplay();
 
       // The reusable stadium gallery (no players) — registers bg/ground/fx layers.
-      window.FrameworkArena.install();
+      await window.FrameworkArena.installFromConfig();
 
       // One call wires pairing, reconnect, the renderer and message routing.
       const game = await window.FrameworkGame.init({

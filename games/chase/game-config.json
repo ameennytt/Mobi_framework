@@ -6,6 +6,8 @@
   "supportsMotion": false,
   "input": "buttons",
   "enableEnrichment": false,
+  "_comment_home": "Phone front door (FrameworkHome). Menu auto-builds from ui.help/about/settings; splash shows the logo briefly on open. Add home.items to customize.",
+  "home": { "splash": true },
   "_comment_preset": "BROADCAST preset — shows the full CricSwing-style experience: onboarding, mode hub, series, toss, roster, TV intro/countdown/over-summary/milestones. A minimal game omits the ui/tv/series blocks (see games/starter).",
   "_comment_code": "Modular game code, loaded in order (entry index.js last). chase-shot.js = cricket ball math.",
   "code": [
@@ -68,7 +70,13 @@
   },
   "_comment_series": "OPTIONAL — a format can set seriesType to start a multi-match series/tournament.",
   "rosterTitle": "Your batting order",
-  "roster": ["Opener 1", "Opener 2", "No. 3", "No. 4", "No. 5"],
+  "roster": [
+    { "name": "Opener 1", "role": "BAT" },
+    { "name": "Opener 2", "role": "BAT" },
+    { "name": "No. 3", "role": "BAT" },
+    { "name": "No. 4", "role": "ALL-R" },
+    { "name": "Finisher", "role": "ALL-R" }
+  ],
   "tv": {
     "intro": true,
     "countdown": 3,
@@ -106,6 +114,26 @@
     { "id": "hard", "name": "Hard", "sub": "Steep target" }
   ],
   "hud": "chase",
+  "arena": "cricket",
+  "_comment_controller": "Framework-owned controller. groups=aim (LEG/STRAIGHT/OFF); PLAY SHOT sends {choice}. gameplay/controller.js supplies the chase Need calc, the series target re-deal and the broadcast match-end branching.",
+  "controller": {
+    "code": ["gameplay/controller.js"],
+    "hud": [
+      { "key": "runs", "label": "Runs" },
+      { "key": "need", "label": "Need" }
+    ],
+    "groups": [
+      { "key": "choice", "options": [
+        { "id": "left", "label": "LEG" },
+        { "id": "center", "label": "STRAIGHT", "default": true },
+        { "id": "right", "label": "OFF" }
+      ] }
+    ],
+    "actions": [
+      { "id": "go", "label": "PLAY SHOT", "primary": true }
+    ],
+    "hint": "Pick a direction, then tap PLAY SHOT"
+  },
   "_comment_flow": "Lobby steps. Framework builds these screens; reorder/remove freely. consent/intro are one-time (skipped after first run). menu = mode hub with About/Help entries.",
   "flow": [
     { "type": "pair" },
@@ -127,7 +155,7 @@
     { "type": "choice", "key": "league", "title": "Pick your league", "source": "chaseData.leagues", "when": { "key": "branch", "equals": "league" } },
     { "type": "choice", "key": "team", "title": "Pick your club", "source": "$league.teams", "when": { "key": "branch", "equals": "league" } },
     { "type": "choice", "key": "format", "title": "Pick your format", "source": "formats" },
-    { "type": "choice", "key": "difficulty", "title": "Pick your challenge", "source": "difficulties" },
+    { "type": "choice", "key": "difficulty", "title": "Pick your challenge", "source": "difficulties", "cols": 3, "preview": true, "confirm": true, "confirmText": "Start Match" },
     { "type": "ceremony", "kind": "toss" },
     { "type": "target" }
   ]

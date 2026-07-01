@@ -75,7 +75,18 @@
       "Bash(node -e \"try{const p=require\\('./package.json'\\);console.log\\('name:',p.name\\);console.log\\(JSON.stringify\\(p.scripts||{},null,1\\)\\)}catch\\(e\\){console.log\\('no root package.json'\\)}\")",
       "Bash(node -e \"try{const p=require\\('./mobile/package.json'\\);console.log\\('rn:',p.dependencies&&p.dependencies['react-native']\\);console.log\\('deps:',Object.keys\\(p.dependencies||{}\\).join\\(', '\\)\\)}catch\\(e\\){console.log\\('?'\\)}\")",
       "Bash(node -e \"try{const p=require\\('./package.json'\\);console.log\\('name',p.name\\);console.log\\('scripts',JSON.stringify\\(p.scripts||{}\\)\\);console.log\\('deps',Object.keys\\(p.dependencies||{}\\).join\\(', '\\)\\)}catch\\(e\\){console.log\\('no root pkg'\\)}\")",
-      "Bash(node -c games/chase/gameplay/index.js)"
+      "Bash(node -c games/chase/gameplay/index.js)",
+      "Bash(echo \"=== EXIT $? ===\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,1\\)\\)\")",
+      "Bash(ls scripts/)",
+      "Bash(node -e \"const c=require\\('./games/starter/game-config.json'\\); console.log\\(JSON.stringify\\(c.theme,null,1\\)\\)\")",
+      "Bash(node -e \"const c=require\\('./games/chase/game-config.json'\\); console.log\\(JSON.stringify\\(c.theme,null,1\\)\\)\")",
+      "Bash(node -e \"const c=require\\('./games/starter/game-config.json'\\); console.log\\(Object.keys\\(c\\)\\)\")",
+      "Bash(node -e \"const c=require\\('./games/starter/game-config.json'\\); console.log\\(JSON.stringify\\(c.theme||c.colors||{},null,1\\)\\)\")",
+      "Bash(node -e \"const c=require\\('./games/chase/game-config.json'\\); console.log\\(Object.keys\\(c\\)\\)\")",
+      "Bash(node --check framework/flow/lobby-flow.js)",
+      "Bash(findstr /i \"scripts\" -A 20)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")"
     ]
   }
 }

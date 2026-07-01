@@ -2,7 +2,7 @@
 
 Each subfolder is one game. Copy a template with `npm run new-game <id> --from <template>`.
 
-All templates share the **same premium look** (CricSwing-grade) and the **same modular
+All templates share the **same premium look** and the **same modular
 shape**. They differ only in sport shaping.
 
 The three games are **presets** for the optional screen set: **`starter` = minimal** (buttons),

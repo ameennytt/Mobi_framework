@@ -34,8 +34,9 @@
       // Loads YOUR code from game-config.json `code` (or gameplay.js). Defines window.Gameplay.
       await window.FrameworkGame.loadGameplay();
 
-      // Stadium gallery. Add a field overlay with install({ field:'goal'|'court'|'lanes'|'targetBoard' }).
-      window.FrameworkArena.install();
+      // Arena + field overlay read from game-config.json (`arena`, `field`).
+      // arena: cricket|stadium|court|hall|minimal · field: goal|court|lanes|targetBoard
+      await window.FrameworkArena.installFromConfig();
 
       const game = await window.FrameworkGame.init({
         role: 'screen',

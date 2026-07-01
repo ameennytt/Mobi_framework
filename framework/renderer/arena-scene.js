@@ -10,6 +10,14 @@
  *   • a boundary rope + infield circle + swappable outfield ad boards
  *   • a particle system (burst on score) + fireworks + a victory trophy
  *
+ * ARCHETYPES — the venue is chosen by game-config.json `arena` (install reads it):
+ *   cricket  floodlit oval stadium + boundary rope + infield (default; parity)
+ *   stadium  rectangular-pitch stadium (football/hockey) — grass edge-to-edge, no oval
+ *   court    indoor hard-court floor + low dark stands (tennis/basketball; field:'court')
+ *   hall     indoor hall — flat wall + lit floor, no crowd
+ *   minimal  themed wash + vignette, zero sport geometry (new-game default)
+ * Field overlays (FrameworkFields: goal/court/lanes/targetBoard) compose on top of any.
+ *
  * It plugs into the existing render pipeline by registering layers on
  * FrameworkLayers — the static stadium goes on the cached `background` layer (so
  * it costs zero per frame), the rope/ads on `ground`, and effects on `particle`.
@@ -40,6 +48,7 @@ class ArenaScene {
       { txt: 'CONNECT · PLAY · WIN', ux: 0.70, uy: 0.78, color: '#cfe6c4' },
     ];
     this.field = null;     // optional FrameworkFields overlay name (e.g. 'goal')
+    this.arena = 'cricket';  // environment archetype (see ARCHETYPES); cricket = default/parity
     this._installed = false;
   }
 
@@ -54,12 +63,184 @@ class ArenaScene {
   install(opts = {}) {
     if (opts.ads) this.ads = opts.ads;
     if (opts.field) this.field = opts.field;
+    if (opts.arena) this.arena = opts.arena;
+    // Full override (Rec 7): a game can supply its own background/ground draw fns and
+    // keep the shared effects (particles/fireworks/trophy). install({ background, ground }).
+    if (typeof opts.background === 'function') this._bgOverride = opts.background;
+    if (typeof opts.ground === 'function') this._groundOverride = opts.ground;
     const L = window.FrameworkLayers;
     if (!L) { console.warn('[Arena] FrameworkLayers missing'); return; }
-    L.register('background', (ctx, W, H) => this._drawBackground(ctx, W, H));
-    L.register('ground', (ctx, W, H) => this._drawGround(ctx, W, H));
+    L.register('background', (ctx, W, H) => this._background(ctx, W, H));
+    L.register('ground', (ctx, W, H) => this._ground(ctx, W, H));
     L.register('particle', (ctx, W, H) => this._drawEffects(ctx, W, H));
     this._installed = true;
+  }
+
+  /**
+   * Install reading the archetype + field overlay straight from game-config.json,
+   * so screen.html stays a config-driven stub (no hardcoded arena/field). Resolves
+   * the game id from the URL unless given.
+   */
+  async installFromConfig(gameId, extra = {}) {
+    let cfg = {};
+    try {
+      const parts = window.location.pathname.split('/');
+      const i = parts.indexOf('games');
+      const id = gameId || ((i !== -1 && parts[i + 1]) ? parts[i + 1] : null);
+      if (id) cfg = await fetch(`/games/${id}/game-config.json`).then(r => r.json());
+    } catch (_) {}
+    this.install(Object.assign({ arena: cfg.arena, field: cfg.field, ads: cfg.ads }, extra));
+  }
+
+  // A rectangular-pitch archetype (or any game with a field overlay) wants grass
+  // edge-to-edge and no cricket oval markings; cricket keeps the oval.
+  _rectMode() { return this.arena === 'stadium' || this.arena === 'court' || this.arena === 'hall' || !!this.field; }
+
+  // ── archetype dispatch ──────────────────────────────────────────────────────
+  _background(c, W, H) {
+    if (this._bgOverride) { try { this._bgOverride(c, W, H, this); } catch (_) {} return; }
+    if (this.arena === 'minimal') return this._bgMinimal(c, W, H);
+    if (this.arena === 'hall') return this._bgHall(c, W, H);
+    if (this.arena === 'court') return this._bgCourt(c, W, H);
+    return this._drawBackground(c, W, H);   // cricket / stadium (grass venue)
+  }
+  _ground(c, W, H) {
+    if (this._groundOverride) { try { this._groundOverride(c, W, H, this); } catch (_) {} return; }
+    if (this.arena === 'minimal') {
+      // zero sport geometry — only an explicit field overlay, if any
+      if (this.field && window.FrameworkFields && window.FrameworkFields[this.field]) {
+        try { window.FrameworkFields[this.field](c, W, H); } catch (_) {}
+      }
+      return;
+    }
+    return this._drawGround(c, W, H);
+  }
+
+  // Minimal arena — themed radial wash + vignette, no venue geometry. The cheapest,
+  // most reusable backdrop; the default for a freshly generated game.
+  _bgMinimal(c, W, H) {
+    const accent = this._accent();
+    const g = c.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#05070d'); g.addColorStop(0.55, '#070b14'); g.addColorStop(1, '#04060c');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    // soft accent glow pooled low-centre
+    c.save();
+    const rg = c.createRadialGradient(W / 2, H * 0.92, 0, W / 2, H * 0.92, W * 0.7);
+    rg.addColorStop(0, this._alpha(accent, 0.10)); rg.addColorStop(0.6, this._alpha(accent, 0.02)); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = rg; c.fillRect(0, 0, W, H);
+    c.restore();
+    // corner vignette
+    const v = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)');
+    c.fillStyle = v; c.fillRect(0, 0, W, H);
+  }
+
+  // Indoor hall — flat back wall + lit floor at the horizon, no crowd/stands.
+  _bgHall(c, W, H) {
+    const horizY = H * 0.42;
+    const accent = this._accent();
+    const wall = c.createLinearGradient(0, 0, 0, horizY);
+    wall.addColorStop(0, '#0a0d16'); wall.addColorStop(1, '#10141f');
+    c.fillStyle = wall; c.fillRect(0, 0, W, horizY);
+    // floor
+    const floor = c.createLinearGradient(0, horizY, 0, H);
+    floor.addColorStop(0, '#161b27'); floor.addColorStop(1, '#0b0e16');
+    c.fillStyle = floor; c.fillRect(0, horizY, W, H - horizY);
+    // accent baseline strip at the wall/floor seam
+    c.fillStyle = this._alpha(accent, 0.5); c.fillRect(0, horizY - 2, W, 3);
+    // floor sheen
+    c.save();
+    const sheen = c.createRadialGradient(W / 2, horizY, 0, W / 2, horizY, W * 0.6);
+    sheen.addColorStop(0, this._alpha(accent, 0.08)); sheen.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = sheen; c.fillRect(0, horizY, W, H - horizY);
+    c.restore();
+  }
+
+  // Indoor court — hard playing surface (not grass), low dark stands, lit floor.
+  // Tennis/basketball/volleyball etc. Pair with field:'court' for the net + lines.
+  _bgCourt(c, W, H) {
+    this._ensureScene();
+    const horizY = H * 0.30;
+    const accent = this._accent();
+
+    // Dark arena bowl behind the court.
+    const wall = c.createLinearGradient(0, 0, 0, horizY);
+    wall.addColorStop(0, '#080b12'); wall.addColorStop(1, '#0d1018');
+    c.fillStyle = wall; c.fillRect(0, 0, W, horizY + 4);
+
+    // Low, dim stands (seat speckle, dark — indoor lighting, crowd in shadow).
+    const cols = Math.ceil(W / 5);
+    for (let r = 0; r < 5; r++) {
+      const ry = horizY * (0.10 + r * 0.05);
+      const rw = W * (0.34 + r * 0.08), rx = (W - rw) / 2;
+      for (let col = 0; col < Math.ceil(rw / 5); col++) {
+        const s = this.scene.seats[(r * cols + col) % this.scene.seats.length];
+        const l = s.filled ? 16 + r * 1.4 : 9;
+        c.fillStyle = s.filled ? `hsl(${s.hue},22%,${l}%)` : `hsl(220,14%,${l}%)`;
+        c.fillRect(rx + col * 5, ry, 4, 4);
+      }
+    }
+
+    // Hard court floor (themed surface tone, perspective shading near→far).
+    const floor = c.createLinearGradient(0, horizY, 0, H);
+    const surf = this._mix(accent, '#1b2a34', 0.18);   // accent-tinted court colour
+    floor.addColorStop(0, this._shade(surf, -0.5));
+    floor.addColorStop(0.5, surf);
+    floor.addColorStop(1, this._shade(surf, 0.18));
+    c.fillStyle = floor; c.fillRect(0, horizY, W, H - horizY);
+
+    // Baseline strip at the back of the court + soft floor sheen.
+    c.fillStyle = this._alpha(accent, 0.45); c.fillRect(0, horizY, W, 2);
+    c.save();
+    c.beginPath(); c.rect(0, horizY, W, H - horizY); c.clip();
+    const sheen = c.createRadialGradient(W / 2, H * 0.78, 0, W / 2, H * 0.78, W * 0.7);
+    sheen.addColorStop(0, this._alpha(accent, 0.07)); sheen.addColorStop(0.6, 'rgba(0,0,0,0)');
+    c.fillStyle = sheen; c.fillRect(0, horizY, W, H - horizY);
+    c.restore();
+
+    // Corner vignette sinking the floor edges.
+    const v = c.createRadialGradient(W / 2, H, H * 0.2, W / 2, H, H * 0.95);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(5,8,12,.7)');
+    c.fillStyle = v; c.fillRect(0, horizY, W, H - horizY);
+  }
+
+  // Blend two hex colors by t (0..1 toward b). Returns #hex.
+  _mix(a, b, t) {
+    const pa = this._rgb(a), pb = this._rgb(b);
+    if (!pa || !pb) return a;
+    const m = i => Math.round(pa[i] + (pb[i] - pa[i]) * t);
+    return `rgb(${m(0)},${m(1)},${m(2)})`;
+  }
+  // Lighten (>0) / darken (<0) a color by f. Returns rgb().
+  _shade(col, f) {
+    const p = this._rgb(col); if (!p) return col;
+    const s = v => Math.max(0, Math.min(255, Math.round(v + 255 * f)));
+    return `rgb(${s(p[0])},${s(p[1])},${s(p[2])})`;
+  }
+  // Parse #hex or rgb()/rgba() to [r,g,b].
+  _rgb(col) {
+    if (!col) return null;
+    if (col[0] === '#') {
+      let h = col.slice(1);
+      if (h.length === 3) h = h.split('').map(x => x + x).join('');
+      const n = parseInt(h, 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    const m = col.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  }
+
+  // Parse a CSS color to rgba with the given alpha (handles #hex + rgb()/var-resolved).
+  _alpha(col, a) {
+    if (!col) return `rgba(255,255,255,${a})`;
+    if (col[0] === '#') {
+      let h = col.slice(1);
+      if (h.length === 3) h = h.split('').map(x => x + x).join('');
+      const n = parseInt(h, 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    }
+    const m = col.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    return m ? `rgba(${m[1]},${m[2]},${m[3]},${a})` : col;
   }
 
   // ── geometry (matches ShotVisuals so landings align with the rope) ──────────
@@ -168,9 +349,9 @@ class ArenaScene {
     gnd.addColorStop(0, '#102810'); gnd.addColorStop(0.5, '#2d5e1f'); gnd.addColorStop(1, '#4a8b3a');
     c.fillStyle = gnd; c.fillRect(0, horizY, W, H - horizY);
     c.save();
-    // Field-overlay sports (football/court/…) want grass edge-to-edge; cricket keeps
-    // the oval. Clip the stripes to a full rectangle when a field overlay is set.
-    if (this.field) { c.beginPath(); c.rect(0, horizY, W, H - horizY); c.clip(); }
+    // Rectangular-pitch archetypes (stadium/court) + field-overlay sports want grass
+    // edge-to-edge; cricket keeps the oval. Clip stripes accordingly.
+    if (this._rectMode()) { c.beginPath(); c.rect(0, horizY, W, H - horizY); c.clip(); }
     else { c.beginPath(); c.ellipse(W / 2, ey, erx, ery, 0, 0, Math.PI * 2); c.clip(); }
     const sh = Math.max(10, (H - horizY) / 20);
     for (let sy = horizY; sy < H; sy += sh) {
@@ -208,9 +389,9 @@ class ArenaScene {
     const { ey, erx, ery } = this.boundary(W, H);
     const rip = this.crowdWave > 0 ? Math.sin(Date.now() / 75) * 2.5 : 0;
 
-    // Cricket oval markings (boundary rope + infield circle). A field-overlay sport
-    // draws its own pitch lines (see FrameworkFields), so skip these when field set.
-    if (!this.field) {
+    // Cricket oval markings (boundary rope + infield circle). Rectangular archetypes
+    // and field-overlay sports draw their own pitch lines, so skip these there.
+    if (!this._rectMode()) {
       // Boundary rope.
       c.beginPath(); c.ellipse(W / 2, ey + rip * 0.4, erx + rip + 2, ery + rip * 0.5 + 2, 0, 0, Math.PI * 2);
       c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 7; c.stroke();

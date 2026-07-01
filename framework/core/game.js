@@ -116,12 +116,29 @@ class FrameworkGameClass {
       }
     }
 
+    // 2b. Track match-in-progress generically (drives the away overlays below). A live
+    // game emits game_state; game_over ends it. Works on both roles (screen sends,
+    // bat receives — both see the message on their socket).
+    this.inMatch = false;
+    window.FrameworkEvents.on('game_state', () => { this.inMatch = true; });
+    window.FrameworkEvents.on('game_over', () => { this.inMatch = false; });
+
     // 3. Socket lifecycle hooks shared by both roles.
-    window.FrameworkEvents.on('sys:connected', () => { if (cfg.onConnect) cfg.onConnect(); });
+    window.FrameworkEvents.on('sys:connected', () => {
+      // Phone: clear the "TV away" overlay once the link is back.
+      if (autoOverlay && this.role === 'bat' && window.FrameworkTemplates && window.FrameworkTemplates.hideMobileAway) {
+        window.FrameworkTemplates.hideMobileAway();
+      }
+      if (cfg.onConnect) cfg.onConnect();
+    });
     window.FrameworkEvents.on('sys:disconnected', () => {
       if (autoOverlay && this.role === 'screen' && this.paired) {
         // TV shows a passive reconnect notice; event-hub auto-reconnects.
         window.FrameworkUI && window.FrameworkUI.showToast('Reconnecting…', 2500, true);
+      }
+      // Phone, mid-match: show the "TV away" overlay (auto-resumes on reconnect).
+      if (autoOverlay && this.role === 'bat' && this.inMatch && window.FrameworkTemplates && window.FrameworkTemplates.renderMobileAway) {
+        window.FrameworkTemplates.renderMobileAway({ message: 'TV disconnected' });
       }
       if (cfg.onDisconnect) cfg.onDisconnect();
     });
@@ -178,13 +195,20 @@ class FrameworkGameClass {
     window.FrameworkEvents.on('bat_connected', () => {
       this.paired = true;
       if (autoOverlay && window.FrameworkUI) window.FrameworkUI.hidePairingOverlay();
+      if (autoOverlay && window.FrameworkTemplates && window.FrameworkTemplates.hideTVAway) window.FrameworkTemplates.hideTVAway();
       if (cfg.onPaired) cfg.onPaired();
     });
 
     window.FrameworkEvents.on('bat_disconnected', () => {
       this.paired = false;
-      if (autoOverlay && window.FrameworkUI) {
-        window.FrameworkUI.renderPairingOverlay(this.code, 'waiting', cfg.qrUrl || '');
+      // Mid-match → passive "player stepped out" overlay (match resumes on reconnect).
+      // Pre-match → the pairing code, so a new phone can join.
+      if (autoOverlay) {
+        if (this.inMatch && window.FrameworkTemplates && window.FrameworkTemplates.renderTVAway) {
+          window.FrameworkTemplates.renderTVAway({ message: 'Player stepped out' });
+        } else if (window.FrameworkUI) {
+          window.FrameworkUI.renderPairingOverlay(this.code, 'waiting', cfg.qrUrl || '');
+        }
       }
       if (cfg.onUnpaired) cfg.onUnpaired();
     });

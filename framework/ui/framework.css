@@ -30,6 +30,42 @@
   --game-warning: #F3D86B;
   --game-offwhite:#F5F7EF;          /* CricSwing --cs-offwhite */
   --game-blue:    #4af;
+  /* Semantic aliases — theme by INTENT so a game's `theme` block recolors all
+     reusable chrome (TV + phone). Reusable templates must use these, never a hex
+     literal. Defaults map to the CricSwing palette → visual parity until overridden. */
+  --game-secondary: var(--game-accent-2);            /* deeper accent (borders/glow chrome) */
+  --game-surface:   rgba(7, 16, 12, 0.78);           /* frosted panel/overlay fill */
+  --game-surface-soft: rgba(7, 16, 12, 0.60);        /* lighter frosted fill */
+  --game-surface-2: rgba(255, 255, 255, 0.04);       /* lighter card fill */
+  --game-border:    var(--fw-line);                  /* hairline border */
+  --game-glow:      var(--fw-shadow-glow);           /* accent glow shadow */
+  /* Card/frame dark gradient — CricSwing #0e1812→#131e18 pair-code-frame, menu cards */
+  --game-card-dark:   #0e1812;
+  --game-card-dark-2: #131e18;
+  --game-card-bg: linear-gradient(180deg, var(--game-card-dark), var(--game-card-dark-2));
+  /* Pre-baked accent (154,223,107) + secondary (118,185,0) alphas — reusable chrome
+     references these instead of a hex literal, so a theme override recolors them. */
+  --game-accent-08: rgba(154, 223, 107, 0.08);
+  --game-accent-10: rgba(154, 223, 107, 0.10);
+  --game-accent-12: rgba(154, 223, 107, 0.12);
+  --game-accent-15: rgba(154, 223, 107, 0.15);
+  --game-accent-18: rgba(154, 223, 107, 0.18);
+  --game-accent-25: rgba(154, 223, 107, 0.25);
+  --game-accent-30: rgba(154, 223, 107, 0.30);
+  --game-accent-32: rgba(154, 223, 107, 0.32);
+  --game-accent-35: rgba(154, 223, 107, 0.35);
+  --game-accent-40: rgba(154, 223, 107, 0.40);
+  --game-accent-50: rgba(154, 223, 107, 0.50);
+  --game-accent-60: rgba(154, 223, 107, 0.60);
+  --game-secondary-06: rgba(118, 185, 0, 0.06);
+  --game-secondary-25: rgba(118, 185, 0, 0.25);
+  --game-secondary-10: rgba(118, 185, 0, 0.10);
+  --game-secondary-12: rgba(118, 185, 0, 0.12);
+  --game-secondary-28: rgba(118, 185, 0, 0.28);
+  --game-secondary-30: rgba(118, 185, 0, 0.30);
+  --game-secondary-35: rgba(118, 185, 0, 0.35);
+  --game-secondary-40: rgba(118, 185, 0, 0.40);
+  --game-secondary-45: rgba(118, 185, 0, 0.45);
   /* Phone UI uses the device's native font (CricSwing lobby/bat = system stack);
      'Selawik' (Segoe-equiv, bundled) is the cross-platform fallback for TVs. */
   --game-font:    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Selawik', Roboto, sans-serif;
@@ -149,15 +185,15 @@ body, html {
 .fw-codebox-row { display: flex; gap: 10px; justify-content: center; }
 .fw-code-box {
   width: 72px; height: 72px; border-radius: 13px;
-  background: linear-gradient(180deg, #0e0e0e, #050505);
-  border: 1.5px solid rgba(154, 223, 107, 0.18);
+  background: var(--game-card-bg);
+  border: 2px solid var(--fw-line-2);
   display: flex; align-items: center; justify-content: center;
   font-size: 34px; font-weight: 900; color: var(--game-accent);
   font-family: var(--game-font);
   text-shadow: 0 0 0.5em rgba(154, 223, 107, 0.50);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.fw-code-box.active { border-color: var(--game-accent); box-shadow: 0 0 0 2px rgba(154, 223, 107, 0.25); }
+.fw-code-box.active { border-color: rgba(154,223,107,.6); box-shadow: 0 0 0 2px rgba(154, 223, 107, 0.18); }
 .fw-codebox-row.paired .fw-code-box { animation: fwPairFrameGlow 0.85s var(--fw-ease-out) forwards; }
 
 /* Tabs — exact CricSwing .region-tab */

@@ -141,10 +141,21 @@ motion/ML extension (off by default; see §6 below and `framework/extensions/REA
 }
 ```
 
-**`roster` / `rosterTitle`** — an editable line-up shown on the `target` step:
+**`roster` / `rosterTitle`** — an editable line-up shown on the `target` step. Entries are
+plain strings, or `{name, role}` objects to show a role badge + highlight the next player:
 ```jsonc
 "rosterTitle": "Your batting order",
-"roster": ["Opener 1", "Opener 2", "No. 3", "No. 4", "No. 5"]
+"roster": [
+  { "name": "Opener 1", "role": "BAT" },
+  { "name": "No. 4",    "role": "ALL-R" }
+]
+```
+
+**Choice-step extras** — a `choice` step (e.g. difficulty) can show a VS match-preview and a
+confirm button instead of auto-advancing:
+```jsonc
+{ "type": "choice", "key": "difficulty", "source": "difficulties",
+  "cols": 3, "preview": true, "confirm": true, "confirmText": "Start Match" }
 ```
 
 **Series / tournament** (per format, or one top-level default) — runs a multi-match state

@@ -62,6 +62,13 @@ assert.strictEqual(s.done, true, 'tournament complete');
 assert.strictEqual(s.won, true, 'champion');
 assert.strictEqual(s.label, 'Champion!', 'champion label');
 
+// ── results[] history (drives the match-end dots) ──────────────────────────
+Series.start({ type: 'series', bestOf: 3 });
+Series.recordResult(true);
+Series.recordResult(false);
+s = Series.standings();
+assert.deepStrictEqual(s.results, ['win', 'loss'], 'results[] records each match in order');
+
 // ── clear ──────────────────────────────────────────────────────────────────
 Series.clear();
 assert.strictEqual(Series.isOver(), true, 'no series after clear');

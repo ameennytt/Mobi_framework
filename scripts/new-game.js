@@ -94,13 +94,11 @@ function rewrite(dir) {
 rewrite(dest);
 
 console.log(`Created games/${id} from the ${template} template.`);
+console.log(`The HTML files (home / lobby / controller / screen) are framework-built STUBS —`);
+console.log(`you normally don't touch them. Work in config + gameplay:`);
 console.log(`Next:`);
-if (fs.existsSync(path.join(dest, 'gameplay.js'))) {
-  console.log(`  1. Edit games/${id}/game-config.json  (title, colors, modes/teams, formats, flow, hud, field)`);
-  console.log(`  2. Edit games/${id}/gameplay.js       (your core rules + game-screen draw)`);
-  console.log(`  3. npm start  →  TV: http://localhost:3000/games/${id}/screen.html`);
-} else {
-  console.log(`  1. Edit games/${id}/game-config.json  (title, colors, logo)`);
-  console.log(`  2. Edit the 3 HTML files (lobby / controller / screen) — search "EDIT"`);
-  console.log(`  3. npm start  →  TV: http://localhost:3000/games/${id}/screen.html`);
-}
+console.log(`  1. Brand it      games/${id}/game-config.json  (text, theme, assets)`);
+console.log(`  2. Swap assets   games/${id}/assets/*`);
+console.log(`  3. Configure     game-config.json  (home, flow, controller.controls, hud, arena, field, formats, teams)`);
+console.log(`  4. Build gameplay games/${id}/gameplay/*  (rules · scoring · visuals · index; optional controller.js hooks)`);
+console.log(`  5. npm start  →  Phone: http://localhost:3000/games/${id}/home.html  ·  TV: /games/${id}/screen.html`);

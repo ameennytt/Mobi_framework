@@ -17,7 +17,7 @@ window.FrameworkCharts = (function () {
   };
   function host(h) { return typeof h === 'string' ? document.getElementById(h) : h; }
   function box(el, title) {
-    return `<div style="background:rgba(7,16,12,.72);border:1.5px solid rgba(118,185,0,.25);border-radius:12px;padding:10px 12px;">
+    return `<div style="background:var(--game-surface);border:1.5px solid var(--game-secondary-25);border-radius:12px;padding:10px 12px;">
       ${title ? `<div style="font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:${COL.muted};margin-bottom:8px;">${title}</div>` : ''}${el}</div>`;
   }
 

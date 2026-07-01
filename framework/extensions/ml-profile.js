@@ -29,8 +29,19 @@ window.FrameworkMLProfile = (function () {
     progress() { return { pct: Math.round((trained / totalShots) * 100), label: `${trained}/${totalShots} trained` }; },
     stop() { const summary = { trained, totalShots, mode }; mode = null; return summary; },
 
-    // Optional UI hooks — training hub / net practice screens (stubs for now).
-    trainingHubUI() { /* TODO(dev): render the training-hub screen */ },
+    // Optional UI hooks — render the training-hub screen via the shared template.
+    // opts:{ shots:[{name,trained}], onPick, onAll }. The real build supplies trained state.
+    trainingHubUI(opts = {}) {
+      const T = window.FrameworkTemplates;
+      if (T && T.renderMobileTrainingHub) {
+        T.renderMobileTrainingHub({
+          title: opts.title || 'Train Your Shots',
+          subtitle: opts.subtitle || this.progress().label,
+          shots: opts.shots || [],
+          onPick: opts.onPick, onAll: opts.onAll,
+        });
+      }
+    },
     netPracticeUI() { /* TODO(dev): render the net-practice screen */ },
 
     _setTrained(n) { trained = Math.max(0, Math.min(totalShots, n | 0)); },  // test/helper

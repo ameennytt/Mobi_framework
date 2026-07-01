@@ -1,5 +1,5 @@
 {
-  "gameId": "versus",
+  "gameId": "soccer",
   "version": "1.0.0",
   "supportsTv": true,
   "supportsMobile": true,
@@ -39,8 +39,9 @@
     "gameplay/index.js"
   ],
   "assets": {
-    "APP_LOGO": "/games/versus/assets/logo1.svg",
-    "SCREEN_HERO": "/games/versus/assets/icon1.svg"
+    "APP_LOGO": "/games/soccer/assets/logo1.svg",
+    "APP_ICON": "/games/soccer/assets/icon1.svg",
+    "SCREEN_HERO": "/games/soccer/assets/icon1.svg"
   },
   "text": {
     "APP_TITLE": "Striker Duel",

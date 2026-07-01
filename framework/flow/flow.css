@@ -16,36 +16,66 @@
 .fw-spacer { flex: 1; }
 
 /* brand / welcome */
-.fw-brand { text-align: center; margin-top: 14px; }
+.fw-brand { text-align: center; margin-top: 10px; }
 .fw-brand img { width: 88px; height: 88px; object-fit: contain; }
 .fw-brand h1 { font-size: 30px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
 .fw-brand p { font-size: 13px; color: var(--game-muted); margin: 0; }
+/* standalone pair buttons (outside cardbox) */
+#fw-connect, #fw-clear { margin-top: 12px; }
 /* hero entrance on the pair screen (CricSwing logoHeroIn) */
-.fw-hero { animation: fwLogoHeroIn 0.55s var(--fw-ease-out, ease-out) both; }
+.fw-hero { animation: fwLogoHeroIn 0.55s var(--fw-ease-out, ease-out) 0.35s both; }
 
-/* pairing status chip (pulse) */
-.fw-pair-chip {
-  display: inline-flex; align-items: center; gap: 8px; align-self: center;
-  margin: 14px auto 0; padding: 6px 14px; border-radius: 99px;
-  background: rgba(154, 223, 107, 0.10); border: 1px solid rgba(154, 223, 107, 0.30);
-  font-size: 12px; font-weight: 700; color: var(--game-text-2, #ccc);
+/* ── chip / eyebrow pill — shared primitive (CricSwing .pair-chip) ──────────── */
+/* Used by: pair status chip, intro eyebrow, any lobby eyebrow. Position via the
+   composed modifier class (.fw-pair-chip / .fw-intro-chip). */
+.fw-chip {
+  display: inline-flex; align-items: center; gap: 6px; align-self: center;
+  padding: 5px 12px; border-radius: 99px;
+  background: var(--game-accent-12); border: 1px solid var(--game-accent-25);
+  font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--game-accent);
 }
-.fw-pair-chip.paired { color: var(--game-accent); }
-.fw-pair-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--game-accent); animation: fwPairPulse 1.6s ease-out infinite; }
+.fw-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--game-accent); }
+.fw-chip-dot.pulse { animation: fwPairPulse 1.6s ease-out infinite; }
+
+/* pairing status chip — positioning + paired state only */
+.fw-pair-chip { margin: 20px auto 0; }
+.fw-pair-chip.paired { border-color: var(--game-accent); }
+
+/* pair step instruction cards */
+.fw-pair-steps {
+  display: flex; flex-direction: column; gap: 0;
+  background: var(--game-surface-2); border: 1px solid var(--fw-line);
+  border-radius: 16px; overflow: hidden; margin: 16px 0 12px;
+}
+.fw-pair-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; position: relative;
+}
+.fw-pair-step + .fw-pair-step { border-top: 1px solid rgba(255,255,255,0.07); }
+.fw-pair-stepnum {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--game-accent-12); border: 1px solid var(--game-accent-30);
+  font-size: 12px; font-weight: 800; color: var(--game-accent);
+}
+.fw-pair-stepicon { font-size: 18px; flex-shrink: 0; }
+.fw-pair-steptext { font-size: 14px; font-weight: 600; color: var(--game-text); line-height: 1.4; }
+.fw-pair-site { color: var(--game-accent); font-weight: 800; }
 
 /* 4 code-boxes wrapper + Wi-Fi hint */
 #fw-code-visual { margin: 6px 0 4px; outline: none; }
 .fw-wifi-hint {
   margin-top: 14px; padding: 10px 14px; border-radius: 12px;
-  background: rgba(154, 223, 107, 0.08); border: 1px solid rgba(154, 223, 107, 0.25);
+  background: var(--game-accent-08); border: 1px solid var(--game-accent-25);
   font-size: 12px; color: var(--game-text-2, #bcd); line-height: 1.5; text-align: center;
 }
 
 .fw-cardbox {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 20px;
+  background: var(--game-card-bg);
+  border: 1.5px solid var(--fw-line);
+  border-radius: 20px;
+  padding: 16px;
 }
 .fw-cardbox label {
   font-size: 12px; font-weight: 700; text-transform: uppercase;
@@ -136,17 +166,32 @@
 }
 
 /* ── consent / intro onboarding (optional) ─────────────────────────────────── */
-.fw-intro { text-align: center; }
-.fw-intro-card {
-  background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px; padding: 30px 22px; max-width: 480px; margin: 0 auto; width: 100%;
+.fw-intro { text-align: center; display: flex; flex-direction: column; min-height: 100%; }
+.fw-intro-chip { margin: 8px auto 18px; }
+.fw-intro-title {
+  font-size: 32px; font-weight: 900; color: var(--game-text); line-height: 1.1;
+  max-width: 480px; margin: 0 auto;
+}
+.fw-intro-figure {
+  display: flex; flex-direction: column; align-items: center; gap: 22px;
+  max-width: 480px; margin: 0 auto; width: 100%;
   animation: fwBannerIn 0.4s var(--fw-ease-out, ease) both;
 }
-.fw-intro-icon { font-size: 52px; line-height: 1; margin-bottom: 12px; }
-.fw-intro-title { font-size: 22px; font-weight: 900; color: var(--game-text); margin-bottom: 8px; }
-.fw-intro-text { font-size: 14px; color: var(--game-muted); line-height: 1.55; }
-.fw-intro-dots { display: flex; justify-content: center; margin-top: 18px; }
-.fw-intro-actions { display: flex; gap: 12px; max-width: 480px; margin: 0 auto; width: 100%; }
+.fw-intro-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 200px; height: 200px; font-size: 80px; line-height: 1;
+  border: 1.5px solid var(--game-accent-25); border-radius: 28px;
+  background: var(--game-surface-2);
+}
+.fw-intro-text { font-size: 15px; color: var(--game-muted); line-height: 1.55; max-width: 340px; margin: 0 auto; }
+.fw-intro-dots { display: flex; justify-content: center; margin: 0 auto 18px; }
+.fw-intro-actions { display: flex; flex-direction: column; gap: 10px; max-width: 480px; margin: 0 auto; width: 100%; }
+.fw-intro-next { width: 100%; }
+.fw-intro-skip {
+  background: none; border: none; color: var(--game-muted); cursor: pointer;
+  font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 8px;
+}
+.fw-intro-skip:hover { color: var(--game-text-2); }
 
 /* ── menu hub secondary entries (optional) ─────────────────────────────────── */
 .fw-menu-entries { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
@@ -171,7 +216,7 @@
 .fw-roster-num {
   width: 24px; height: 24px; flex: 0 0 auto; border-radius: 50%; font-size: 12px; font-weight: 800;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(154, 223, 107, 0.15); color: var(--game-accent);
+  background: var(--game-accent-15); color: var(--game-accent);
 }
 .fw-roster-input {
   flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--fw-line, rgba(255,255,255,0.12));
@@ -179,3 +224,42 @@
   padding: 8px 10px; outline: none;
 }
 .fw-roster-input:focus { border-color: var(--game-accent); }
+
+/* ── A1: N-column grid + selected card + match-preview (CricSwing difficulty) ──── */
+.fw-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.fw-card.selected { border-color: var(--game-accent); background: var(--game-accent-10);
+  box-shadow: 0 0 0 1.5px var(--game-accent), var(--fw-shadow-glow); }
+.fw-preview {
+  margin-top: 18px; background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--fw-line, rgba(255,255,255,0.1)); border-radius: 16px; padding: 16px;
+}
+.fw-preview-label { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--game-muted); margin-bottom: 14px; text-align: center; }
+.fw-preview-row { display: flex; align-items: center; justify-content: center; gap: 22px; }
+.fw-preview-team { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 96px; }
+.fw-preview-name { font-size: 15px; font-weight: 800; color: var(--game-text); }
+.fw-preview-vs { font-size: 16px; font-weight: 900; color: var(--game-muted); }
+.fw-preview-tag {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--game-accent); border: 1px solid var(--game-accent); border-radius: 99px; padding: 3px 10px;
+}
+
+/* ── A2: toss gold disc + subtitle (CricSwing coin) ─────────────────────────── */
+.fw-coin-disc {
+  width: 150px; height: 150px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 72px; cursor: pointer; user-select: none;
+  background: radial-gradient(circle at 38% 32%, #fff3b0, #f3d033 55%, #c79a12 100%);
+  box-shadow: 0 6px 30px rgba(255, 215, 0, 0.4), inset 0 2px 6px rgba(255, 255, 255, 0.6),
+    inset 0 -6px 14px rgba(140, 100, 10, 0.5);
+}
+.fw-coin-disc.spin { animation: fwCoinSpin 1.6s ease-in-out; }
+.fw-toss-sub { font-size: 22px; font-weight: 900; color: var(--game-gold, #F3D86B); text-align: center; margin-bottom: 4px; }
+
+/* ── A3: batting-order role badge + next-batter highlight ───────────────────── */
+.fw-roster-row.next { border: 1.5px solid var(--game-accent); border-radius: 12px;
+  padding: 8px; margin: 0 -8px 8px; background: var(--game-accent-08); }
+.fw-roster-role {
+  flex: 0 0 auto; font-size: 10px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--game-gold, #F3D86B); background: rgba(243, 216, 107, 0.12);
+  border: 1px solid rgba(243, 216, 107, 0.30); border-radius: 6px; padding: 4px 7px;
+}

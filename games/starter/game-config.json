@@ -20,7 +20,20 @@
     "EXIT_ACTION": "QUIT"
   },
   "hud": "flat",
+  "arena": "minimal",
   "field": "",
+  "_comment_controller": "Framework-owned in-match controller. hud=score cards (key reads game_state[key]); actions=buttons that game.send('action', payload). Default behavior needs no JS — see games/chase for the optional gameplay/controller.js hooks.",
+  "controller": {
+    "hud": [
+      { "key": "score", "label": "Score" },
+      { "key": "left", "label": "Left" },
+      { "key": "best", "label": "Best" }
+    ],
+    "actions": [
+      { "id": "tap", "label": "TAP", "primary": true }
+    ],
+    "hint": "Tap to take your try"
+  },
   "_comment_code": "Your game code, loaded in order (entry index.js last). This is the ONLY code you write. Split further or merge into one gameplay.js — your call.",
   "code": [
     "gameplay/rules.js",

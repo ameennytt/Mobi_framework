@@ -29,9 +29,24 @@ does **not** include these scripts, and its `game-config.json` has no `input` fi
    FrameworkMotionInput.start();
    ```
 
-## Status: scaffold only
-`classify` returns a neutral result, swing detection is a `TODO`, and the training-hub /
-net-practice screens are stubs. They reuse what already exists (`FrameworkMotion`,
-`FrameworkTemplates.renderMobileCalibration`) so the input/UI plumbing is in place. The
-real swing/ML logic (e.g. Baseball's) drops in here without changing the framework or any
-button game. Contracts: see [`framework/EXTENSIONS.md`](../EXTENSIONS.md) → ML/Motion + Training.
+## The screens already exist (UI done, logic stubbed)
+The full motion/swing/training **UI** ships in `framework/ui` and renders only when called —
+so the only thing left to write is the sensor math. Available now:
+
+- Phone: `renderMobileCameraHint`, `renderMobileStance` (+ `updateMobileStance(pct,ready)`),
+  `renderMobilePitchControl` (+ `updateMobilePitchTiming`/`setMobilePitchStatus`),
+  `renderMobileTrainingHub`.
+- TV: `renderTVStance` (+ `updateTVStance`), `renderTVTimingRing` (+ `updateTVTimingRing`),
+  `renderTVBallBrief`, `renderTVTrainGuide` / `renderTVTrainComplete`.
+- Extension entry points: `FrameworkMotionInput.cameraHintUI()` / `stanceLockUI()`,
+  `FrameworkMLProfile.trainingHubUI({shots,onPick,onAll})`.
+
+`stanceLockUI()` now drives `renderMobileStance` (the scaffold auto-ramps the hold bar; the
+real build feeds sensor steadiness into `updateMobileStance`). A bowl/pitch controller calls
+`renderMobilePitchControl({label:'PITCH'|'BOWL', onFire})` and animates the timing bar.
+
+## Status: logic scaffold only
+`classify` returns a neutral result, swing detection is a `TODO`, training is a no-op
+counter. The **screens are real**; the model/sensor logic (e.g. Baseball's) drops in here
+without changing the framework or any button game. Contracts: see
+[`framework/EXTENSIONS.md`](../EXTENSIONS.md) → ML/Motion + Training.

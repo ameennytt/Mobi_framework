@@ -60,8 +60,8 @@ window.Gameplay = (function () {
       bannerText: 'Game Over',
       winner: String(score.score),
       stats: [{ label: 'Score', value: score.score }, { label: 'Best', value: best }, { label: 'Tries', value: score.attempts }],
-      primaryText: 'PLAY AGAIN',
-      onPrimary: () => { game.hideResult(); start({ attempts: score.attempts }); },
+      // TV result is display-only — the phone drives Play Again / Home (no dead TV button).
+      sub: 'Play again on your phone',
     });
   }
 
