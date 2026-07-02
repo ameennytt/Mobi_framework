@@ -82,10 +82,8 @@ android {
 
     namespace "com.cricketdash"
 
-    // nodejs-mobile-react-native: the embedded Node binary must not be compressed
-    aaptOptions {
-        noCompress "node"
-    }
+    // (nodejs-mobile removed — server now runs over react-native-tcp-socket, so the
+    // old `aaptOptions { noCompress "node" }` is gone. No 4 KB-aligned libnode.so.)
 
     defaultConfig {
         applicationId "com.cricketdash"

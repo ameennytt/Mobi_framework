@@ -8,18 +8,21 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "postinstall": "cd nodejs-assets/nodejs-project && npm install --omit=optional --no-audit --no-fund",
+    "sync-assets": "node ../../../scripts/sync-assets.js",
+    "server-test": "node src/server/__test__/run-node.js",
     "bundle:android": "cd android && gradlew.bat bundleRelease"
   },
   "dependencies": {
+    "buffer": "^6.0.3",
     "fast-text-encoding": "^1.0.6",
-    "nodejs-mobile-react-native": "^18.20.4",
     "react": "18.2.0",
     "react-native": "0.73.6",
+    "react-native-fs": "^2.20.0",
     "react-native-network-info": "^5.2.2",
     "react-native-qrcode-svg": "^6.2.0",
     "react-native-sensors": "^7.3.6",
     "react-native-svg": "^14.1.0",
+    "react-native-tcp-socket": "^6.4.1",
     "react-native-webview": "^13.16.1"
   },
   "devDependencies": {

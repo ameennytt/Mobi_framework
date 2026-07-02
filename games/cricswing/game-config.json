@@ -1,0 +1,197 @@
+{
+  "gameId": "cricswing",
+  "version": "1.0.0",
+  "supportsTv": true,
+  "supportsMobile": true,
+  "supportsMotion": false,
+  "input": "buttons",
+  "enableEnrichment": false,
+  "_comment_home": "Phone front door (FrameworkHome). Menu auto-builds from ui.help/about/settings; splash shows the logo briefly on open. Add home.items to customize.",
+  "home": { "splash": true },
+  "_comment_preset": "BROADCAST preset — shows the full CricSwing-style experience: onboarding, mode hub, series, toss, roster, TV intro/countdown/over-summary/milestones. A minimal game omits the ui/tv/series blocks (see games/starter).",
+  "_comment_code": "Modular game code, loaded in order (entry index.js last). chase-shot.js = cricket ball math.",
+  "code": [
+    "chase-shot.js",
+    "gameplay/rules.js",
+    "gameplay/scoring.js",
+    "gameplay/visuals.js",
+    "gameplay/index.js"
+  ],
+  "assets": {
+    "APP_LOGO": "/games/cricswing/assets/cricswing-logo.png",
+    "APP_ICON": "/games/cricswing/assets/icon.svg",
+    "SCREEN_HERO": "/games/cricswing/assets/cricswing-mark.png",
+    "SCREEN_BACKGROUND": "#000"
+  },
+  "text": {
+    "APP_TITLE": "CricSwing",
+    "APP_TITLE_HTML": "Cric<span class=\"fw-accent\">Swing</span>",
+    "APP_TAGLINE": "TV CRICKET",
+    "PRIMARY_SCORE": "Runs",
+    "SECONDARY_SCORE": "Wickets",
+    "PROGRESS_METRIC": "Overs",
+    "ACTIVITY_FEED": "Match Feed",
+    "RESULT_PANEL": "Result",
+    "START_ACTION": "BAT NOW",
+    "EXIT_ACTION": "QUIT"
+  },
+  "_comment_ui": "OPTIONAL onboarding + info modals. Remove this block for a no-onboarding game.",
+  "ui": {
+    "onboarding": {
+      "consent": {
+        "title": "Help improve the game?",
+        "body": "Allow anonymous gameplay data to be collected (no name, no email). You can change this later.",
+        "acceptText": "Allow",
+        "declineText": "No thanks"
+      },
+      "intro": [
+        { "art": "phone", "title": "Your phone is the bat", "text": "Hold the phone like a bat handle.<br>Tilt it — the bat on the TV tilts <b>with you</b>." },
+        { "art": "timing", "title": "Time the swing", "text": "Watch the bowler. When the timing bar hits the <b>green zone</b>, swing your phone forward." },
+        { "art": "lock", "title": "Lock your stance", "text": "Before the first ball, tap <b>LOCK MY STANCE</b> to calibrate the bat to your grip." }
+      ]
+    },
+    "about": {
+      "title": "About Chase Arena",
+      "body": [
+        "An independent cricket-inspired game built on the TV + phone framework.",
+        "Teams and names are fictional or user-customized."
+      ]
+    },
+    "help": {
+      "title": "How to Play",
+      "body": [
+        "1. Pair your phone with the TV using the on-screen code.",
+        "2. Pick a mode, team, format and difficulty.",
+        "3. Choose a shot direction and tap PLAY SHOT to chase the target."
+      ]
+    },
+    "settings": [
+      { "label": "Sound", "type": "toggle", "value": true },
+      { "label": "Mirror to TV", "type": "toggle", "value": true }
+    ]
+  },
+  "_comment_series": "OPTIONAL — a format can set seriesType to start a multi-match series/tournament.",
+  "rosterTitle": "Your batting order",
+  "roster": [
+    { "name": "Opener 1", "role": "BAT" },
+    { "name": "Opener 2", "role": "BAT" },
+    { "name": "No. 3", "role": "BAT" },
+    { "name": "No. 4", "role": "ALL-R" },
+    { "name": "Finisher", "role": "ALL-R" }
+  ],
+  "tv": {
+    "intro": true,
+    "countdown": 3,
+    "milestones": true,
+    "overSummary": true,
+    "broadcast": "full"
+  },
+  "modes": [
+    { "id": "cup", "branch": "cup", "title": "Chase World Cup", "sub": "National teams · Tournament climb", "iconUrl": "/games/cricswing/assets/icons/art-menu-1.svg", "accent": "match" },
+    { "id": "league", "branch": "league", "title": "Chase League", "sub": "City clubs · Local rivalries", "iconUrl": "/games/cricswing/assets/icons/art-menu-2.svg", "accent": "practice" },
+    { "id": "featured", "title": "Featured Chase", "sub": "🔒 Win on Hard to unlock 100 chase levels.", "iconUrl": "/games/cricswing/assets/icons/art-menu-3.svg", "locked": true }
+  ],
+  "teams": [
+    { "name": "Red Lions", "short": "RED", "color": "#e0443e" },
+    { "name": "Blue Sharks", "short": "BLU", "color": "#3a7bd5" },
+    { "name": "Green Bolts", "short": "GRN", "color": "#2faa55" },
+    { "name": "Gold Hawks", "short": "GLD", "color": "#e0a83e" },
+    { "name": "Purple Storm", "short": "PUR", "color": "#8e44ad" },
+    { "name": "Teal Tigers", "short": "TEA", "color": "#16a89a" }
+  ],
+  "_comment_chasedata": "CricSwing chase hierarchy. cup = national teams (World Cup branch). leagues = country → domestic league → city clubs (League branch). Colours/codes match the CricSwing picker flags.",
+  "chaseData": {
+    "cup": [
+      { "id": "india", "name": "India", "code": "IND", "color": "#FF9933" },
+      { "id": "australia", "name": "Australia", "code": "AUS", "color": "#00008B" },
+      { "id": "england", "name": "England & Wales", "code": "ENG", "color": "#012169" },
+      { "id": "pakistan", "name": "Pakistan", "code": "PAK", "color": "#01411C" },
+      { "id": "southafrica", "name": "South Africa", "code": "SA", "color": "#007A4D" },
+      { "id": "newzealand", "name": "New Zealand", "code": "NZ", "color": "#00247D" },
+      { "id": "srilanka", "name": "Sri Lanka", "code": "SL", "color": "#8D153A" },
+      { "id": "bangladesh", "name": "Bangladesh", "code": "BAN", "color": "#006A4E" },
+      { "id": "westindies", "name": "West Indies", "code": "WI", "color": "#7B0041" },
+      { "id": "afghanistan", "name": "Afghanistan", "code": "AFG", "color": "#D32011" },
+      { "id": "zimbabwe", "name": "Zimbabwe", "code": "ZIM", "color": "#006400" },
+      { "id": "ireland", "name": "Ireland", "code": "IRE", "color": "#169B62" }
+    ],
+    "leagues": [
+      { "id": "india", "name": "India", "leagueName": "Indian Chase League", "code": "IND", "color": "#FF9933", "teams": ["Chennai", "Delhi", "Ahmedabad", "Kolkata", "Lucknow", "Mumbai", "Mohali", "Jaipur", "Bengaluru", "Hyderabad"] },
+      { "id": "australia", "name": "Australia", "leagueName": "Australian Chase League", "code": "AUS", "color": "#00008B", "teams": ["Adelaide", "Brisbane", "Hobart", "Melbourne", "Perth", "Sydney"] },
+      { "id": "pakistan", "name": "Pakistan", "leagueName": "Pakistani Chase League", "code": "PAK", "color": "#01411C", "teams": ["Islamabad", "Karachi", "Lahore", "Multan", "Peshawar", "Quetta"] },
+      { "id": "england", "name": "England & Wales", "leagueName": "English & Welsh Chase League", "code": "ENG", "color": "#012169", "teams": ["Birmingham", "London", "Manchester", "Southampton", "Leeds", "Nottingham", "Cardiff"] },
+      { "id": "southafrica", "name": "South Africa", "leagueName": "South African Chase League", "code": "SA", "color": "#007A4D", "teams": ["Durban", "Johannesburg", "Cape Town", "Paarl", "Pretoria", "Gqeberha"] },
+      { "id": "westindies", "name": "West Indies", "leagueName": "Caribbean Chase League", "code": "WI", "color": "#7B0041", "teams": ["Antigua", "Barbados", "Guyana", "Basseterre", "Gros Islet", "Port of Spain"] },
+      { "id": "newzealand", "name": "New Zealand", "leagueName": "New Zealand Chase League", "code": "NZ", "color": "#00247D", "teams": ["Auckland", "Christchurch", "Hamilton", "Napier", "Dunedin", "Wellington"] },
+      { "id": "srilanka", "name": "Sri Lanka", "leagueName": "Sri Lankan Chase League", "code": "SL", "color": "#8D153A", "teams": ["Colombo", "Dambulla", "Galle", "Jaffna", "Kandy"] },
+      { "id": "uae", "name": "UAE", "leagueName": "UAE Chase League", "code": "UAE", "color": "#CC0000", "teams": ["Abu Dhabi", "Dubai", "Sharjah", "Fujairah", "Al Ain"] },
+      { "id": "usa", "name": "USA", "leagueName": "American Chase League", "code": "USA", "color": "#0057A8", "teams": ["Los Angeles", "New York", "San Francisco", "Seattle", "Dallas", "Washington"] },
+      { "id": "bangladesh", "name": "Bangladesh", "leagueName": "Bangladeshi Chase League", "code": "BAN", "color": "#006A4E", "teams": ["Dhaka", "Chattogram", "Khulna", "Rajshahi", "Rangpur", "Sylhet", "Barishal"] },
+      { "id": "nepal", "name": "Nepal", "leagueName": "Nepali Chase League", "code": "NEP", "color": "#CC0000", "teams": ["Kathmandu", "Pokhara", "Chitwan", "Biratnagar", "Janakpur", "Lumbini", "Karnali", "Sudurpaschim"] }
+    ]
+  },
+  "formats": [
+    { "id": "f1", "name": "Friendly", "sub": "1 over · quick", "emoji": "⚡", "accent": "match", "overs": 1 },
+    { "id": "f2", "name": "Series", "sub": "Best of 3 · 2 overs", "emoji": "🏆", "accent": "practice", "overs": 2, "seriesType": "series", "bestOf": 3 },
+    { "id": "f5", "name": "Tournament", "sub": "Knockout · 2 overs", "emoji": "🎯", "accent": "tournament", "overs": 2, "seriesType": "tournament", "total": 3 }
+  ],
+  "difficulties": [
+    { "id": "easy", "name": "Easy", "sub": "Wide timing zone" },
+    { "id": "medium", "name": "Medium", "sub": "Standard timing zone" },
+    { "id": "hard", "name": "Hard", "sub": "Tight timing zone" }
+  ],
+  "hud": "chase",
+  "arena": "cricket",
+  "_comment_controller": "Framework-owned controller. groups=aim (LEG/STRAIGHT/OFF); PLAY SHOT sends {choice}. gameplay/controller.js supplies the chase Need calc, the series target re-deal and the broadcast match-end branching.",
+  "controller": {
+    "code": ["gameplay/controller.js"],
+    "hud": [
+      { "key": "runs", "label": "Runs" },
+      { "key": "need", "label": "Need" }
+    ],
+    "groups": [
+      { "key": "choice", "options": [
+        { "id": "left", "label": "LEG" },
+        { "id": "center", "label": "STRAIGHT", "default": true },
+        { "id": "right", "label": "OFF" }
+      ] }
+    ],
+    "actions": [
+      { "id": "go", "label": "PLAY SHOT", "primary": true }
+    ],
+    "hint": "Pick a direction, then tap PLAY SHOT",
+    "tips": [
+      { "icon": "🏏", "title": "Pick your shot", "text": "Choose LEG, STRAIGHT or OFF before each ball — it sets where you aim." },
+      { "icon": "⏱️", "title": "Play the shot", "text": "Tap PLAY SHOT as the ball comes in. Good timing scores boundaries." },
+      { "icon": "🎯", "title": "Chase the target", "text": "Beat the target before you run out of balls or wickets." }
+    ]
+  },
+  "_comment_flow": "Lobby steps. Framework builds these screens; reorder/remove freely. consent/intro are one-time (skipped after first run). menu = mode hub with About/Help entries.",
+  "flow": [
+    { "type": "pair" },
+    { "type": "consent" },
+    { "type": "intro" },
+    {
+      "type": "menu",
+      "key": "mode",
+      "title": "Pick your mode",
+      "kicker": "Step 1",
+      "sub": "All games run on classic T20 rules.",
+      "source": "modes",
+      "branch": true,
+      "entries": [
+        { "icon": "📖", "label": "How to Play", "action": "help" },
+        { "icon": "ℹ️", "label": "About", "action": "about" }
+      ]
+    },
+    { "type": "choice", "key": "team", "title": "Pick your team", "kicker": false, "source": "teams", "when": { "key": "branch", "equals": "team" } },
+    { "type": "choice", "key": "team", "title": "Pick your country", "kicker": false, "tile": true, "tileSub": "Test Nation", "source": "chaseData.cup", "when": { "key": "branch", "equals": "cup" } },
+    { "type": "choice", "key": "league", "title": "Pick your league", "kicker": false, "layout": "rows", "source": "chaseData.leagues", "when": { "key": "branch", "equals": "league" } },
+    { "type": "choice", "key": "team", "title": "Pick your club", "kicker": false, "tile": true, "tileSub": "Club", "source": "$league.teams", "when": { "key": "branch", "equals": "league" } },
+    { "type": "choice", "key": "format", "title": "Pick your format", "kicker": "Step 2", "layout": "list", "context": "team", "source": "formats" },
+    { "type": "choice", "key": "difficulty", "title": "Pick your challenge", "kicker": "Step 3", "source": "difficulties", "cols": 3, "preview": true, "confirm": true, "confirmText": "Start Match" },
+    { "type": "ceremony", "kind": "toss", "kicker": "Step 4" },
+    { "type": "stance" },
+    { "type": "target" }
+  ]
+}

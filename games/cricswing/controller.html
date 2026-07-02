@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CricSwing — Controller</title>
+  <link rel="stylesheet" href="/framework/ui/framework.css">
+</head>
+<body>
+  <!-- Framework-owned controller (FrameworkController). Controls + HUD come from
+       game-config.json `controller`; chase-specific match logic (Need calc, series
+       target re-deal, match-end branching) from gameplay/controller.js. series.js is
+       loaded because this preset ships a Best-of-3 series. You normally don't edit this. -->
+  <script src="/framework/services/storage.js"></script>
+  <script src="/framework/services/event-hub.js"></script>
+  <script src="/framework/services/theme-loader.js"></script>
+  <script src="/framework/services/asset-loader.js"></script>
+  <script src="/framework/ui/components.js"></script>
+  <script src="/framework/ui/templates.js"></script>
+  <script src="/framework/ui/templates.mobile.js"></script>
+  <script src="/framework/flow/series.js"></script>
+  <script src="/framework/ui/controller.js"></script>
+  <script src="/framework/core/game.js"></script>
+
+  <script>
+    'use strict';
+    window.onload = () => window.FrameworkController.mount();
+  </script>
+</body>
+</html>

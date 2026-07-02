@@ -28,7 +28,7 @@
  * window.FrameworkFlow.
  */
 window.FrameworkFlow = (function () {
-  let cfg = null, game = null, R = null, flow = null, onLaunch = null, onCeremony = null;
+  let cfg = null, game = null, R = null, flow = null, onLaunch = null, onCeremony = null, onStance = null;
   let introIdx = 0;
   const S = {};
   const ROOT_ID = 'fw-flow-root';
@@ -45,22 +45,88 @@ window.FrameworkFlow = (function () {
   const esc = (s) => String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
   function gridHtml(items, cls) {
     const U = window.FrameworkUI;
+    // Mode-hub cards = CricSwing .menu-card: vertical list rows with a 52px icon box,
+    // title + description and a chevron. `accent:'match'|'practice'` recolours a card.
+    if (cls && cls.indexOf('fw-mode') !== -1) {
+      return `<div class="fw-menu-list">${items.map(it => {
+        const acc = it.accent ? ` ${esc(it.accent)}` : '';
+        const lock = it.locked ? ' locked' : '';
+        const icoContent = it.iconUrl
+          ? `<img src="${esc(it.iconUrl)}" alt="" width="44" height="44" decoding="async">`
+          : (it.icon ? it.icon : (it.emoji || ''));
+        return `<button class="fw-menu-card${acc}${lock}" data-id="${esc(it.id)}"${it.locked ? ' data-locked="1"' : ''}>
+          <span class="fw-mc-ico">${icoContent}</span>
+          <span class="fw-mc-text">
+            <span class="fw-mc-title">${esc(it.title || it.name)}</span>
+            ${it.sub ? `<span class="fw-mc-desc">${esc(it.sub)}</span>` : ''}
+          </span>
+          <span class="fw-mc-chev">›</span>
+        </button>`;
+      }).join('')}</div>`;
+    }
+    // League rows = CricSwing .league-row: flag + country + league name + "N cities" + arrow.
+    if (cls && cls.indexOf('fw-rows') !== -1) {
+      return `<div class="fw-league-list">${items.map(it => {
+        const code = it.code || String(it.title || '').slice(0, 3).toUpperCase();
+        const flagBg = it.color ? `background:${esc(it.color)}` : '';
+        return `<button class="fw-league-row" data-id="${esc(it.id)}">
+          <span class="fw-lr-flag" style="${flagBg}">${esc(code)}</span>
+          <span class="fw-lr-body">
+            <span class="fw-lr-title">${esc(it.title || it.name)}</span>
+            ${it.sub ? `<span class="fw-lr-sub">${esc(it.sub)}</span>` : ''}
+            ${it.count ? `<span class="fw-lr-count">${esc(it.count)}</span>` : ''}
+          </span>
+          <span class="fw-lr-arrow">›</span>
+        </button>`;
+      }).join('')}</div>`;
+    }
+    // Tiles = CricSwing .country-tile: 2-col grid, flag + name + sub ("Team").
+    if (cls && cls.indexOf('fw-tile') !== -1) {
+      return `<div class="fw-tile-grid">${items.map(it => {
+        const code = it.code || String(it.title || '').slice(0, 3).toUpperCase();
+        const flagBg = it.color ? `background:${esc(it.color)}` : '';
+        return `<button class="fw-tile" data-id="${esc(it.id)}">
+          <span class="fw-tile-flag" style="${flagBg}">${esc(code)}</span>
+          <span class="fw-tile-name">${esc(it.title || it.name)}</span>
+          <span class="fw-tile-sub">${esc(it.sub || 'Team')}</span>
+        </button>`;
+      }).join('')}</div>`;
+    }
     return `<div class="fw-grid">${items.map(it => {
       // entity cards (teams/clubs/countries) get a painted crest; others a colour dot
       const badge = (it.short && U && U.crest)
         ? U.crest({ short: it.short, color: it.color, size: 44 })
         : (it.color ? `<span class="fw-dot" style="background:${esc(it.color)}"></span>` : '');
-      return `<button class="fw-card ${cls || ''}" data-id="${esc(it.id)}">
+      return `<button class="fw-card _${esc(it.id)} ${cls || ''}" data-id="${esc(it.id)}">
         ${badge}
-        <span class="fw-card-title">${esc(it.title)}</span>
+        <span class="fw-card-title">${esc(it.title || it.name)}</span>
         ${it.sub ? `<span class="fw-card-sub">${esc(it.sub)}</span>` : ''}
       </button>`;
     }).join('')}</div>`;
   }
-  function headHtml(title, step, total) {
+  // Wrap the last word of a title in an accent span (CricSwing "Pick your **mode**").
+  function titleAccent(t) {
+    const s = String(t || '').trim(); if (!s) return '';
+    const m = s.match(/^(.*\s)(\S+)$/);
+    return m ? `${esc(m[1])}<span class="fw-accent">${esc(m[2])}</span>` : `<span class="fw-accent">${esc(s)}</span>`;
+  }
+  function headHtml(title, kicker) {
     return `<div class="fw-flowhead">
-      ${step ? `<span class="fw-pill">Step ${step} / ${total}</span>` : ''}
-      <h1 class="fw-h1">${esc(title)}</h1></div>`;
+      ${kicker !== false ? `<div class="fw-chip fw-step-pill"><span class="fw-chip-dot pulse"></span>${esc(kicker || 'Setup')}</div>` : ''}
+      <h1 class="fw-h1">${titleAccent(title)}</h1></div>`;
+  }
+  // Context row (CricSwing format screen): shows the picked team/country + a "Change" chip
+  // that jumps back to re-pick. st.context names the S key to display (e.g. 'team').
+  function contextRowHtml(st) {
+    const val = S[st.context];
+    if (!val) return '';
+    const label = S.branch === 'cup' ? 'COUNTRY' : (S.branch === 'league' ? 'CLUB' : 'TEAM');
+    return `<div class="fw-context">
+      <div class="fw-context-sub">${esc(val)}</div>
+      <div class="fw-context-row">
+        <span class="fw-context-chip">${esc(val)}</span>
+        <button class="fw-context-change" data-changectx>Change ${esc(label)} ›</button>
+      </div></div>`;
   }
 
   // ── source resolution → normalized option list ─────────────────────────────
@@ -69,8 +135,10 @@ window.FrameworkFlow = (function () {
   }
   function resolveSource(src) {
     if (src === '$league.teams') {
-      const t = (S._leagueObj && S._leagueObj.teams) || [];
-      return t.map(x => ({ id: x, title: x }));
+      const lg = S._leagueObj || {};
+      const t = lg.teams || [];
+      // Cities inherit the league's flag colour; code = first 3 letters (CricSwing city tiles).
+      return t.map(x => ({ id: x, title: x, color: lg.color, code: String(x).slice(0, 3).toUpperCase(), sub: 'Team' }));
     }
     let raw;
     if (src === 'modes') raw = cfg.modes;
@@ -85,12 +153,19 @@ window.FrameworkFlow = (function () {
       return {
         id: x.id != null ? x.id : (x.short || x.name || String(i)),
         title: x.title || x.name || String(x.id || i),
-        sub: x.sub,
+        sub: x.sub || x.leagueName,
+        count: Array.isArray(x.teams) ? `${x.teams.length} cities` : undefined,
         color: x.color,
+        code: x.code,
         branch: x.branch,
         overs: x.overs,
         rounds: x.rounds,
         short: x.short,
+        iconUrl: x.iconUrl,
+        accent: x.accent,
+        emoji: x.emoji,
+        icon: x.icon,
+        locked: x.locked,
         _raw: x,
       };
     });
@@ -119,8 +194,8 @@ window.FrameworkFlow = (function () {
         return `<div class="fw-screen" id="${id}">
           <div class="fw-chip fw-pair-chip" id="fw-pair-chip"><span class="fw-chip-dot pulse"></span><span id="fw-pair-status">LOOKING FOR TV</span></div>
           <div class="fw-brand fw-hero">
-            ${iconUrl ? `<img src="${esc(iconUrl)}" alt="" style="width:108px;height:108px;border-radius:24px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,0.5);">` : ''}
-            <h1>${esc(title)}</h1>
+            ${iconUrl ? `<img src="${esc(iconUrl)}" alt="">` : ''}
+            <h1>${(cfg.text && cfg.text.APP_TITLE_HTML) || esc(title)}</h1>
           </div>
           <div class="fw-pair-steps">
             <div class="fw-pair-step">
@@ -134,8 +209,8 @@ window.FrameworkFlow = (function () {
               <span class="fw-pair-steptext">A 4-digit code appears on screen<br><span style="font-size:12px;color:var(--game-muted);">Enter it in the field below to connect ↓</span></span>
             </div>
           </div>
-          <div class="fw-cardbox">
-            <label>ENTER TV CODE</label>
+          <div class="fw-code-frame" id="fw-code-frame">
+            <div class="fw-code-header"><span class="lbl">Enter TV code</span><span class="step">Step 2</span></div>
             <div id="fw-code-visual" tabindex="0">${boxes}</div>
             <input type="text" id="fw-code" maxlength="4" inputmode="latin" autocomplete="off"
               autocapitalize="characters" style="position:absolute;opacity:0;pointer-events:none;height:0;width:0;">
@@ -153,20 +228,28 @@ window.FrameworkFlow = (function () {
       if (st.type === 'intro') {
         const eyebrow = st.eyebrow || (((cfg.ui && cfg.ui.onboarding) || {}).introEyebrow) || 'Quick Intro';
         return `<div class="fw-screen fw-intro" id="${id}">
-          <div class="fw-chip fw-intro-chip"><span class="fw-chip-dot"></span>${esc(eyebrow)}</div>
+          <div class="fw-chip fw-intro-chip"><span class="fw-chip-dot pulse"></span>${esc(eyebrow)}</div>
           <h2 class="fw-intro-title" data-introtitle="${i}"></h2>
           <div class="fw-spacer"></div>
-          <div class="fw-intro-figure" data-intro="${i}"></div>
+          <div class="fw-intro-stage" data-introart="${i}"></div>
           <div class="fw-spacer"></div>
+          <div class="fw-intro-caption" data-introcap="${i}"></div>
           <div class="fw-intro-dots" data-introdots="${i}"></div>
           <div class="fw-intro-actions">
-            <button class="btn btn-primary fw-intro-next" data-intronext="${i}">Next</button>
+            <div class="fw-intro-nav-row">
+              <button class="fw-intro-prev" data-introprev="${i}" style="display:none">← Prev</button>
+              <button class="btn btn-primary fw-intro-next" data-intronext="${i}">Next</button>
+            </div>
             <button class="fw-intro-skip" data-introskip="${i}">Skip</button>
           </div></div>`;
       }
-      // menu — mode hub: mode cards + optional About/Help/Settings entries.
+      // menu — mode hub: paired chip + title/sub, mode cards + optional About/Help entries.
       if (st.type === 'menu') {
+        const chipLabel = st.kicker || 'TV Paired';
         return `<div class="fw-screen" id="${id}">
+          <div class="fw-chip fw-step-pill fw-menu-paired"><span class="fw-chip-dot pulse"></span>${esc(chipLabel)}</div>
+          <h1 class="fw-menu-title">${titleAccent(st.title || 'Pick your mode')}</h1>
+          ${st.sub ? `<p class="fw-menu-sub">${esc(st.sub)}</p>` : ''}
           <div class="fw-grid-host" data-step="${i}"></div>
           <div class="fw-menu-entries" data-entries="${i}"></div></div>`;
       }
@@ -185,12 +268,81 @@ window.FrameworkFlow = (function () {
         const sub = isToss ? 'Time for the toss' : 'Time to kick off';
         const coinCls = isToss ? 'fw-coin fw-coin-disc' : 'fw-coin';   // toss = styled gold disc
         return `<div class="fw-screen" id="${id}">
-          ${headHtml(isToss ? 'Flip the coin' : 'Kick off')}
+          ${headHtml(isToss ? 'Flip the coin' : 'Kick off', st.kicker !== undefined ? st.kicker : false)}
           <div class="fw-toss">
             <div class="fw-toss-sub">${sub}</div>
             <div class="${coinCls}" data-step="${i}">${emoji}</div>
             <div class="fw-toss-msg" data-msg="${i}">Tap to start</div>
             <div class="fw-toss-result" data-result="${i}"></div></div></div>`;
+      }
+      if (st.type === 'stance') {
+        return `<div class="fw-screen fw-stance-screen" id="${id}">
+          <div class="fw-stance-title">Get Into Your <span class="fw-accent">Stance</span></div>
+          <div class="fw-stance-sub">Hold the phone like a bat handle. The bat below tilts with you.</div>
+          <div class="fw-hand-row">
+            <button class="fw-hand-btn fw-hand-r active" data-hand="right">🏏 Right Hand</button>
+            <button class="fw-hand-btn fw-hand-l" data-hand="left">Left Hand 🏏</button>
+          </div>
+          <span class="fw-stance-good" id="fw-stance-good-${i}">✓ Stance Good</span>
+          <div class="fw-stance-stage">
+            <svg class="fw-hand-grip" viewBox="0 0 280 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <path d="M 90 250 Q 60 200 70 150 Q 78 110 100 100 Q 118 92 116 78 Q 120 64 130 70"/>
+              <path d="M 100 110 Q 110 116 118 112"/>
+              <path d="M 110 90 Q 116 92 120 88"/>
+              <path d="M 198 50 Q 218 42 212 25"/>
+              <path d="M 202 80 Q 224 72 218 55"/>
+              <path d="M 202 110 Q 224 102 218 85"/>
+              <path d="M 200 140 Q 220 132 214 115"/>
+              <path d="M 195 168 Q 211 160 207 145"/>
+              <path d="M 195 50 Q 200 110 190 168"/>
+              <path d="M 100 180 Q 130 200 160 200 Q 200 200 195 180"/>
+              <path d="M 110 200 Q 124 232 130 260"/>
+              <path d="M 190 200 Q 178 232 172 260"/>
+              <path d="M 130 210 Q 160 215 190 210"/>
+            </svg>
+            <span class="fw-stance-ring-inner"></span>
+            <div class="fw-stance-bat" id="fw-stance-bat-${i}">
+              <svg viewBox="0 0 120 280" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fwBladeGrad${i}" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%"   stop-color="#9a6a32"/>
+                    <stop offset="35%"  stop-color="#e8c896"/>
+                    <stop offset="65%"  stop-color="#d4a574"/>
+                    <stop offset="100%" stop-color="#7a4818"/>
+                  </linearGradient>
+                  <linearGradient id="fwHandleGrad${i}" x1="0" x2="1" y1="0" y2="0">
+                    <stop offset="0%"   stop-color="#1a0a05"/>
+                    <stop offset="50%"  stop-color="#3a2010"/>
+                    <stop offset="100%" stop-color="#1a0a05"/>
+                  </linearGradient>
+                </defs>
+                <g opacity="0.82">
+                  <rect x="26" y="12" width="67" height="6" rx="2" fill="#2a1a08"/>
+                  <rect x="26" y="16" width="67" height="149" rx="5" fill="url(#fwBladeGrad${i})" stroke="#5a3818" stroke-width="1.4"/>
+                  <rect x="55" y="42" width="10" height="117" rx="2" fill="rgba(154,223,107,0.32)"/>
+                  <line x1="36" y1="21" x2="36" y2="161" stroke="rgba(80,40,15,.4)"  stroke-width="0.6"/>
+                  <line x1="46" y1="21" x2="46" y2="161" stroke="rgba(80,40,15,.45)" stroke-width="0.6"/>
+                  <line x1="60" y1="21" x2="60" y2="161" stroke="rgba(80,40,15,.55)" stroke-width="0.8"/>
+                  <line x1="74" y1="21" x2="74" y2="161" stroke="rgba(80,40,15,.45)" stroke-width="0.6"/>
+                  <line x1="84" y1="21" x2="84" y2="161" stroke="rgba(80,40,15,.4)"  stroke-width="0.6"/>
+                  <polygon points="41,166 79,166 72,173 48,173" fill="#a87842"/>
+                  <rect x="49" y="173" width="22" height="93" rx="3" fill="url(#fwHandleGrad${i})"/>
+                  <line x1="49" y1="187" x2="71" y2="187" stroke="#000" stroke-width="1.2" opacity=".45"/>
+                  <line x1="49" y1="203" x2="71" y2="203" stroke="#000" stroke-width="1.2" opacity=".45"/>
+                  <line x1="49" y1="219" x2="71" y2="219" stroke="#000" stroke-width="1.2" opacity=".45"/>
+                  <line x1="49" y1="235" x2="71" y2="235" stroke="#000" stroke-width="1.2" opacity=".45"/>
+                  <line x1="49" y1="251" x2="71" y2="251" stroke="#000" stroke-width="1.2" opacity=".45"/>
+                  <ellipse cx="60" cy="266" rx="11" ry="4" fill="#0a0502"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="fw-tilt-strip">
+            <span class="fw-tilt-marker" id="fw-tilt-marker-${i}"></span>
+          </div>
+          <button class="fw-stance-btn" data-stancelock="${i}">LOCK</button>
+          <div class="fw-stance-hint">Tap when comfortable — this sets your grip.</div>
+        </div>`;
       }
       // target / briefing
       return `<div class="fw-screen" id="${id}">
@@ -213,6 +365,7 @@ window.FrameworkFlow = (function () {
   function skipSeen(st) {
     if (st.type === 'consent' && st.once !== false) return consentSeen();
     if (st.type === 'intro' && st.once !== false) return introSeen();
+    if (st.type === 'stance') return !(cfg.supportsMotion);
     return false;
   }
   function currentIdx() {
@@ -231,7 +384,12 @@ window.FrameworkFlow = (function () {
     if (st.type === 'choice' || st.type === 'menu') {
       const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
       const opts = resolveSource(src);
-      const cls = src === 'modes' ? 'fw-mode' : '';
+      // Per-step tile subtitle (e.g. "Test Nation" for cup countries, "Club" for cities).
+      if (st.tileSub) opts.forEach(o => { if (!o.sub) o.sub = st.tileSub; });
+      let cls = '';
+      if (src === 'modes' || st.layout === 'list') cls = 'fw-mode';   // big-icon menu cards
+      else if (st.layout === 'rows') cls = 'fw-rows';                 // league rows (flag+title+sub+count)
+      else if (st.tile) cls = 'fw-tile';                              // country/city flag tiles
       // Mirror this pick screen to the TV (CricSwing-style: pill, title, options, wait chip).
       const noun = st.key || (st.type === 'menu' ? 'mode' : 'option');
       sendTV('choosing', {
@@ -250,15 +408,19 @@ window.FrameworkFlow = (function () {
           opts.forEach(o => { const g = (o._raw && o._raw[st.tabs]) || 'All'; if (!byG[g]) { byG[g] = []; groups.push(g); } byG[g].push(o); });
           let active = 0;
           const renderG = () => {
-            host.innerHTML = headHtml(st.title, i, flow.length) + U.tabs(groups, active) + gridHtml(byG[groups[active]], cls);
+            host.innerHTML = headHtml(st.title, st.kicker) + U.tabs(groups, active) + gridHtml(byG[groups[active]], cls);
             host.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => { active = +b.getAttribute('data-tab'); renderG(); }; });
           };
           renderG();
         } else {
-          host.innerHTML = headHtml(st.title, i, flow.length) + gridHtml(opts, cls);
+          // menu shows its own chip+title header (in the screen template); choice uses headHtml.
+          const head = st.type === 'menu' ? '' : headHtml(st.title, st.kicker);
+          const ctx = st.context ? contextRowHtml(st) : '';
+          host.innerHTML = head + ctx + gridHtml(opts, cls);
         }
         // Optional N-column layout (e.g. 3-across difficulty cards).
         if (st.cols) { const g = host.querySelector('.fw-grid'); if (g) g.classList.add(`cols-${st.cols}`); }
+        if (st.center) { const g = host.querySelector('.fw-grid'); if (g) g.classList.add('fw-grid-center'); }
       }
       if (st.type === 'menu') renderMenuEntries(st, i);
       if (st.type === 'choice' && st.preview) renderPreview(i);
@@ -275,6 +437,19 @@ window.FrameworkFlow = (function () {
       const coinEl = document.querySelector(`.fw-coin[data-step="${i}"]`);
       if (coinEl) { coinEl.dataset.ready = '0'; setTimeout(() => { coinEl.dataset.ready = '1'; }, 400); }
       sendTV('ceremony', { kind: st.kind });   // mirror the coin/ball screen to the TV on enter
+    } else if (st.type === 'stance') {
+      // gyroscope wiring is game-provided; framework just wires hand buttons + LOCK
+      const good = document.getElementById(`fw-stance-good-${i}`);
+      const screen = document.getElementById(idFor(i));
+      if (screen) {
+        screen.querySelectorAll('.fw-hand-btn').forEach(b => {
+          b.onclick = () => {
+            screen.querySelectorAll('.fw-hand-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+            S._stanceHand = b.getAttribute('data-hand');
+          };
+        });
+      }
     } else if (st.type === 'target' || st.type === 'briefing') {
       renderSummary(st, i);
     }
@@ -302,19 +477,39 @@ window.FrameworkFlow = (function () {
 
   function introSeen() { try { return !!(window.FrameworkStorage && window.FrameworkStorage.load(`${game._gid}_intro_seen`)); } catch (_) { return false; } }
   function introSlides(st) { return (st.slides && st.slides.length) ? st.slides : (((cfg.ui && cfg.ui.onboarding) || {}).intro || []); }
+  // Animated intro-stage art (CricSwing onboarding). Opt-in via slide.art; generic archetypes:
+  //   'phone'  — a phone tilting like a bat/racket handle
+  //   'timing' — a needle sweeping into a green timing zone
+  //   'lock'   — a "lock my stance" calibration card
+  function introArt(key) {
+    if (key === 'phone') return `<div class="fw-intro-phone"><span class="fw-intro-phone-bat">🏏</span></div>`;
+    if (key === 'timing') return `<div class="fw-intro-timing">
+      <div class="fw-intro-timing-track"><div class="fw-intro-timing-zone"></div><div class="fw-intro-timing-needle"></div></div>
+      <div class="fw-intro-timing-label">Green zone</div></div>`;
+    if (key === 'lock') return `<div class="fw-intro-lock-card">
+      <div class="fw-intro-lock-icon">🎯</div>
+      <div class="fw-intro-lock-btn">Lock my stance</div>
+      <div class="fw-intro-lock-hint">Calibrate once per match</div></div>`;
+    return '';
+  }
   function renderIntro(st, i) {
     const slides = introSlides(st);
     if (!slides.length) { next(); return; }
-    const figure = document.querySelector(`[data-intro="${i}"]`);
+    const artHost = document.querySelector(`[data-introart="${i}"]`);
+    const capHost = document.querySelector(`[data-introcap="${i}"]`);
     const titleHost = document.querySelector(`[data-introtitle="${i}"]`);
     const dotsHost = document.querySelector(`[data-introdots="${i}"]`);
     const nextBtn = document.querySelector(`[data-intronext="${i}"]`);
+    const prevBtn = document.querySelector(`[data-introprev="${i}"]`);
     const sl = slides[Math.min(introIdx, slides.length - 1)];
     if (titleHost) titleHost.textContent = sl.title || '';
-    if (figure) figure.innerHTML = `${sl.icon ? `<div class="fw-intro-icon">${sl.icon}</div>` : ''}
-      <p class="fw-intro-text">${esc(sl.text || '')}</p>`;
+    // art: named archetype (sl.art) → animated stage; else fall back to an emoji icon.
+    if (artHost) artHost.innerHTML = sl.art ? introArt(sl.art) : (sl.icon ? `<div class="fw-intro-icon">${sl.icon}</div>` : '');
+    // caption is game-authored (trusted) → allow inline <b> highlight like the original.
+    if (capHost) capHost.innerHTML = sl.text || sl.cap || '';
     if (dotsHost && window.FrameworkUI && window.FrameworkUI.dots) dotsHost.innerHTML = window.FrameworkUI.dots(slides.length, introIdx);
-    if (nextBtn) nextBtn.textContent = (introIdx >= slides.length - 1) ? 'Start' : 'Next →';
+    if (nextBtn) nextBtn.textContent = (introIdx >= slides.length - 1) ? 'Start →' : 'Next →';
+    if (prevBtn) prevBtn.style.display = introIdx > 0 ? '' : 'none';
   }
   function finishIntro() {
     try { window.FrameworkStorage && window.FrameworkStorage.save(`${game._gid}_intro_seen`, '1'); } catch (_) {}
@@ -458,23 +653,28 @@ window.FrameworkFlow = (function () {
     const key = st.key;
     if (st.branch) S.branch = opt.branch || opt.id;
     if (key === 'mode') { S.mode = opt.id; }
-    else if (key === 'team') { S.team = opt.title; S.teamShort = opt.short || String(opt.id).slice(0, 3).toUpperCase(); S.teamColor = opt.color; pickOpp(); }
+    else if (key === 'team') { S.team = opt.title; S.teamShort = opt.short || opt.code || String(opt.id).slice(0, 3).toUpperCase(); S.teamColor = opt.color; pickOpp(st.source); }
     else if (key === 'league') { S.league = opt.title; S._leagueObj = opt._raw; }
     else if (key === 'format') { S.format = opt.id; S.formatName = opt.sub || opt.title; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; applySeriesFromFormat(opt); }
     else { S[key] = opt.id; }
     save();
     sendTV('pick');
   }
-  function pickOpp() {
-    const pool = (cfg.teams || []).filter(t => t.name !== S.team);
-    const o = pool.length ? pool[(Math.random() * pool.length) | 0] : { name: 'Rivals', short: 'RIV' };
-    S.opp = o.name; S.oppShort = o.short; S.oppColor = o.color;
+  // Opponent = another entry from the SAME pool the player picked from (CricSwing:
+  // another country in the cup, another city in the league). Falls back to cfg.teams.
+  function pickOpp(source) {
+    let pool = [];
+    try { pool = resolveSource(source || 'teams'); } catch (_) { pool = []; }
+    pool = pool.filter(o => o.title !== S.team);
+    if (!pool.length) pool = (cfg.teams || []).map(t => ({ title: t.name, short: t.short, color: t.color })).filter(o => o.title !== S.team);
+    const o = pool.length ? pool[(Math.random() * pool.length) | 0] : { title: 'Rivals', short: 'RIV' };
+    S.opp = o.title; S.oppShort = o.short || o.code || String(o.title).slice(0, 3).toUpperCase(); S.oppColor = o.color;
   }
   // A "quick" branch skips team screens — make sure a team + opponent still exist.
   function ensureTeam() {
     if (S.team) return;
     const t = (cfg.teams || [])[(Math.random() * (cfg.teams || []).length) | 0];
-    if (t) { S.team = t.name; S.teamShort = t.short; pickOpp(); }
+    if (t) { S.team = t.name; S.teamShort = t.short; S.teamColor = t.color; pickOpp('teams'); }
   }
 
   // ── ceremony ──────────────────────────────────────────────────────────
@@ -608,7 +808,18 @@ window.FrameworkFlow = (function () {
 
     // delegated: card picks, coin taps, intro nav, menu entries, launch
     host.addEventListener('click', (e) => {
-      const card = e.target.closest('.fw-card');
+      const card = e.target.closest('.fw-card') || e.target.closest('.fw-menu-card')
+        || e.target.closest('.fw-league-row') || e.target.closest('.fw-tile');
+      if (card && card.getAttribute('data-locked')) return;   // locked mode (e.g. Featured Chase)
+      // "Change country/club" chip on the format step → jump back to the team/league picker.
+      const changeCtx = e.target.closest('[data-changectx]');
+      if (changeCtx) {
+        for (let j = 1; j < flow.length; j++) {
+          const s = flow[j];
+          if (s.type === 'choice' && (s.key === 'team' || s.key === 'league') && passes(s) && !skipSeen(s)) { go(j); break; }
+        }
+        return;
+      }
       if (card) {
         const i = currentIdx(); const st = flow[i];
         const src = st.source || (st.type === 'menu' ? 'modes' : st.source);
@@ -638,6 +849,12 @@ window.FrameworkFlow = (function () {
         else { introIdx++; renderIntro(flow[i], i); }
         return;
       }
+      const iprev = e.target.closest('[data-introprev]');
+      if (iprev) {
+        const i = currentIdx();
+        if (introIdx > 0) { introIdx--; renderIntro(flow[i], i); }
+        return;
+      }
       const iskip = e.target.closest('[data-introskip]');
       if (iskip) { finishIntro(); return; }
       // menu secondary entries (About / Help / Settings / custom).
@@ -650,6 +867,15 @@ window.FrameworkFlow = (function () {
       }
       const coin = e.target.closest('.fw-coin');
       if (coin) { runCeremony(flow[currentIdx()], currentIdx()); return; }
+      const stanceLock = e.target.closest('[data-stancelock]');
+      if (stanceLock) {
+        const i = +stanceLock.getAttribute('data-stancelock');
+        stanceLock.textContent = '✓ LOCKED';
+        stanceLock.classList.add('done');
+        if (onStance) onStance(S._stanceHand || 'right', () => next());
+        else setTimeout(() => next(), 600);
+        return;
+      }
       const launch = e.target.closest('[data-launch]');
       if (launch) {
         ensureTeam(); save();
@@ -680,6 +906,7 @@ window.FrameworkFlow = (function () {
     game = options.game;
     onLaunch = options.onLaunch || function () {};
     onCeremony = typeof options.onCeremony === 'function' ? options.onCeremony : null;
+    onStance = typeof options.onStance === 'function' ? options.onStance : null;
     if (!game._gid) { const p = location.pathname.split('/'); const idx = p.indexOf('games'); game._gid = (idx !== -1 && p[idx + 1]) ? p[idx + 1] : 'fw'; }
     R = window.FrameworkRouter;
     flow = (cfg.flow && cfg.flow.length) ? cfg.flow : DEFAULT_FLOW;

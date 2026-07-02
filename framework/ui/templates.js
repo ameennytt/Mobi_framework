@@ -315,7 +315,7 @@ class GameTemplates {
    * TV milestone flash — generic "kicker / BIG / sub" celebration (50, 100, streaks,
    * new best…). Sport-neutral; auto-fades. opts: { kicker, big, sub, color }
    */
-  showTVMilestone({ kicker, big, sub, color } = {}) {
+  showTVMilestone({ kicker, big, sub, color, emoji } = {}) {
     let o = document.getElementById('fw-tv-milestone');
     if (!o) {
       o = document.createElement('div');
@@ -324,14 +324,57 @@ class GameTemplates {
       document.body.appendChild(o);
     }
     const c = color || 'var(--game-accent)';
+    // Falling-emoji fireworks (CricSwing .tv-fw) — a burst rains down behind the number.
+    const glyphs = emoji || ['🎉', '✨', '🏏', '⭐', '🎊'];
+    let fw = '';
+    for (let k = 0; k < 16; k++) {
+      const g = glyphs[k % glyphs.length];
+      const left = (k * 6.1 + (k % 3) * 4) % 96 + 2;   // spread across width, deterministic
+      const delay = (k % 8) * 0.14;
+      const dur = 1.6 + (k % 5) * 0.22;
+      fw += `<span class="fw-tv-fw" style="left:${left}%;font-size:${34 + (k % 4) * 8}px;animation-delay:${delay}s;animation-duration:${dur}s;">${g}</span>`;
+    }
     o.innerHTML = `
-      <div style="font-size:36px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:${c};">${kicker || ''}</div>
-      <div style="font-family:var(--game-mono);font-size:240px;font-weight:900;line-height:1;color:${c};text-shadow:0 10px 50px rgba(0,0,0,.6);animation:fwMiPop .6s var(--fw-ease-pop, ease-out);">${big != null ? big : ''}</div>
-      ${sub ? `<div style="font-size:22px;font-weight:700;color:var(--game-text);margin-top:8px;">${sub}</div>` : ''}
-      <style>@keyframes fwMiPop{0%{transform:scale(.3);opacity:0}45%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}</style>`;
+      <div class="fw-tv-fw-container">${fw}</div>
+      <div style="position:relative;z-index:2;font-size:36px;font-weight:900;letter-spacing:.3em;text-transform:uppercase;color:${c};">${kicker || ''}</div>
+      <div style="position:relative;z-index:2;font-family:var(--game-mono);font-size:240px;font-weight:900;line-height:1;color:${c};text-shadow:0 10px 50px rgba(0,0,0,.6);animation:fwMiPop .6s var(--fw-ease-pop, ease-out);">${big != null ? big : ''}</div>
+      ${sub ? `<div style="position:relative;z-index:2;font-size:22px;font-weight:700;color:var(--game-text);margin-top:8px;">${sub}</div>` : ''}
+      <style>@keyframes fwMiPop{0%{transform:scale(.3);opacity:0}45%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}
+        .fw-tv-fw-container{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
+        .fw-tv-fw{position:absolute;top:-80px;line-height:1;animation:fwTvFall linear forwards;}
+        @keyframes fwTvFall{0%{transform:translateY(-80px) rotate(0) scale(1);opacity:1}100%{transform:translateY(120vh) rotate(540deg) scale(.5);opacity:0}}</style>`;
     o.style.opacity = '1';
     clearTimeout(this._miTimer);
     this._miTimer = setTimeout(() => { o.style.opacity = '0'; }, 2600);
+  }
+
+  /**
+   * TV wicket/loss "takeover" — a dramatic full-screen red flash on a big negative
+   * moment (a wicket in cricket, a red card, etc.). Sport-neutral: pass your own words.
+   * @param {object} opts { pill, type, sub, tip, color, seconds }
+   */
+  showTVWicket({ pill, type, sub, tip, color, seconds } = {}) {
+    let o = document.getElementById('fw-tv-wicket');
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-wicket';
+      o.style.cssText = 'position:fixed;inset:0;z-index:9460;display:none;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .25s ease;';
+      document.body.appendChild(o);
+    }
+    const c = color || 'var(--game-danger)';
+    o.style.background = `radial-gradient(ellipse 80% 60% at 50% 45%, ${c}52, rgba(7,16,12,.72) 60%)`;
+    o.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 30px;border-radius:16px;
+        background:rgba(7,16,12,.85);border:1.5px solid ${c}66;box-shadow:0 8px 22px rgba(0,0,0,.55),0 0 1.2em ${c}38;">
+        ${pill ? `<div style="font-size:12px;font-weight:900;letter-spacing:.32em;color:${c};padding:4px 14px;border-radius:99px;background:${c}14;border:1px solid ${c}59;text-transform:uppercase;">${pill}</div>` : ''}
+        <div style="font-size:72px;font-weight:800;line-height:1.1;color:var(--game-offwhite);text-shadow:0 4px 12px rgba(0,0,0,.65);">${type || 'OUT'}</div>
+        ${sub ? `<div style="font-size:14px;color:#cfe0d4;font-weight:600;letter-spacing:.08em;">${sub}</div>` : ''}
+        ${tip ? `<div style="margin-top:10px;padding:6px 14px;background:var(--game-accent-08);border:1px solid var(--game-accent-30);border-radius:99px;font-size:12px;font-weight:700;color:var(--game-gold);">${tip}</div>` : ''}
+      </div>`;
+    o.style.display = 'flex';
+    requestAnimationFrame(() => { o.style.opacity = '1'; });
+    clearTimeout(this._wktTimer);
+    this._wktTimer = setTimeout(() => { o.style.opacity = '0'; setTimeout(() => { o.style.display = 'none'; }, 260); }, (seconds || 2) * 1000);
   }
 
   /**
@@ -784,6 +827,40 @@ class GameTemplates {
     this._briefTimer = setTimeout(() => this.hideTVBallBrief(), 1700);
   }
   hideTVBallBrief() { const o = document.getElementById('fw-tv-ballbrief'); if (o) o.style.display = 'none'; }
+
+  /**
+   * Broadcast HUD overlay (opt-in via game-config `tv.broadcast:'full'`). Creates the
+   * fixed corner hosts (shot-map, runs/over, last-ball card, conn badge) that the
+   * FrameworkCharts widgets render into. All the tv* helpers below no-op unless enabled,
+   * so gameplay can call them unconditionally. Off → a clean, minimal TV (default).
+   */
+  renderTVBroadcast(on) {
+    this._bcast = !!on;
+    let o = document.getElementById('fw-tv-bcast');
+    if (!on) { if (o) o.remove(); return; }
+    if (!o) {
+      o = document.createElement('div');
+      o.id = 'fw-tv-bcast';
+      o.style.cssText = 'position:fixed;inset:0;z-index:24;pointer-events:none;';
+      document.body.appendChild(o);
+    }
+    o.innerHTML = `
+      <div id="fw-bc-lastball" style="position:absolute;top:16px;right:16px;width:290px;"></div>
+      <div id="fw-bc-wagon" style="position:absolute;bottom:16px;left:16px;width:150px;"></div>
+      <div id="fw-bc-manhattan" style="position:absolute;bottom:16px;right:16px;width:170px;"></div>
+      <div id="fw-bc-conn" style="position:absolute;bottom:150px;right:16px;"></div>`;
+  }
+  tvManhattan(overs) { if (this._bcast && window.FrameworkCharts) window.FrameworkCharts.manhattan('fw-bc-manhattan', overs || []); }
+  tvWagon(shots) { if (this._bcast && window.FrameworkCharts) window.FrameworkCharts.wagonWheel('fw-bc-wagon', shots || []); }
+  tvLastBall(opts) { if (this._bcast && window.FrameworkCharts) window.FrameworkCharts.commentaryCard('fw-bc-lastball', opts || {}); }
+  tvConn(paired, label) {
+    if (!this._bcast) return;
+    const e = document.getElementById('fw-bc-conn'); if (!e) return;
+    e.innerHTML = paired
+      ? `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.5);border-radius:8px;padding:5px 10px;font-size:10px;font-weight:700;color:var(--game-accent);">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--game-accent);box-shadow:0 0 6px var(--game-accent-60);animation:fwPairPulse 1.6s ease-out infinite;"></span>${label || 'Bat phone connected'}</span>`
+      : '';
+  }
 
   /** TV training guide — "Where To Shoot" eyebrow + shot name + direction. */
   renderTVTrainGuide({ shot, dir } = {}) {

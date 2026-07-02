@@ -1,0 +1,8 @@
+<svg class="perm-ic" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M4 12a8 8 0 0 1 16 0" stroke="#062208" stroke-width="2" stroke-linecap="round"/>
+          <path d="M8 12a4 4 0 0 1 8 0" stroke="#062208" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="1.6" fill="#062208"/>
+          <path d="M12 3.5v2.2M12 18.3v2.2" stroke="#062208" stroke-width="1.6" stroke-linecap="round"/>
+          <rect x="15.5" y="4.5" width="2.8" height="10" rx="1.2" fill="#062208" transform="rotate(32 16.9 9.5)"/>
+          <rect x="15" y="13.5" width="4.5" height="2.2" rx="1" fill="#062208" transform="rotate(32 17.25 14.6)"/>
+        </svg>

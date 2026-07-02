@@ -24,6 +24,7 @@ class AssetLoader {
   constructor() {
     this.gameId = null;
     this.slots = {};
+    this.textSlots = {};   // init so text() is safe before loadConfig() (returns fallbacks)
 
     // Slot registry — names grouped by kind, so framework tooling can enumerate
     // the convention (and games have a predictable list to fill).
@@ -81,6 +82,7 @@ class AssetLoader {
       const j = await response.json();
       this.slots = j.assets || {};
       this.textSlots = j.text || {};
+      this.tv = j.tv || {};
       this.manifest = {
         gameId: j.gameId || gameId,
         version: j.version || '1.0.0',
@@ -93,6 +95,7 @@ class AssetLoader {
       console.warn('[AssetLoader] Failed loading configs. Fallbacks active.', e.message);
       this.slots = {};
       this.textSlots = {};
+      this.tv = {};
       this.manifest = {};
     }
   }

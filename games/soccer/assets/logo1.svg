@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
-  <circle cx="40" cy="40" r="24" fill="#eafff0" stroke="#39ff14" stroke-width="4"/>
-  <path d="M40 22 l7 11 -7 9 -7 -9 z" fill="#06140c"/>
-  <text x="78" y="50" font-family="-apple-system, Segoe UI, sans-serif" font-size="26" font-weight="900" fill="#eafff0">DUEL</text>
-</svg>

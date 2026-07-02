@@ -110,28 +110,43 @@ window.FrameworkController = (function () {
     s.id = 'fw-ctl-style';
     s.textContent = `
       body.fw-ctl-body { margin:0; height:100dvh; display:flex; flex-direction:column;
-        padding:16px; box-sizing:border-box; touch-action:manipulation; background:var(--game-primary); }
+        padding:16px; box-sizing:border-box; touch-action:manipulation;
+        background:radial-gradient(ellipse 90% 60% at 50% 100%, var(--game-accent-08), transparent 60%), var(--game-primary); }
       .fw-ctl-top { display:flex; justify-content:space-between; align-items:center;
         border-bottom:1.5px solid var(--game-border); padding-bottom:12px; }
-      .fw-ctl-title { font-size:16px; font-weight:800; color:var(--game-accent); }
+      .fw-ctl-title { font-size:16px; font-weight:900; color:var(--game-accent); letter-spacing:-.01em; }
       .fw-ctl-status { display:flex; gap:8px; align-items:center; }
-      .fw-ctl-pause { cursor:pointer; border:none; font:inherit; }
+      .fw-ctl-pause { cursor:pointer; border:1.5px solid var(--fw-line-2); background:var(--game-surface-2);
+        color:var(--game-text-2); font:inherit; }
+      [data-ctl-conn] { border:1.5px solid var(--fw-line); background:var(--game-surface-2); color:var(--game-text-2); }
       .fw-ctl-hud { display:flex; gap:12px; margin:16px 0; }
-      .fw-ctl-card { flex:1; background:var(--game-surface-2); border:1px solid var(--game-border);
-        border-radius:var(--fw-r-2); padding:10px; text-align:center; }
-      .fw-ctl-lbl { font-size:11px; text-transform:uppercase; color:var(--game-muted); letter-spacing:.04em; }
-      .fw-ctl-num { font-size:26px; font-weight:900; color:var(--game-text); font-family:var(--game-mono); line-height:1.1; }
-      .fw-ctl-mid { flex:1; display:flex; flex-direction:column; justify-content:center; gap:14px; }
-      .fw-ctl-feedback { min-height:0; text-align:center; font-size:15px; font-weight:800; color:var(--game-gold); }
+      .fw-ctl-card { flex:1; background:var(--game-card-bg); border:1px solid rgba(255,255,255,.06);
+        border-radius:var(--fw-r-3); padding:12px 10px; text-align:center;
+        box-shadow:0 4px 14px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.03); }
+      .fw-ctl-lbl { font-size:10px; text-transform:uppercase; color:var(--game-muted); letter-spacing:.14em; font-weight:700; }
+      .fw-ctl-num { font-size:28px; font-weight:900; color:var(--game-gold); font-family:var(--game-mono); line-height:1.1; margin-top:4px; }
+      .fw-ctl-mid { flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px; }
+      .fw-ctl-feedback:empty { display:none; }
+      .fw-ctl-feedback { align-self:center; text-align:center; font-size:12px; font-weight:800; letter-spacing:.08em;
+        text-transform:uppercase; color:var(--game-gold); padding:8px 16px; border-radius:99px;
+        background:rgba(243,216,107,.10); border:1px solid rgba(243,216,107,.30); }
       .fw-ctl-grouplabel:empty { display:none; }
-      .fw-ctl-grouplabel { font-size:11px; text-transform:uppercase; color:var(--game-muted); text-align:center; }
+      .fw-ctl-grouplabel { font-size:11px; text-transform:uppercase; color:var(--game-muted); text-align:center; letter-spacing:.12em; font-weight:700; }
       .fw-ctl-group { display:flex; gap:10px; }
-      .fw-ctl-opt { flex:1; background:var(--game-surface-2); border:1px solid var(--game-border);
-        color:var(--game-text); padding:16px; border-radius:var(--fw-r-2); font-weight:800; font-size:14px;
-        font-family:inherit; cursor:pointer; }
-      .fw-ctl-opt.active { background:var(--game-accent-12); border-color:var(--game-accent); color:var(--game-accent); }
+      .fw-ctl-opt { flex:1; background:var(--game-card-bg); border:1.5px solid rgba(255,255,255,.08);
+        color:var(--game-text); padding:18px 12px; border-radius:16px; font-weight:800; font-size:14px;
+        letter-spacing:.02em; font-family:inherit; cursor:pointer;
+        box-shadow:0 4px 14px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.03);
+        transition:border-color .15s, transform .1s, box-shadow .15s, color .15s, background .15s; }
+      .fw-ctl-opt:active { transform:scale(.97); }
+      .fw-ctl-opt.active { background:linear-gradient(180deg, var(--game-card-sel-top), var(--game-card-sel-btm));
+        border-color:var(--game-accent); color:var(--game-accent);
+        box-shadow:0 0 0 1px var(--game-accent-34), 0 8px 22px var(--game-secondary-28), inset 0 1px 0 rgba(255,255,255,.05); }
       .fw-ctl-actions { display:flex; flex-direction:column; gap:10px; }
-      .fw-ctl-go { width:100%; height:72px; font-size:20px; }
+      .fw-ctl-go { width:100%; height:68px; font-size:19px; font-weight:800; letter-spacing:.04em;
+        border-radius:99px; color:var(--game-on-accent); background:var(--game-accent);
+        box-shadow:0 4px 18px var(--game-accent-25), 0 8px 32px var(--game-accent-15); }
+      .fw-ctl-go:active { transform:scale(.98); }
       .fw-ctl-hint { text-align:center; font-size:11px; color:var(--game-muted); margin-top:10px; min-height:14px; }`;
     document.head.appendChild(s);
   }

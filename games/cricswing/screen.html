@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CricSwing — TV Screen</title>
+  <link rel="stylesheet" href="/framework/ui/framework.css">
+  <style>
+    body { margin: 0; overflow: hidden; background: var(--game-primary); }
+    #game-canvas { width: 100vw; height: 100vh; display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Framework (load order matters) -->
+  <script src="/framework/services/storage.js"></script>
+  <script src="/framework/services/event-hub.js"></script>
+  <script src="/framework/services/theme-loader.js"></script>
+  <script src="/framework/services/asset-loader.js"></script>
+  <script src="/framework/renderer/tv-perf-manager.js"></script>
+  <script src="/framework/renderer/layer-manager.js"></script>
+  <script src="/framework/renderer/renderer.js"></script>
+  <script src="/framework/renderer/projectile.js"></script>
+  <script src="/framework/renderer/arena-scene.js"></script>
+  <script src="/framework/ui/components.js"></script>
+  <script src="/framework/ui/templates.js"></script>
+  <script src="/framework/ui/templates.mobile.js"></script>
+  <script src="/framework/ui/charts.js"></script>
+  <script src="/framework/core/game.js"></script>
+
+  <script>
+    'use strict';
+    window.onload = async () => {
+      // Loads this game's modular code from game-config.json `code` (chase-shot + gameplay/*).
+      await window.FrameworkGame.loadGameplay();
+
+      // The reusable stadium gallery (no players) — registers bg/ground/fx layers.
+      await window.FrameworkArena.installFromConfig();
+
+      // One call wires pairing, reconnect, the renderer and message routing.
+      const game = await window.FrameworkGame.init({
+        role: 'screen',
+        canvas: 'game-canvas',
+        draw: window.Gameplay.draw,          // object layer = your ball/action
+        onPaired: () => {
+          window.Gameplay.setPaired(true);
+          // Do NOT start here — onPaired fires on the lobby's ephemeral pairing too,
+          // which would kill the TV setup mirror. The controller drives the real
+          // start via its `start` message (see handlers).
+        },
+        onUnpaired: () => window.Gameplay.setPaired(false),
+        handlers: window.Gameplay.handlers,
+      });
+
+      window.Gameplay.attach(game);
+    };
+  </script>
+</body>
+</html>

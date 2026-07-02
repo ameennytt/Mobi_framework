@@ -17,8 +17,12 @@
 
 /* brand / welcome */
 .fw-brand { text-align: center; margin-top: 10px; }
-.fw-brand img { width: 88px; height: 88px; object-fit: contain; }
-.fw-brand h1 { font-size: 30px; font-weight: 900; color: var(--game-accent); margin: 12px 0 2px; }
+/* logo icon — CricSwing .pair-logo-icon: clamp size, rounded, lime glow */
+.fw-brand img { width: clamp(80px, 22vw, 96px); height: clamp(80px, 22vw, 96px); object-fit: contain;
+  border-radius: 22px; box-shadow: 0 10px 30px var(--game-accent-25); }
+/* wordmark — CricSwing .pair-brand: white with accent span (.fw-accent) on the game's word */
+.fw-brand h1 { font-size: 30px; font-weight: 900; color: var(--game-text); letter-spacing: -.03em; margin: 12px 0 2px; }
+.fw-brand h1 .fw-accent { color: var(--game-accent); }
 .fw-brand p { font-size: 13px; color: var(--game-muted); margin: 0; }
 /* standalone pair buttons (outside cardbox) */
 #fw-connect, #fw-clear { margin-top: 12px; }
@@ -29,18 +33,20 @@
 /* Used by: pair status chip, intro eyebrow, any lobby eyebrow. Position via the
    composed modifier class (.fw-pair-chip / .fw-intro-chip). */
 .fw-chip {
-  display: inline-flex; align-items: center; gap: 6px; align-self: center;
+  display: inline-flex; align-items: center; gap: 8px; align-self: center;
   padding: 5px 12px; border-radius: 99px;
-  background: var(--game-accent-12); border: 1px solid var(--game-accent-25);
+  background: var(--game-accent-08); border: 1.5px solid var(--game-accent-30);
   font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
   color: var(--game-accent);
+  transition: background .25s, border-color .25s, box-shadow .25s;
 }
-.fw-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--game-accent); }
+.fw-chip-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--game-accent); flex-shrink: 0; }
 .fw-chip-dot.pulse { animation: fwPairPulse 1.6s ease-out infinite; }
 
-/* pairing status chip — positioning + paired state only */
+/* pairing status chip — positioning + paired state (CricSwing .pair-chip.is-paired) */
 .fw-pair-chip { margin: 20px auto 0; }
-.fw-pair-chip.paired { border-color: var(--game-accent); }
+.fw-pair-chip.paired { background: var(--game-accent-15); border-color: var(--game-accent); box-shadow: var(--game-glow); }
+.fw-pair-chip.paired .fw-chip-dot { display: none; }
 
 /* pair step instruction cards */
 .fw-pair-steps {
@@ -65,6 +71,36 @@
 
 /* 4 code-boxes wrapper + Wi-Fi hint */
 #fw-code-visual { margin: 6px 0 4px; outline: none; }
+
+/* ── code-entry frame + boxes (CricSwing .pair-code-frame / .pair-code-box) ──── */
+.fw-code-frame {
+  width: 100%;
+  background: linear-gradient(180deg, var(--game-accent-08), transparent);
+  border: 1px solid var(--game-accent-25);
+  border-radius: 20px; padding: 18px 16px 16px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.fw-code-frame.paired { border-color: var(--game-accent); box-shadow: var(--game-glow); }
+.fw-code-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.fw-code-header .lbl { font-size: 9.5px; color: var(--game-muted); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.fw-code-header .step { font-size: 9.5px; color: var(--game-accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.fw-codebox-row { position: relative; display: flex; gap: 8px; justify-content: center; cursor: text; }
+.fw-code-box {
+  flex: 0 0 auto; width: 72px; height: 72px; border-radius: 13px;
+  background: linear-gradient(180deg, #0e0e0e, #050505);
+  border: 1.5px solid var(--game-accent-18);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900; color: var(--game-accent);
+  font-family: var(--game-font); text-shadow: 0 0 .5em var(--game-accent-50);
+  transition: border-color .15s, box-shadow .15s; user-select: none;
+}
+.fw-code-box.active { border-color: var(--game-accent); box-shadow: 0 0 0 3px var(--game-accent-10); }
+.fw-code-box.active::after {
+  content: ''; display: block; width: 2px; height: 36px; border-radius: 2px;
+  background: var(--game-accent); box-shadow: 0 0 .5em var(--game-accent-60);
+  animation: fwCaret 1.06s steps(1, end) infinite;
+}
+.fw-codebox-row.paired .fw-code-box.active::after { display: none; }
 .fw-wifi-hint {
   margin-top: 14px; padding: 10px 14px; border-radius: 12px;
   background: var(--game-accent-08); border: 1px solid var(--game-accent-25);
@@ -90,48 +126,115 @@
   padding: 12px; text-transform: uppercase; outline: none;
 }
 .fw-full { width: 100%; }
-/* connect button — CricSwing #start-btn: 15px / 800 / lime */
+/* connect button — CricSwing #start-btn: pill, accent fill, dark on-accent text */
 .btn.fw-full { margin-top: 16px; font-size: 15px; padding: 15px; }
-/* launch button — CricSwing .big-btn: green gradient, white, 20px, radius 16, l-spacing 1 */
-.btn.fw-big {
-  font-size: 20px; padding: 20px; font-weight: 800; letter-spacing: 1px;
-  border-radius: 16px; color: #fff;
-  background: linear-gradient(135deg, #1a5a2a, #2a8a3a);
-  box-shadow: var(--fw-shadow-soft);
+#fw-connect {
+  border-radius: 99px; min-height: 48px; padding: 0 22px; font-size: 15px; font-weight: 800;
+  letter-spacing: .04em; background: var(--game-accent); color: var(--game-on-accent); border: none;
+  box-shadow: 0 4px 14px var(--game-accent-25);
 }
-.btn.fw-big:hover { box-shadow: var(--fw-shadow-card); }
+#fw-connect:disabled { opacity: .40; cursor: not-allowed; box-shadow: none; }
+/* clear — CricSwing .pair-alt-btn: ghost pill */
+#fw-clear {
+  border-radius: 99px; min-height: 48px; padding: 0 22px; font-size: 14px; font-weight: 700;
+  background: transparent; color: var(--game-text); border: 1.5px solid var(--fw-line-2);
+  margin-top: 10px;
+}
+/* launch button — CricSwing .launch-btn: solid accent, on-accent text, pill, glow */
+.btn.fw-big {
+  font-size: 18px; padding: 18px 24px; font-weight: 800; letter-spacing: .04em;
+  border-radius: 99px; color: var(--game-on-accent);
+  background: var(--game-accent);
+  box-shadow: 0 4px 18px var(--game-accent-25), 0 8px 32px var(--game-accent-15);
+}
+.btn.fw-big:hover { box-shadow: 0 6px 24px var(--game-accent-35), 0 12px 36px var(--game-accent-20); }
 .fw-status { text-align: center; font-size: 13px; color: var(--game-muted); margin-top: 14px; min-height: 16px; }
 
 /* flow header */
-.fw-flowhead { margin: 8px 0 18px; }
+.fw-flowhead { margin: 8px 0 18px; display: flex; flex-direction: column; }
 .fw-pill {
   display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1px;
   text-transform: uppercase; color: var(--game-primary);
   background: var(--game-accent); border-radius: 99px; padding: 4px 12px;
 }
-.fw-h1 { font-size: 26px; font-weight: 900; color: var(--game-text); margin: 10px 0 0; letter-spacing: -0.01em; }
+/* step chip — ghost pill above screen h1 (CricSwing .flow-step-pill) */
+.fw-chip.fw-step-pill {
+  background: var(--game-surface-soft); border-color: var(--game-accent-32);
+  font-size: 10.5px; letter-spacing: .12em;
+  align-self: flex-start; margin: 0 0 12px;
+}
+.fw-h1 { font-size: 30px; font-weight: 900; color: var(--game-text); margin: 0; letter-spacing: -.03em; }
 
 /* card grids */
 .fw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .fw-card {
   position: relative;
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--fw-line, rgba(255, 255, 255, 0.1));
+  background: var(--game-card-bg);
+  border: 1px solid rgba(255,255,255,.06);
   border-radius: var(--fw-r-4, 18px); padding: 12px 14px;
   color: var(--game-text); text-align: left; cursor: pointer;
-  font-family: inherit; box-shadow: var(--fw-shadow-soft, 0 4px 14px rgba(0,0,0,.45));
+  font-family: inherit; box-shadow: 0 4px 14px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.03);
   transition: transform var(--fw-d-fast, .14s) var(--fw-ease-out, ease),
               border-color var(--fw-d-fast, .14s) var(--fw-ease-out, ease),
-              background var(--fw-d-fast, .14s) var(--fw-ease-out, ease);
+              box-shadow var(--fw-d-fast, .14s) var(--fw-ease-out, ease);
 }
 .fw-card:active { transform: scale(0.97); }
-.fw-card:hover { border-color: var(--game-accent); background: rgba(255, 255, 255, 0.09); }
+.fw-card:hover { border-color: var(--game-accent-30); box-shadow: 0 6px 18px rgba(0,0,0,.40), 0 0 0 1px var(--game-accent-10); }
 .fw-card-title { font-size: 16px; font-weight: 800; }
 .fw-card-sub { font-size: 12px; color: var(--game-muted); font-weight: 600; }
 .fw-dot { width: 14px; height: 14px; border-radius: 50%; margin-bottom: 4px; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15); }
 .fw-mode { grid-column: span 2; flex-direction: row; align-items: center; justify-content: flex-start; }
 .fw-mode .fw-card-title { font-size: 18px; }
+
+/* ── mode hub (CricSwing #s-menu): chip + accent title + sub + vertical card list ─ */
+.fw-menu-paired { align-self: flex-start; margin: 0 0 18px; }
+.fw-menu-title { font-size: 28px; font-weight: 900; color: var(--game-text); letter-spacing: -.02em;
+  text-align: left; align-self: flex-start; line-height: 1.1; }
+.fw-menu-title .fw-accent { color: var(--game-accent); }
+.fw-menu-sub { font-size: 13px; color: var(--game-text-2); font-weight: 500; text-align: left;
+  align-self: flex-start; margin: 6px 0 18px; }
+.fw-menu-list { display: flex; flex-direction: column; width: 100%; }
+.fw-menu-card {
+  width: 100%; border: 1px solid rgba(255,255,255,.06); border-radius: 18px; padding: 16px 18px;
+  cursor: pointer; background: var(--game-card-bg); font-family: inherit; color: var(--game-text);
+  transition: border-color .18s, transform .12s, box-shadow .18s;
+  display: flex; gap: 14px; align-items: center;
+  margin-bottom: 8px; text-align: left;
+  box-shadow: 0 4px 14px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.fw-menu-card:hover {
+  border-color: var(--game-accent-30);
+  box-shadow: 0 6px 18px rgba(0,0,0,.40), 0 0 0 1px var(--game-accent-10), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fw-menu-card:active { transform: scale(.98); }
+.fw-menu-card.selected {
+  border-color: var(--game-accent);
+  background: linear-gradient(180deg, var(--game-card-sel-top), var(--game-card-sel-btm));
+  box-shadow: 0 0 0 1px var(--game-accent-34), 0 8px 22px var(--game-secondary-28), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.fw-mc-ico { width: 72px; height: 72px; border-radius: 18px; flex-shrink: 0; display: flex;
+  align-items: center; justify-content: center; font-size: 28px; line-height: 1;
+  background: var(--game-surface-2); border: 1px solid rgba(255,255,255,.08); }
+.fw-mc-ico svg { width: 30px; height: 30px; }
+.fw-mc-ico img { width: 44px; height: 44px; object-fit: contain; display: block; }
+.fw-mc-text { flex: 1; min-width: 0; }
+.fw-mc-title { display: block; font-size: 15px; font-weight: 800; color: var(--game-offwhite); letter-spacing: -.01em; line-height: 1.15; }
+.fw-mc-desc { display: block; font-size: 10.5px; color: var(--game-card-desc); margin-top: 5px; line-height: 1.45; }
+.fw-mc-chev { font-size: 24px; color: var(--game-muted); flex-shrink: 0; font-weight: 300; align-self: center; }
+/* featured (match) → lime glow; practice → gold (CricSwing .menu-card.match/.practice) */
+.fw-menu-card.match { border-color: var(--game-accent-40);
+  box-shadow: 0 0 0 1px var(--game-accent-15), 0 8px 24px var(--game-accent-08); }
+.fw-menu-card.match .fw-mc-ico {
+  background: linear-gradient(135deg, var(--game-accent-18), var(--game-accent-08));
+  border-color: var(--game-accent-30); }
+.fw-menu-card.match .fw-mc-title { color: var(--game-accent); }
+.fw-menu-card.match:active { border-color: var(--game-accent); }
+.fw-menu-card.practice .fw-mc-ico {
+  background: linear-gradient(135deg, rgba(243,216,107,.20), rgba(243,216,107,.06));
+  border-color: rgba(243,216,107,.32); }
+.fw-menu-card.practice .fw-mc-title { color: var(--game-gold); }
+.fw-menu-card.practice:active { border-color: rgba(243,216,107,.5); }
 
 /* toss */
 .fw-toss { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
@@ -151,7 +254,7 @@
 .fw-toss-result { font-size: 15px; font-weight: 800; color: var(--game-accent); text-align: center; min-height: 18px; }
 
 /* target */
-.fw-target { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 22px; text-align: center; }
+.fw-target { background: var(--game-card-bg); border: 1px solid rgba(255,255,255,.06); border-radius: 18px; padding: 22px; text-align: center; }
 .fw-target-row { font-size: 14px; color: var(--game-muted); }
 .fw-target-row b { color: var(--game-text); font-size: 18px; font-family: var(--game-mono, monospace); }
 .fw-target-big { font-size: 18px; color: var(--game-muted); margin: 14px 0 4px; }
@@ -169,13 +272,19 @@
 .fw-intro { text-align: center; display: flex; flex-direction: column; min-height: 100%; }
 .fw-intro-chip { margin: 8px auto 18px; }
 .fw-intro-title {
-  font-size: 32px; font-weight: 900; color: var(--game-text); line-height: 1.1;
-  max-width: 480px; margin: 0 auto;
+  font-size: 30px; font-weight: 900; color: var(--game-text); line-height: 1.1;
+  letter-spacing: -.03em; max-width: 340px; margin: 0 auto;
 }
+/* animated art stage (CricSwing intro-stage) — 260×260 canvas centred */
+.fw-intro-stage {
+  position: relative; width: 260px; height: 260px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  animation: fwBannerIn 0.4s var(--fw-ease-out, ease) both;
+}
+/* fallback emoji icon (slides with no `art`) */
 .fw-intro-figure {
   display: flex; flex-direction: column; align-items: center; gap: 22px;
   max-width: 480px; margin: 0 auto; width: 100%;
-  animation: fwBannerIn 0.4s var(--fw-ease-out, ease) both;
 }
 .fw-intro-icon {
   display: flex; align-items: center; justify-content: center;
@@ -183,15 +292,58 @@
   border: 1.5px solid var(--game-accent-25); border-radius: 28px;
   background: var(--game-surface-2);
 }
-.fw-intro-text { font-size: 15px; color: var(--game-muted); line-height: 1.55; max-width: 340px; margin: 0 auto; }
-.fw-intro-dots { display: flex; justify-content: center; margin: 0 auto 18px; }
+.fw-intro-text, .fw-intro-caption { font-size: 13px; color: var(--game-text-2); line-height: 1.5; max-width: 300px; margin: 0 auto; min-height: 60px; font-weight: 500; }
+.fw-intro-caption b { color: var(--game-accent); font-weight: 800; }
+.fw-intro-dots { display: flex; justify-content: center; gap: 8px; margin: 0 auto 18px; }
 .fw-intro-actions { display: flex; flex-direction: column; gap: 10px; max-width: 480px; margin: 0 auto; width: 100%; }
-.fw-intro-next { width: 100%; }
+.fw-intro-nav-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+.fw-intro-next { flex: 1; }
+.fw-intro-prev {
+  flex: 1; background: transparent; border: 1.5px solid var(--fw-line-2); color: var(--game-text-2);
+  font-size: 13px; font-weight: 700; padding: 13px 0; border-radius: 99px; cursor: pointer; font-family: inherit;
+  transition: border-color .15s, color .15s;
+}
+.fw-intro-prev:active { border-color: var(--game-accent-50); color: var(--game-accent); }
 .fw-intro-skip {
   background: none; border: none; color: var(--game-muted); cursor: pointer;
-  font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 8px;
 }
 .fw-intro-skip:hover { color: var(--game-text-2); }
+
+/* Act 1 — phone tilts like a bat handle (CricSwing introPhone) */
+@keyframes fwIntroPhone { 0%,35%{transform:rotate(-22deg)} 50%,85%{transform:rotate(28deg)} 100%{transform:rotate(-22deg)} }
+.fw-intro-phone {
+  position: relative; width: 90px; height: 170px; border: 1.5px solid var(--game-accent-35);
+  border-radius: 18px; background: var(--game-card-bg);
+  display: flex; align-items: center; justify-content: center; transform-origin: 50% 100%;
+  animation: fwIntroPhone 5s ease-in-out infinite;
+  box-shadow: 0 12px 30px rgba(0,0,0,.55), 0 0 24px var(--game-accent-10), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fw-intro-phone::before { content: ''; width: 18px; height: 3px; background: var(--game-accent-35); border-radius: 2px; position: absolute; top: 8px; }
+.fw-intro-phone-bat { font-size: 36px; line-height: 1; }
+
+/* Act 2 — timing bar with green zone + sweeping needle (CricSwing introNeedle) */
+.fw-intro-timing { width: 100%; max-width: 220px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.fw-intro-timing-track { position: relative; width: 100%; height: 14px; border-radius: 99px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.fw-intro-timing-zone { position: absolute; left: 38%; width: 24%; height: 100%; border-radius: 99px; background: var(--game-accent-40); border: 1px solid var(--game-accent-50); box-shadow: 0 0 12px var(--game-accent-25); }
+@keyframes fwIntroNeedle { 0%,100%{left:6%} 50%{left:70%} }
+.fw-intro-timing-needle { position: absolute; top: 50%; width: 4px; height: 22px; margin-top: -11px; background: var(--game-accent); border-radius: 2px; box-shadow: 0 0 10px var(--game-accent-50); animation: fwIntroNeedle 2.2s ease-in-out infinite; }
+.fw-intro-timing-label { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--game-accent); }
+
+/* Act 3 — lock-stance calibration card (CricSwing intro-lock-card) */
+.fw-intro-lock-card {
+  display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px 20px;
+  border-radius: 18px; width: 100%; max-width: 220px; background: var(--game-card-bg);
+  border: 1px solid var(--game-accent-30); box-shadow: 0 8px 28px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.fw-intro-lock-icon { font-size: 32px; line-height: 1; }
+@keyframes fwIntroLockPulse { 0%,100%{box-shadow:0 0 0 0 var(--game-accent-35)} 50%{box-shadow:0 0 0 10px rgba(154,223,107,0)} }
+.fw-intro-lock-btn {
+  padding: 12px 22px; border-radius: 99px; background: var(--game-accent-12); border: 1.5px solid var(--game-accent);
+  color: var(--game-accent); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  animation: fwIntroLockPulse 1.8s ease-in-out infinite;
+}
+.fw-intro-lock-hint { font-size: 11px; color: var(--game-muted); font-weight: 600; text-align: center; }
 
 /* ── menu hub secondary entries (optional) ─────────────────────────────────── */
 .fw-menu-entries { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
@@ -227,8 +379,13 @@
 
 /* ── A1: N-column grid + selected card + match-preview (CricSwing difficulty) ──── */
 .fw-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.fw-grid.cols-3 .fw-card { align-items: center; justify-content: center; text-align: center; }
 .fw-card.selected { border-color: var(--game-accent); background: var(--game-accent-10);
   box-shadow: 0 0 0 1.5px var(--game-accent), var(--fw-shadow-glow); }
+/* difficulty accent-colour overrides (CricSwing: easy=green, medium=gold, hard=red) */
+.fw-card._easy.selected  { border-color: var(--game-accent);   background: var(--game-accent-10); }
+.fw-card._medium.selected{ border-color: var(--game-gold);     background: rgba(243,216,107,.10); box-shadow: 0 0 0 1.5px var(--game-gold), 0 0 18px rgba(243,216,107,.18); }
+.fw-card._hard.selected  { border-color: var(--game-danger);   background: rgba(255,68,68,.10);   box-shadow: 0 0 0 1.5px var(--game-danger), 0 0 18px rgba(255,68,68,.18); }
 .fw-preview {
   margin-top: 18px; background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--fw-line, rgba(255,255,255,0.1)); border-radius: 16px; padding: 16px;
@@ -254,6 +411,157 @@
 }
 .fw-coin-disc.spin { animation: fwCoinSpin 1.6s ease-in-out; }
 .fw-toss-sub { font-size: 22px; font-weight: 900; color: var(--game-gold, #F3D86B); text-align: center; margin-bottom: 4px; }
+
+/* ── centered team/country grid (string-only items, no badge) ─────────────── */
+.fw-grid.fw-grid-center .fw-card { align-items: center; text-align: center; justify-content: center; }
+
+/* ── league country rows (CricSwing .league-row) ──────────────────────────── */
+.fw-league-list { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+.fw-league-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  background: var(--game-card-bg); border: 1.5px solid rgba(255,255,255,.08); cursor: pointer;
+  font-family: inherit; text-align: left; width: 100%;
+  transition: border-color .15s, transform .12s;
+}
+.fw-league-row:hover { border-color: var(--game-accent-30); }
+.fw-league-row:active { transform: scale(.98); }
+.fw-lr-flag {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 900; letter-spacing: .04em; color: #fff;
+  background: var(--game-surface-2); box-shadow: 0 4px 12px rgba(0,0,0,.40);
+}
+.fw-lr-body { flex: 1; min-width: 0; }
+.fw-lr-title { display: block; font-size: 14.5px; font-weight: 800; color: var(--game-text); letter-spacing: -.01em; }
+.fw-lr-sub { display: block; font-size: 10.5px; color: var(--game-muted); font-weight: 500; margin-top: 2px; }
+.fw-lr-count { display: block; font-size: 10px; color: var(--game-accent); font-weight: 800; letter-spacing: .10em; margin-top: 2px; text-transform: uppercase; }
+.fw-lr-arrow { color: var(--game-muted); font-size: 20px; flex-shrink: 0; }
+
+/* ── country / city tiles (CricSwing .country-tile) ───────────────────────── */
+.fw-tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.fw-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 14px 8px;
+  border-radius: 14px; background: var(--game-card-bg); border: 1.5px solid rgba(255,255,255,.08);
+  cursor: pointer; font-family: inherit; transition: border-color .15s, transform .12s;
+}
+.fw-tile:hover { border-color: var(--game-accent-30); }
+.fw-tile:active { transform: scale(.97); }
+.fw-tile.selected { border-color: var(--game-accent); background: var(--game-accent-08); }
+.fw-tile-flag {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 900; letter-spacing: .04em; color: #fff;
+  background: var(--game-surface-2); box-shadow: 0 4px 12px rgba(0,0,0,.40);
+}
+.fw-tile-name { font-size: 13px; font-weight: 800; color: var(--game-text); letter-spacing: .02em; text-align: center; line-height: 1.2; }
+.fw-tile-sub { font-size: 9px; color: var(--game-muted); font-weight: 600; letter-spacing: .10em; text-transform: uppercase; }
+
+/* ── locked mode card (CricSwing .fmt-chase.locked — e.g. Featured Chase) ──── */
+.fw-menu-card.locked { opacity: .55; filter: grayscale(1); cursor: not-allowed; }
+.fw-menu-card.locked:hover { border-color: rgba(255,255,255,.06); box-shadow: 0 4px 14px rgba(0,0,0,.30), inset 0 1px 0 rgba(255,255,255,.03); }
+.fw-menu-card.locked:active { transform: none; }
+.fw-menu-card.locked .fw-mc-title { color: var(--game-muted); }
+
+/* ── context row (CricSwing format screen: picked country + Change chip) ───── */
+.fw-context { margin: 0 0 16px; }
+.fw-context-sub { font-size: 20px; font-weight: 900; color: var(--game-accent); letter-spacing: -.01em; margin-bottom: 10px; }
+.fw-context-row { display: flex; gap: 8px; align-items: center; }
+.fw-context-chip {
+  display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 99px;
+  background: var(--game-surface-2); border: 1px solid var(--fw-line);
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--game-text-2);
+}
+.fw-context-change {
+  display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 99px; cursor: pointer;
+  background: transparent; border: 1.5px solid var(--game-accent-30); color: var(--game-accent);
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; font-family: inherit;
+}
+.fw-context-change:active { transform: scale(.97); }
+
+/* ── tournament accent (orange — CricSwing .fmt-tournament) ────────────────── */
+.fw-menu-card.tournament .fw-mc-ico {
+  background: linear-gradient(135deg, rgba(255,140,66,.20), rgba(255,140,66,.05));
+  border-color: rgba(255,140,66,.30); }
+.fw-menu-card.tournament .fw-mc-title { color: #FF8C42; }
+.fw-menu-card.tournament:active { border-color: rgba(255,140,66,.5); }
+
+/* ── stance screen (CricSwing bat.html #match-stance) ──────────────────────── */
+.fw-stance-screen {
+  background: radial-gradient(ellipse 80% 70% at 50% 50%, rgba(154,223,107,.06), transparent 65%), #000;
+  align-items: center; text-align: center; gap: 10px; overflow: hidden;
+}
+.fw-stance-title {
+  font-size: 22px; font-weight: 900; color: var(--game-text); letter-spacing: .02em;
+  text-transform: uppercase; line-height: 1.1;
+}
+.fw-stance-title .fw-accent { color: var(--game-accent); }
+.fw-stance-sub { font-size: 13px; color: var(--game-muted); line-height: 1.5; max-width: 300px; font-weight: 500; }
+.fw-hand-row { display: flex; gap: 8px; width: 100%; max-width: 300px; }
+.fw-hand-btn {
+  flex: 1; padding: 10px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 800;
+  letter-spacing: .02em; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.10);
+  color: var(--game-muted); font-family: inherit; transition: background .15s, border-color .15s, color .15s;
+}
+.fw-hand-btn.active { background: var(--game-accent-15); border-color: var(--game-accent-50); color: var(--game-accent); }
+.fw-hand-btn:active { transform: scale(.97); }
+.fw-stance-good {
+  display: inline-flex; align-items: center; padding: 4px 11px; border-radius: 99px;
+  background: var(--game-accent-12); border: 1px solid var(--game-accent-40); color: var(--game-accent);
+  font-size: 11px; font-weight: 700; letter-spacing: .02em; opacity: .28;
+  transition: opacity .2s; pointer-events: none;
+}
+.fw-stance-good.show { opacity: 1; box-shadow: 0 0 1em var(--game-accent-40); }
+.fw-stance-stage {
+  position: relative; width: 240px; height: 240px; display: flex; align-items: center; justify-content: center;
+}
+.fw-stance-stage::before, .fw-stance-stage::after {
+  content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  border-radius: 50%; border: 1px dashed rgba(154,223,107,.22); pointer-events: none;
+  animation: fwStanceRing 2.6s ease-in-out infinite;
+}
+.fw-stance-stage::before { width: 220px; height: 220px; }
+.fw-stance-stage::after  { width: 160px; height: 160px; border-color: rgba(154,223,107,.34); animation-delay: .3s; }
+.fw-stance-ring-inner {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  width: 110px; height: 110px; border-radius: 50%; border: 1px dashed rgba(154,223,107,.42);
+  pointer-events: none; animation: fwStanceRing 2.6s ease-in-out infinite .6s;
+}
+@keyframes fwStanceRing {
+  0%,100% { opacity: .6; transform: translate(-50%,-50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%,-50%) scale(1.04); }
+}
+.fw-hand-grip { position: absolute; width: 170px; height: 170px; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; z-index: 1; }
+.fw-hand-grip path, .fw-hand-grip line { fill: none; stroke: rgba(154,223,107,.32); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 4; }
+.fw-stance-bat { width: 88px; height: 204px; transform-origin: 50% 90%; position: relative; z-index: 2; filter: drop-shadow(0 14px 22px rgba(0,0,0,.6)); transition: transform .08s linear; }
+.fw-stance-bat svg { width: 100%; height: 100%; display: block; }
+.fw-tilt-strip {
+  position: relative; display: flex; width: 100%; max-width: 300px; padding: 10px 16px;
+  border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.06); min-height: 44px;
+}
+.fw-tilt-marker {
+  position: absolute; top: 50%; left: calc(50% - 7px); width: 14px; height: 24px; border-radius: 5px;
+  transform: translateY(-50%); background: linear-gradient(180deg, var(--game-accent), var(--game-accent-2));
+  box-shadow: 0 0 .6em var(--game-accent-50); transition: left .08s linear;
+}
+.fw-tilt-marker.good { box-shadow: 0 0 .9em var(--game-accent-60); }
+.fw-stance-btn {
+  width: 130px; height: 130px; border-radius: 50%; border: none; cursor: pointer;
+  background: radial-gradient(circle at 38% 32%, #c8ee8b 0%, var(--game-accent) 40%, var(--game-accent-2) 100%);
+  color: var(--game-on-accent); font-size: 24px; font-weight: 900; letter-spacing: .06em;
+  font-family: inherit;
+  box-shadow: 0 18px 32px var(--game-accent-35), inset 0 2px 2px rgba(255,255,255,.45), inset 0 -4px 8px rgba(0,0,0,.18);
+  animation: fwLockPulse 1.8s ease-in-out infinite; display: flex; align-items: center; justify-content: center;
+}
+.fw-stance-btn:active { transform: scale(.97); animation: none; }
+.fw-stance-btn.done {
+  width: auto; min-width: 130px; height: 52px; border-radius: 99px; padding: 0 24px;
+  font-size: 15px; animation: none;
+  background: linear-gradient(135deg, #2a4a5a, #3a6a7a); color: var(--game-text);
+  box-shadow: 0 12px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.15);
+}
+@keyframes fwLockPulse { 0%,100% { box-shadow: 0 18px 32px var(--game-accent-35), inset 0 2px 2px rgba(255,255,255,.45); } 50% { box-shadow: 0 22px 36px var(--game-accent-50), inset 0 2px 2px rgba(255,255,255,.45); } }
+.fw-stance-hint { font-size: 10.5px; color: var(--game-muted); line-height: 1.4; font-weight: 500; max-width: 300px; }
 
 /* ── A3: batting-order role badge + next-batter highlight ───────────────────── */
 .fw-roster-row.next { border: 1.5px solid var(--game-accent); border-radius: 12px;

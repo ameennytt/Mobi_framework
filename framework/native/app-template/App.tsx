@@ -4,9 +4,11 @@ import {
   Animated, Easing, BackHandler, AppState,
 } from 'react-native';
 import WebView from 'react-native-webview';
-import nodejs from 'nodejs-mobile-react-native';
 import { NetworkInfo } from 'react-native-network-info';
 import { useSensorBridge } from './useSensorBridge';
+// Embedded server now runs IN-PROCESS over react-native-tcp-socket (pure Java,
+// 16 KB-safe) — no more nodejs-mobile / libnode.so. See src/server/.
+import { startServer } from './src/server';
 
 // ── EDIT per game ────────────────────────────────────────────────────────────
 const GAME_ID = 'starter';                 // TEMPLATE default — `npm run publish <id>` overwrites this per game
@@ -32,6 +34,8 @@ export default function App() {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const splashOpacity = useRef(new Animated.Value(1)).current;
   const screenGoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const localIPRef = useRef<string | null>(null);
+  const serverRef = useRef<{ stop: () => void } | null>(null);
   // Animated splash (CricSwing-style): glow bloom, logo spring, text rise, progress bar.
   const glow = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.65)).current;
@@ -41,33 +45,50 @@ export default function App() {
   const [slowMsg, setSlowMsg] = useState(false);
 
   useEffect(() => {
-    nodejs.start('server.js');
-
-    const listener = nodejs.channel.addListener('message', (msg: string) => {
+    // Server events arrive as direct callbacks now (no rn-bridge). Same 3 signals
+    // the old nodejs-mobile server sent: 'server-ready' | {room-created} | {screen-disconnected}.
+    const onServerEvent = (msg: any) => {
       if (msg === 'server-ready') { setServerReady(true); return; }
       try {
-        const ev = JSON.parse(msg);
-        if (ev.type === 'room-created') {
+        const ev = typeof msg === 'string' ? JSON.parse(msg) : msg;
+        if (ev && ev.type === 'room-created') {
           if (screenGoneTimer.current) { clearTimeout(screenGoneTimer.current); screenGoneTimer.current = null; }
           setRoomCode(ev.code);
         }
-        if (ev.type === 'screen-disconnected') {
+        if (ev && ev.type === 'screen-disconnected') {
           // Debounce 20s so a brief TV blip doesn't yank the user to re-pair.
           if (screenGoneTimer.current) clearTimeout(screenGoneTimer.current);
           screenGoneTimer.current = setTimeout(() => { setRoomCode(null); screenGoneTimer.current = null; }, 20000);
         }
       } catch {}
-    });
+    };
 
+    serverRef.current = startServer({ onEvent: onServerEvent, getLanIp: () => localIPRef.current });
+
+    // LAN IP for the pairing hint. Keep only private IPv4 (reject cellular/public).
+    const isPrivateIPv4 = (ip: string | null) => !!ip && (
+      ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('169.254.') ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(ip));
+    const acceptIp = (ip: string | null) => {
+      if (!isPrivateIPv4(ip)) return false;
+      localIPRef.current = ip as string;
+      setLocalIP(ip as string);
+      clearInterval(ipPoll);
+      return true;
+    };
     let tries = 0;
     const ipPoll = setInterval(() => {
-      NetworkInfo.getIPV4Address().then(ip => { if (ip) { setLocalIP(ip); clearInterval(ipPoll); } });
+      NetworkInfo.getIPV4Address().then(acceptIp);
       if (++tries > 10) clearInterval(ipPoll);
     }, 1000);
-    NetworkInfo.getIPV4Address().then(ip => { if (ip) { setLocalIP(ip); clearInterval(ipPoll); } });
+    NetworkInfo.getIPV4Address().then(acceptIp);
 
     const fallback = setTimeout(() => setServerReady(true), 3500);
-    return () => { listener.remove(); clearInterval(ipPoll); clearTimeout(fallback); if (screenGoneTimer.current) clearTimeout(screenGoneTimer.current); };
+    return () => {
+      try { serverRef.current?.stop(); } catch {}
+      clearInterval(ipPoll); clearTimeout(fallback);
+      if (screenGoneTimer.current) clearTimeout(screenGoneTimer.current);
+    };
   }, []);
 
   // Splash entrance animation (runs once on mount).

@@ -10,14 +10,14 @@
  *
  * Presets (templates) = how many optional screens are on (see DOC/SCREENS.md):
  *   starter = minimal (buttons)   chase = broadcast (onboarding/series/toss/intro/over-summary)
- *   versus  = head-to-head (football)
+ *   versus  = head-to-head (football)   cricswing = full pixel-perfect CricSwing reference
  *
  * Rewrites paths, storage keys, and gameId so the copy runs immediately.
  */
 const fs = require('fs');
 const path = require('path');
 
-const KNOWN = ['starter', 'chase', 'versus'];
+const KNOWN = ['starter', 'chase', 'versus', 'cricswing'];
 
 const args = process.argv.slice(2);
 const id = (args.find(a => !a.startsWith('-')) || '').trim();

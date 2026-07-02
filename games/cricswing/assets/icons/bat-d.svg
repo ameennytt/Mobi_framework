@@ -1,0 +1,33 @@
+<svg viewBox="0 0 160 280" class="st-phone-svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="stBodyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#d49a4a"/>
+            <stop offset=".55" stop-color="#a06a2a"/>
+            <stop offset="1" stop-color="#6a4220"/>
+          </linearGradient>
+          <linearGradient id="stGripGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#1a0d05"/>
+            <stop offset=".5" stop-color="#3a1d0a"/>
+            <stop offset="1" stop-color="#1a0d05"/>
+          </linearGradient>
+        </defs>
+        <rect x="40" y="14" width="80" height="190" rx="14" fill="url(#stBodyGrad)" stroke="#2a1810" stroke-width="2"/>
+        <rect x="76" y="22" width="8" height="172" rx="3" fill="#f0c478" opacity=".35"/>
+        <rect x="58" y="200" width="44" height="14" rx="3" fill="#2a1810"/>
+        <rect x="62" y="212" width="36" height="58" rx="6" fill="url(#stGripGrad)"/>
+        <g stroke="#5a3018" stroke-width="1.5" opacity=".7">
+          <line x1="64" y1="216" x2="98" y2="232"/>
+          <line x1="64" y1="226" x2="98" y2="242"/>
+          <line x1="64" y1="236" x2="98" y2="252"/>
+          <line x1="64" y1="246" x2="98" y2="262"/>
+        </g>
+        <ellipse cx="80" cy="270" rx="20" ry="6" fill="#3a1d0a"/>
+        <g>
+          <path d="M30 60 L20 80 L40 80 Z" fill="#F3D86B" opacity=".75"/>
+          <line x1="32" y1="80" x2="48" y2="100" stroke="#F3D86B" stroke-width="1.5" opacity=".75" stroke-dasharray="3 2"/>
+        </g>
+        <g>
+          <path d="M130 240 L140 220 L120 220 Z" fill="#9ADF6B" opacity=".8"/>
+          <line x1="128" y1="220" x2="112" y2="240" stroke="#9ADF6B" stroke-width="1.5" opacity=".8" stroke-dasharray="3 2"/>
+        </g>
+      </svg>

@@ -86,7 +86,27 @@
       "Bash(node -e \"const c=require\\('./games/chase/game-config.json'\\); console.log\\(Object.keys\\(c\\)\\)\")",
       "Bash(node --check framework/flow/lobby-flow.js)",
       "Bash(findstr /i \"scripts\" -A 20)",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "PowerShell(node -c \"c:\\\\Users\\\\alame\\\\Desktop\\\\tv-mobile-game-framework\\\\framework\\\\flow\\\\lobby-flow.js\")",
+      "PowerShell(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('c:/Users/alame/Desktop/tv-mobile-game-framework/games/cricswing/game-config.json'\\)\\)\")",
+      "PowerShell(if \\($?\\) { \"lobby-flow.js OK\" })",
+      "PowerShell(if \\($?\\) { \"game-config.json OK\" })",
+      "PowerShell(if \\($?\\) { \"OK\" })",
+      "PowerShell(if \\($?\\) { \"lobby-flow OK\" })",
+      "PowerShell(if \\($?\\) { \"config OK\" })",
+      "Bash(node -c framework/ui/controller.js)",
+      "Bash(node -c framework/ui/templates.mobile.js)",
+      "Bash(node -c games/cricswing/gameplay/controller.js)",
+      "Bash(node -c games/cricswing/gameplay/scoring.js)",
+      "Bash(node -c games/cricswing/gameplay/index.js)",
+      "Bash(node -c framework/services/asset-loader.js)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('games/cricswing/game-config.json'\\)\\)\")",
+      "Bash(node -e \"require\\('ws'\\); require\\('buffer'\\); console.log\\('ws + buffer OK, node', process.version\\)\")",
+      "Bash(node framework/native/app-template/src/server/__test__/run-node.js)",
+      "Bash(rm -rf \"c:/Users/alame/Desktop/tv-mobile-game-framework/games/soccer\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\alame\\Desktop\\tv-mobile-game-framework\\games\\soccer"
     ]
   }
 }

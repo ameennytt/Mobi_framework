@@ -255,7 +255,7 @@
       if (!o) {
         o = document.createElement('div');
         o.id = 'fw-mobile-matchend';
-        o.style.cssText = 'position:fixed;inset:0;z-index:9600;overflow-y:auto;background:radial-gradient(ellipse at 50% 0%, var(--game-secondary-06), #060a14 70%), #060a14;';
+        o.style.cssText = 'position:fixed;inset:0;z-index:9600;overflow-y:auto;background:radial-gradient(ellipse at 50% 0%, var(--game-accent-08), var(--game-primary) 70%), var(--game-primary);';
         document.body.appendChild(o);
       }
       const loss = opts.won === false;

@@ -12,6 +12,15 @@
 @font-face { font-family: 'JetBrains Mono'; font-weight: 500; font-display: swap; src: url('fonts/jetbrains-mono-500.ttf') format('truetype'); }
 @font-face { font-family: 'Montserrat'; font-weight: 800; font-display: swap; src: url('fonts/montserrat-800.woff2') format('woff2'); }
 @font-face { font-family: 'Montserrat'; font-weight: 900; font-display: swap; src: url('fonts/montserrat-900.woff2') format('woff2'); }
+/* Anybody (headlines) + Hanken Grotesk (secondary body) + Material Symbols (icons) — from CricSwing */
+@font-face { font-family: 'Anybody'; font-weight: 400; font-display: swap; src: url('fonts/anybody-400.ttf') format('truetype'); }
+@font-face { font-family: 'Anybody'; font-weight: 700; font-display: swap; src: url('fonts/anybody-700.ttf') format('truetype'); }
+@font-face { font-family: 'Anybody'; font-weight: 800; font-display: swap; src: url('fonts/anybody-800.ttf') format('truetype'); }
+@font-face { font-family: 'Anybody'; font-weight: 900; font-display: swap; src: url('fonts/anybody-900.ttf') format('truetype'); }
+@font-face { font-family: 'Hanken Grotesk'; font-weight: 400; font-display: swap; src: url('fonts/hanken-grotesk-400.ttf') format('truetype'); }
+@font-face { font-family: 'Hanken Grotesk'; font-weight: 600; font-display: swap; src: url('fonts/hanken-grotesk-600.ttf') format('truetype'); }
+@font-face { font-family: 'Material Symbols Outlined'; font-weight: 400; font-display: swap; src: url('fonts/material-symbols-outlined.ttf') format('truetype'); }
+.material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
 
 :root {
   /* Brand (themeable per game) — EXACT CricSwing values (web/lobby.html :root) */
@@ -20,6 +29,7 @@
   --game-bg-3:    #161616;          /* CricSwing --bg-3 */
   --game-accent:  #9ADF6B;          /* --green : primary CTA / accent */
   --game-accent-2:#76B900;          /* --green-2 : deeper green */
+  --game-on-accent: #062208;        /* readable text/icon ON an accent fill (CricSwing #062208) */
   --game-gold:    #F3D86B;          /* --gold : scores / highlights */
   --game-gold-2:  #e0c050;          /* --gold-2 */
   --game-text:    #f5f5f5;
@@ -43,6 +53,9 @@
   --game-card-dark:   #0e1812;
   --game-card-dark-2: #131e18;
   --game-card-bg: linear-gradient(180deg, var(--game-card-dark), var(--game-card-dark-2));
+  --game-card-desc: #a8b0a8;          /* card/hub description text — CricSwing muted warm grey */
+  --game-card-sel-top: #1a2812;       /* selected card gradient top */
+  --game-card-sel-btm: #0e1a08;       /* selected card gradient bottom */
   /* Pre-baked accent (154,223,107) + secondary (118,185,0) alphas — reusable chrome
      references these instead of a hex literal, so a theme override recolors them. */
   --game-accent-08: rgba(154, 223, 107, 0.08);
@@ -52,7 +65,9 @@
   --game-accent-18: rgba(154, 223, 107, 0.18);
   --game-accent-25: rgba(154, 223, 107, 0.25);
   --game-accent-30: rgba(154, 223, 107, 0.30);
+  --game-accent-20: rgba(154, 223, 107, 0.20);
   --game-accent-32: rgba(154, 223, 107, 0.32);
+  --game-accent-34: rgba(154, 223, 107, 0.34);
   --game-accent-35: rgba(154, 223, 107, 0.35);
   --game-accent-40: rgba(154, 223, 107, 0.40);
   --game-accent-50: rgba(154, 223, 107, 0.50);

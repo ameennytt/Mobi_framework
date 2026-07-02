@@ -1,0 +1,42 @@
+<svg viewBox="0 0 120 280" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <linearGradient id="msBladeGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%"   stop-color="#9a6a32"/>
+              <stop offset="35%"  stop-color="#e8c896"/>
+              <stop offset="65%"  stop-color="#d4a574"/>
+              <stop offset="100%" stop-color="#7a4818"/>
+            </linearGradient>
+            <linearGradient id="msHandleGrad" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0%"   stop-color="#1a0a05"/>
+              <stop offset="50%"  stop-color="#3a2010"/>
+              <stop offset="100%" stop-color="#1a0a05"/>
+            </linearGradient>
+          </defs>
+          <!-- Bat (upgraded paths, scaled from ps-bat 100×240 → 120×280) -->
+          <g opacity="0.82">
+            <!-- Toe -->
+            <rect x="26" y="12" width="67" height="6" rx="2" fill="#2a1a08"/>
+            <!-- Blade -->
+            <rect x="26" y="16" width="67" height="149" rx="5" fill="url(#msBladeGrad)" stroke="#5a3818" stroke-width="1.4"/>
+            <!-- Sweet spot -->
+            <rect x="55" y="42" width="10" height="117" rx="2" fill="rgba(154,223,107,0.32)"/>
+            <!-- Wood grain -->
+            <line x1="36" y1="21" x2="36" y2="161" stroke="rgba(80,40,15,.4)"  stroke-width="0.6"/>
+            <line x1="46" y1="21" x2="46" y2="161" stroke="rgba(80,40,15,.45)" stroke-width="0.6"/>
+            <line x1="60" y1="21" x2="60" y2="161" stroke="rgba(80,40,15,.55)" stroke-width="0.8"/>
+            <line x1="74" y1="21" x2="74" y2="161" stroke="rgba(80,40,15,.45)" stroke-width="0.6"/>
+            <line x1="84" y1="21" x2="84" y2="161" stroke="rgba(80,40,15,.4)"  stroke-width="0.6"/>
+            <!-- Shoulder taper -->
+            <polygon points="41,166 79,166 72,173 48,173" fill="#a87842"/>
+            <!-- Handle -->
+            <rect x="49" y="173" width="22" height="93" rx="3" fill="url(#msHandleGrad)"/>
+            <!-- Grip stripes -->
+            <line x1="49" y1="187" x2="71" y2="187" stroke="#000" stroke-width="1.2" opacity=".45"/>
+            <line x1="49" y1="203" x2="71" y2="203" stroke="#000" stroke-width="1.2" opacity=".45"/>
+            <line x1="49" y1="219" x2="71" y2="219" stroke="#000" stroke-width="1.2" opacity=".45"/>
+            <line x1="49" y1="235" x2="71" y2="235" stroke="#000" stroke-width="1.2" opacity=".45"/>
+            <line x1="49" y1="251" x2="71" y2="251" stroke="#000" stroke-width="1.2" opacity=".45"/>
+            <!-- Bottom cap -->
+            <ellipse cx="60" cy="266" rx="11" ry="4" fill="#0a0502"/>
+          </g>
+        </svg>
