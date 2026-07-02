@@ -151,6 +151,7 @@ function requestHandler(req, res) {
   // ── Static File Router ────────────────────────────────────────────────────
   let localFile = null;
   let allowedRoot = null;
+  let gamePageId = null; // set when serving a game's html → drives the fw_game cookie
 
   // Pattern A: Game Extensions (/games/:gameId/assets/... or /games/:gameId/controller.html)
   if (urlPath.startsWith('/games/')) {
@@ -159,6 +160,7 @@ function requestHandler(req, res) {
     const rest = parts.slice(1).join('/');
     localFile = path.join(GAMES_ROOT, gameId, rest);
     allowedRoot = GAMES_ROOT;
+    if (rest.endsWith('.html')) gamePageId = gameId;
   }
   // Pattern B: Framework Services (/framework/ui/framework.css, /framework/renderer/tv-perf-manager.js)
   else if (urlPath.startsWith('/framework/')) {
@@ -167,6 +169,27 @@ function requestHandler(req, res) {
     const rest = parts.slice(1).join('/');
     localFile = path.join(FRAMEWORK_ROOT, service, rest);
     allowedRoot = FRAMEWORK_ROOT;
+  }
+  // Pattern C: Root asset passthrough. Verbatim game pages (e.g. CricSwing's
+  // screen.html) reference phone-server root paths like /fonts/*, /images/*,
+  // /shared/*, /cricswing-mark.png. Resolve them inside the requesting game's
+  // folder. The game id comes from the Referer's /games/<id>/ segment, falling
+  // back to the fw_game cookie (set when the game's html page was served) —
+  // needed because font requests triggered by /fonts/local.css carry the CSS
+  // file (not the game page) as their referer.
+  else {
+    let gid = null;
+    const ref = req.headers.referer || '';
+    let m = ref.match(/\/games\/([\w-]+)\//);
+    if (m) gid = m[1];
+    if (!gid) {
+      m = (req.headers.cookie || '').match(/(?:^|;\s*)fw_game=([\w-]+)/);
+      if (m) gid = m[1];
+    }
+    if (gid) {
+      localFile = path.join(GAMES_ROOT, gid, urlPath.slice(1));
+      allowedRoot = GAMES_ROOT;
+    }
   }
 
   // Containment: reject any path that resolves outside its allowed root
@@ -194,10 +217,15 @@ function requestHandler(req, res) {
       return;
     }
     const ext = path.extname(localFile);
-    res.writeHead(200, {
+    const outHeaders = {
       'Content-Type': MIME[ext] || 'text/plain',
       'Cache-Control': 'no-store',
-    });
+    };
+    // Remember which game this browser is on so Pattern C root-asset requests
+    // (no useful referer, e.g. font files pulled in by a stylesheet) resolve
+    // into the right games/<id>/ folder.
+    if (gamePageId) outHeaders['Set-Cookie'] = `fw_game=${gamePageId}; Path=/; SameSite=Lax`;
+    res.writeHead(200, outHeaders);
     res.end(data);
   });
 }

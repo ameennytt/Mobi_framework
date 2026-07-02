@@ -548,7 +548,7 @@ window.FrameworkFlow = (function () {
     if (action === 'about') return openInfoModal('about');
     if (action === 'help') return openInfoModal('help');
     if (action === 'settings') return openSettings();
-    if (ent.branch) { S.branch = ent.branch; if (ent.mode) S.mode = ent.mode; save(); sendTV('pick'); next(); }
+    if (ent.branch) { S.branch = ent.branch; if (ent.mode) S.mode = ent.mode; save(); sendTV('pick', { keyName: 'mode', picked: { id: ent.mode || ent.branch } }); next(); }
   }
 
   // Optional series/tournament: start it when a series-type format is picked, else clear.
@@ -658,7 +658,10 @@ window.FrameworkFlow = (function () {
     else if (key === 'format') { S.format = opt.id; S.formatName = opt.sub || opt.title; if (opt.overs != null) S.overs = opt.overs; if (opt.rounds != null) S.rounds = opt.rounds; applySeriesFromFormat(opt); }
     else { S[key] = opt.id; }
     save();
-    sendTV('pick');
+    // Self-describing pick: carry WHICH step and option were just chosen so the
+    // TV can render the confirmation statelessly (matters for the screen_rejoined
+    // rebroadcast, where lastTV is replayed without any prior context).
+    sendTV('pick', { keyName: key, picked: { id: opt.id, title: opt.title, sub: opt.sub, short: opt.short, color: opt.color } });
   }
   // Opponent = another entry from the SAME pool the player picked from (CricSwing:
   // another country in the cup, another city in the league). Falls back to cfg.teams.

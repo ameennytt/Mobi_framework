@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>CricSwing — TV Screen</title>
   <link rel="stylesheet" href="/framework/ui/framework.css">
+  <!-- Original CricSwing TV fonts + the pixel-exact lobby mirror (extracted
+       from reference/screen-original.html — see games/cricswing/tv/). -->
+  <link rel="stylesheet" href="/fonts/local.css?v=138">
+  <link rel="stylesheet" href="/games/cricswing/tv/tv-lobby-mirror.css">
   <style>
     body { margin: 0; overflow: hidden; background: var(--game-primary); }
     #game-canvas { width: 100vw; height: 100vh; display: block; }
@@ -27,6 +31,10 @@
   <script src="/framework/ui/templates.mobile.js"></script>
   <script src="/framework/ui/charts.js"></script>
   <script src="/framework/core/game.js"></script>
+  <!-- Level-2 override (DOC/OVERRIDES.md): replaces the default TV setup
+       mirror with the original CricSwing one. Must load after templates.js
+       + components.js + event-hub.js, before the first lobby_step. -->
+  <script src="/games/cricswing/tv/tv-lobby-mirror.js"></script>
 
   <script>
     'use strict';

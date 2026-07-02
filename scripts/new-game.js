@@ -101,4 +101,4 @@ console.log(`  1. Brand it      games/${id}/game-config.json  (text, theme, asse
 console.log(`  2. Swap assets   games/${id}/assets/*`);
 console.log(`  3. Configure     game-config.json  (home, flow, controller.controls, hud, arena, field, formats, teams)`);
 console.log(`  4. Build gameplay games/${id}/gameplay/*  (rules · scoring · visuals · index; optional controller.js hooks)`);
-console.log(`  5. npm start  →  Phone: http://localhost:3000/games/${id}/home.html  ·  TV: /games/${id}/screen.html`);
+console.log(`  5. npm start  →  Phone: http://localhost:3000/games/${id}/lobby.html  ·  TV: /games/${id}/screen.html`);

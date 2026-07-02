@@ -165,7 +165,7 @@ window.FrameworkController = (function () {
   function setFeedback(text, color) { const e = document.querySelector('[data-ctl-feedback]'); if (e) { e.textContent = text || ''; if (color) e.style.color = color; } }
   function flash(opts) { if (T() && T().showMobileResult) T().showMobileResult(opts || {}); }
   function toLobby() { try { sessionStorage.removeItem(matchKey); } catch (_) {} location.href = `/games/${gid}/lobby.html`; }
-  function toHome() { try { sessionStorage.removeItem(matchKey); } catch (_) {} location.href = `/games/${gid}/home.html`; }
+  function toHome() { try { sessionStorage.removeItem(matchKey); } catch (_) {} location.href = `/games/${gid}/lobby.html`; }
   function startMatch(payload) {
     try { sessionStorage.setItem(matchKey, '1'); } catch (_) {}
     game.send('start', payload || {});

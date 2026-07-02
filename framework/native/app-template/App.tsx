@@ -132,8 +132,8 @@ export default function App() {
 
   useSensorBridge(webviewRef, USE_MOTION && serverReady);
 
-  // Phone app boots on Home (front door): Home → Play → Lobby → … → Result → Home.
-  const webviewUrl = `http://localhost:3000/games/${GAME_ID}/home.html`;
+  // Phone app boots straight into pairing: Lobby → … → Result → Lobby (no Home menu).
+  const webviewUrl = `http://localhost:3000/games/${GAME_ID}/lobby.html`;
   const ipReady = localIP !== '…';
   const injectedJs =
     `document.documentElement.style.cssText+='opacity:0;transition:opacity 0.42s ease;';window.__isNativeApp=true;` +
